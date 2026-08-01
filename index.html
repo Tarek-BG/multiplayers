@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>First Game</title>
+		<title>AndooDev WebRTC P2P Example</title>
 		<style>
 html, body, #canvas {
 	margin: 0;
@@ -92,7 +92,22 @@ body {
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => { 
+	let is_right_click_held = false;
 
+	const godotCanvas = document.getElementById('canvas')
+	godotCanvas.addEventListener('mousedown', event => {
+		if (event.button === 2 && is_right_click_held) is_right_click_held = true;
+		if (event.button === 0 && is_right_click_held) godotCanvas.dispatchEvent(new KeyboardEvent('keydown',{'key':'p'}));
+	});
+	godotCanvas.addEventListener('mouseup', event => {
+		if (event.button === 2 && is_right_click_held) is_right_click_held = false;
+		if (event.button === 0 && is_right_click_held) godotCanvas.dispatchEvent(new KeyboardEvent('keyup',{'key':'p'}));
+	});
+
+ });
+</script>
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -111,7 +126,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":1808356,"index.wasm":35749181},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":19194588,"index.wasm":35749181},"focusCanvas":false,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
