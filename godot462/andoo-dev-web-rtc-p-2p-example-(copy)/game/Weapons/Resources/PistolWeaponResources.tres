@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WeaponResourceNew" load_steps=6 format=3 uid="uid://j42d6dl8qkaj"]
+[gd_resource type="Resource" script_class="WeaponResourceNew" format=3 uid="uid://j42d6dl8qkaj"]
 
 [ext_resource type="AudioStream" uid="uid://bhigie4rovst1" path="res://game/assets/sound/9mm Pistol Rack Full.mp3" id="1_gd0kh"]
 [ext_resource type="Script" uid="uid://bnhfyt5sl8jcd" path="res://game/Weapons/Scripts/WeaponResourcesScript.gd" id="2_gd0kh"]
@@ -16,24 +16,15 @@ weaponId = 1
 type = 1
 animBlendTime = 0.2
 equipAnimName = "EquipAnimPistol"
-equipAnimSpeed = 1.0
 unequipAnimName = "UnequipAnimPistol"
-unequipAnimSpeed = 1.0
 shootAnimName = "ShootAnimPistol"
-shootAnimSpeed = 1.0
 reloadAnimName = "ReloadAnimPistol"
-reloadAnimSpeed = 1.0
 equipSound = ExtResource("1_gd0kh")
-equipSoundSpeed = 1.0
-unequipSoundSpeed = 1.0
 shootSound = ExtResource("4_sdsuq")
-shootSoundSpeed = 1.0
 reloadSound = ExtResource("3_rglq3")
-reloadSoundSpeed = 1.0
 totalAmmoInMag = 12
 totalAmmoInMagRef = 12
 ammoType = "LightAmmo"
-allAmmoInMag = false
 equipTime = 0.2
 unequipTime = 0.2
 canAutoShoot = true
@@ -46,18 +37,10 @@ damagePerProj = 28.0
 damageDropoff = SubResource("Curve_eo1mu")
 headshotDamageMult = 2.0
 timeBetweenShots = 0.28
-hasToReload = true
-autoReload = true
 reloadTime = 0.92
-multiPartReload = false
-multiPartReloadTime = 0.0
 baseRotSpeed = 7.0
 targetRotSpeed = 8.0
 recoilVal = Vector3(0.04, 0.012, 0)
-isProjExplosive = false
-projMoveSpeed = 0.0
-projTimeBeforeVanish = 0.0
-projGravityVal = 0.0
 position = Array[Vector3]([Vector3(0.20047, -0.153444, -0.150842), Vector3(0, 3.142, 0)])
 tiltRotSpeed = 8.0
 tiltRotAmount = 0.3
@@ -71,4 +54,3 @@ bobFreq = 0.008
 bobAmount = 0.018
 bobSpeed = 10.0
 onIdleBobFreqDivider = 2.0
-showMuzzleFlash = false
