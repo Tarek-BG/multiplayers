@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Cross-Device Video Chat - No Server Needed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a237e 0%, #311b92 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .status-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .status-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 180px;
+            text-align: center;
+        }
+        
+        .status-label {
+            font-size: 0.9rem;
+            color: #bbdefb;
+            margin-bottom: 8px;
+        }
+        
+        .status-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #f44336;
+        }
+        
+        .indicator.connected {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .video-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #bbdefb;
+        }
+        
+        video {
+            width: 100%;
+            height: 250px;
+            background: #000;
+            border-radius: 8px;
+            transform: rotateY(180deg);
+        }
+        
+        .remote-video {
+            transform: none;
+        }
+        
+        .controls {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: linear-gradient(to right, #4776E6, #8E54E9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            transition: all 0.3s;
+            min-width: 160px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .danger-btn {
+            background: linear-gradient(to right, #FF416C, #FF4B2B);
+        }
+        
+        .success-btn {
+            background: linear-gradient(to right, #0ba360, #3cba92);
+        }
+        
+        .connection-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .connection-method {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .method-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-align: center;
+        }
+        
+        .method-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .method-btn.active {
+            background: rgba(33, 150, 243, 0.3);
+            border: 2px solid #2196F3;
+        }
+        
+        .room-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .room-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        input {
+            padding: 12px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 16px;
+            min-width: 250px;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        #qrcode {
+            display: inline-block;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 12px;
+            padding-left: 5px;
+        }
+        
+        .note {
+            background: rgba(255, 193, 7, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .connection-info {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 0.85rem;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- PeerJS Library for simplified WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 ↔️ 💻 WebRTC Cross-Device Video Chat</h1>
+            <p class="subtitle">No server installation needed - Works directly in browser!</p>
+        </header>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">Your ID</div>
+                <div class="status-value" id="peerId">Not connected</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Connection Status</div>
+                <div class="status-value">
+                    <span id="statusIndicator" class="indicator"></span>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Room</div>
+                <div class="status-value" id="roomName">No room</div>
+            </div>
+        </div>
+        
+        <div class="video-grid">
+            <div class="video-wrapper">
+                <div class="video-title">Your Camera 📱</div>
+                <video id="localVideo" autoplay muted playsinline></video>
+            </div>
+            <div class="video-wrapper">
+                <div class="video-title">Remote Camera 💻</div>
+                <video id="remoteVideo" autoplay playsinline class="remote-video"></video>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-buttons">
+                <button id="startButton" class="success-btn">🎥 Start Camera</button>
+                <button id="connectButton" disabled>📡 Connect to Network</button>
+                <button id="disconnectButton" class="danger-btn" disabled>❌ Disconnect</button>
+            </div>
+            
+            <div class="control-buttons">
+                <button id="createRoomButton" disabled>🏠 Create Room</button>
+                <button id="joinRoomButton" disabled>🚪 Join Room</button>
+                <button id="hangupButton" disabled class="danger-btn">📞 End Call</button>
+            </div>
+        </div>
+        
+        <div class="connection-section">
+            <h3>🔗 Connection Method</h3>
+            <div class="connection-method">
+                <div id="methodPeerJS" class="method-btn active">
+                    <h4>PeerJS (Recommended)</h4>
+                    <p style="font-size: 0.9rem; opacity: 0.9;">Uses PeerJS cloud server for signaling</p>
+                </div>
+                <div id="methodManual" class="method-btn">
+                    <h4>Manual Connection</h4>
+                    <p style="font-size: 0.9rem; opacity: 0.9;">Copy-paste connection data</p>
+                </div>
+            </div>
+            
+            <div id="peerjsSection" class="room-section">
+                <div class="room-input">
+                    <input type="text" id="roomIdInput" placeholder="Enter room name (e.g., family-chat)" maxlength="20">
+                    <button id="connectToRoomButton" disabled>Join Room</button>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.9rem;">
+                    Both users must enter the same room name to connect
+                </p>
+            </div>
+            
+            <div id="manualSection" class="room-section hidden">
+                <div class="room-input">
+                    <input type="text" id="peerIdInput" placeholder="Enter peer ID to connect">
+                    <button id="connectToPeerButton" disabled>Connect to Peer</button>
+                </div>
+                <div style="margin-top: 15px;">
+                    <p>Your Peer ID: <strong id="yourPeerId">Generating...</strong></p>
+                    <button id="copyPeerIdButton" disabled>Copy Your ID</button>
+                </div>
+            </div>
+            
+            <div id="connectionData" class="connection-info hidden">
+                <strong>Connection Data:</strong> <span id="connectionDataText">None</span>
+            </div>
+        </div>
+        
+        <div class="qr-section">
+            <h3>📱 Quick Connect with QR Code</h3>
+            <p>Scan this QR code with your smartphone to join the same room</p>
+            <div id="qrcode"></div>
+            <div style="margin-top: 15px;">
+                <button id="generateQRButton" disabled>Generate QR Code</button>
+                <button id="shareButton" disabled>Share Room Link</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 How to Connect PC ↔ Smartphone:</h3>
+            <ol>
+                <li><strong>On both devices:</strong> Open this page</li>
+                <li><strong>On both devices:</strong> Click "Start Camera" (allow permissions)</li>
+                <li><strong>On both devices:</strong> Click "Connect to Network"</li>
+                <li><strong>Choose a connection method:</strong>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li><strong>PeerJS (Recommended):</strong> Enter the same room name on both devices and click "Join Room"</li>
+                        <li><strong>Manual:</strong> Copy your Peer ID from one device and paste it on the other</li>
+                    </ul>
+                </li>
+                <li><strong>Optional:</strong> Use QR code to easily share room with smartphone</li>
+                <li>The connection will be established automatically!</li>
+            </ol>
+            
+            <div class="note">
+                <strong>⚠️ Important Notes:</strong>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>Both devices must be on the same network or have public IP access</li>
+                    <li>Some networks/firewalls may block WebRTC (try mobile hotspot)</li>
+                    <li>For best results, use Chrome or Firefox on both devices</li>
+                </ul>
+            </div>
+        </div>
+        
+        <footer>
+            <p>WebRTC Cross-Device Video Chat | No Server Installation Needed | Works with Chrome, Firefox, Edge</p>
+            <p style="margin-top: 10px; font-size: 0.8rem;">
+                Uses PeerJS Cloud Server for signaling and public STUN servers for connectivity
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const startButton = document.getElementById('startButton');
+        const connectButton = document.getElementById('connectButton');
+        const disconnectButton = document.getElementById('disconnectButton');
+        const createRoomButton = document.getElementById('createRoomButton');
+        const joinRoomButton = document.getElementById('joinRoomButton');
+        const hangupButton = document.getElementById('hangupButton');
+        const connectToRoomButton = document.getElementById('connectToRoomButton');
+        const connectToPeerButton = document.getElementById('connectToPeerButton');
+        const copyPeerIdButton = document.getElementById('copyPeerIdButton');
+        const generateQRButton = document.getElementById('generateQRButton');
+        const shareButton = document.getElementById('shareButton');
+        const peerIdElement = document.getElementById('peerId');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const roomNameElement = document.getElementById('roomName');
+        const yourPeerIdElement = document.getElementById('yourPeerId');
+        const connectionData = document.getElementById('connectionData');
+        const connectionDataText = document.getElementById('connectionDataText');
+        
+        // Connection method elements
+        const methodPeerJS = document.getElementById('methodPeerJS');
+        const methodManual = document.getElementById('methodManual');
+        const peerjsSection = document.getElementById('peerjsSection');
+        const manualSection = document.getElementById('manualSection');
+        
+        // Input elements
+        const roomIdInput = document.getElementById('roomIdInput');
+        const peerIdInput = document.getElementById('peerIdInput');
+        
+        // Variables
+        let localStream = null;
+        let peer = null;
+        let currentCall = null;
+        let currentConnection = null;
+        let currentRoom = null;
+        let connectionMethod = 'peerjs';
+        let peerId = null;
+        let dataConnection = null;
+        
+        // Update status
+        function updateStatus(text, isConnected = false) {
+            statusText.textContent = text;
+            statusIndicator.className = 'indicator' + (isConnected ? ' connected' : '');
+            
+            // Update connection data display
+            if (text.includes('Connected') || text.includes('Call in progress')) {
+                connectionData.classList.remove('hidden');
+            }
+        }
+        
+        // Generate random room ID
+        function generateRoomId() {
+            const adjectives = ['happy', 'sunny', 'quick', 'brave', 'calm', 'gentle', 'honest', 'jolly'];
+            const nouns = ['tiger', 'eagle', 'river', 'forest', 'ocean', 'mountain', 'star', 'cloud'];
+            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const noun = nouns[Math.floor(Math.random() * nouns.length)];
+            const num = Math.floor(Math.random() * 100);
+            return `${adj}-${noun}-${num}`;
+        }
+        
+        // Start camera
+        startButton.addEventListener('click', async () => {
+            try {
+                // Try ideal constraints first
+                const constraints = {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints)
+                    .catch(async () => {
+                        // Fallback to basic constraints
+                        return await navigator.mediaDevices.getUserMedia({
+                            video: true,
+                            audio: true
+                        });
+                    });
+                
+                localVideo.srcObject = localStream;
+                startButton.disabled = true;
+                connectButton.disabled = false;
+                
+                updateStatus('Camera ready');
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert(`Cannot access camera/microphone: ${error.message}\n\nPlease check permissions and try again.`);
+            }
+        });
+        
+        // Connect to PeerJS network
+        connectButton.addEventListener('click', async () => {
+            try {
+                updateStatus('Connecting to PeerJS server...');
+                
+                // Generate a random peer ID
+                const randomId = 'peer-' + Math.random().toString(36).substring(2, 9);
+                
+                // Initialize PeerJS with cloud server
+                peer = new Peer(randomId, {
+                    host: '0.peerjs.com',
+                    port: 443,
+                    path: '/',
+                    secure: true,
+                    debug: 3,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:global.stun.twilio.com:3478' },
+                            { urls: 'turn:global.relay.twilio.com:3478?transport=udp',
+                              username: 'test',
+                              credential: 'test123' },
+                            { urls: 'turn:global.relay.twilio.com:3478?transport=tcp',
+                              username: 'test',
+                              credential: 'test123' }
+                        ]
+                    }
+                });
+                
+                peer.on('open', (id) => {
+                    console.log('PeerJS connected with ID:', id);
+                    peerId = id;
+                    peerIdElement.textContent = id.substring(0, 12) + '...';
+                    yourPeerIdElement.textContent = id;
+                    
+                    updateStatus('Connected to network', true);
+                    connectButton.disabled = true;
+                    disconnectButton.disabled = false;
+                    createRoomButton.disabled = false;
+                    joinRoomButton.disabled = false;
+                    connectToRoomButton.disabled = false;
+                    connectToPeerButton.disabled = false;
+                    copyPeerIdButton.disabled = false;
+                    generateQRButton.disabled = false;
+                    shareButton.disabled = false;
+                    
+                    // Generate a default room ID
+                    roomIdInput.value = generateRoomId();
+                    
+                    // Generate QR code
+                    generateQRCode();
+                });
+                
+                peer.on('error', (error) => {
+                    console.error('PeerJS error:', error);
+                    updateStatus('Connection error: ' + error.type);
+                    
+                    // Try alternative configuration
+                    if (error.type === 'server-error') {
+                        alert('PeerJS server error. Trying alternative configuration...');
+                        initAlternativePeer();
+                    }
+                });
+                
+                peer.on('connection', (conn) => {
+                    console.log('Incoming data connection:', conn.peer);
+                    handleIncomingConnection(conn);
+                });
+                
+                peer.on('call', (call) => {
+                    console.log('Incoming call from:', call.peer);
+                    handleIncomingCall(call);
+                });
+                
+                peer.on('disconnected', () => {
+                    console.log('PeerJS disconnected');
+                    updateStatus('Disconnected from network');
+                });
+                
+                peer.on('close', () => {
+                    console.log('PeerJS connection closed');
+                    updateStatus('Connection closed');
+                });
+                
+            } catch (error) {
+                console.error('Error connecting to PeerJS:', error);
+                updateStatus('Connection failed');
+                alert('Failed to connect to network. Please try again.');
+            }
+        });
+        
+        // Alternative PeerJS configuration
+        function initAlternativePeer() {
+            try {
+                peer = new Peer(peerId, {
+                    host: 'peerjs-server.herokuapp.com',
+                    port: 443,
+                    secure: true,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.services.mozilla.com:3478' },
+                            { urls: 'stun:stun.sipgate.net:3478' },
+                            { urls: 'stun:stun.stunprotocol.org:3478' }
+                        ]
+                    }
+                });
+                
+                // Reattach event handlers
+                peer.on('open', (id) => {
+                    console.log('Alternative PeerJS connected:', id);
+                    updateStatus('Connected (alternative)', true);
+                });
+            } catch (error) {
+                console.error('Alternative PeerJS failed:', error);
+                alert('Both PeerJS servers are unavailable. Trying manual mode...');
+                switchToManualMode();
+            }
+        }
+        
+        // Switch to manual mode
+        function switchToManualMode() {
+            connectionMethod = 'manual';
+            methodManual.click();
+            updateStatus('Using manual connection mode');
+        }
+        
+        // Handle incoming data connection
+        function handleIncomingConnection(conn) {
+            dataConnection = conn;
+            
+            conn.on('open', () => {
+                console.log('Data connection opened with:', conn.peer);
+                updateStatus('Connected to peer', true);
+                
+                // If we're not in a call yet, request a call
+                if (!currentCall) {
+                    conn.send({ type: 'request-call' });
+                }
+            });
+            
+            conn.on('data', (data) => {
+                console.log('Received data:', data);
+                if (data.type === 'request-call' && !currentCall) {
+                    // Start call with the peer
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('close', () => {
+                console.log('Data connection closed');
+                dataConnection = null;
+                if (!currentCall) {
+                    updateStatus('Peer disconnected');
+                }
+            });
+        }
+        
+        // Handle incoming call
+        function handleIncomingCall(call) {
+            // Answer the call with local stream
+            call.answer(localStream);
+            
+            call.on('stream', (remoteStream) => {
+                console.log('Received remote stream');
+                remoteVideo.srcObject = remoteStream;
+                currentCall = call;
+                hangupButton.disabled = false;
+                updateStatus('Call in progress', true);
+                roomNameElement.textContent = 'In call with ' + call.peer.substring(0, 8);
+            });
+            
+            call.on('close', () => {
+                console.log('Call ended');
+                endCall();
+            });
+            
+            call.on('error', (error) => {
+                console.error('Call error:', error);
+                endCall();
+            });
+        }
+        
+        // Create a room
+        createRoomButton.addEventListener('click', () => {
+            const roomId = generateRoomId();
+            roomIdInput.value = roomId;
+            connectToRoom();
+        });
+        
+        // Join a room
+        joinRoomButton.addEventListener('click', () => {
+            connectToRoom();
+        });
+        
+        // Connect to room
+        function connectToRoom() {
+            const roomId = roomIdInput.value.trim();
+            if (!roomId || !peer) return;
+            
+            currentRoom = roomId;
+            roomNameElement.textContent = roomId;
+            
+            // In PeerJS, we connect to a peer with the room ID as their peer ID
+            // For simplicity, we'll just connect to the peer with the same room ID
+            if (connectionMethod === 'peerjs') {
+                connectToPeer(roomId);
+            }
+            
+            // Update QR code
+            generateQRCode();
+        }
+        
+        // Connect to specific peer
+        connectToPeerButton.addEventListener('click', () => {
+            const targetPeerId = peerIdInput.value.trim();
+            if (!targetPeerId || !peer) return;
+            
+            connectToPeer(targetPeerId);
+        });
+        
+        // Connect to peer
+        function connectToPeer(targetPeerId) {
+            if (!peer) {
+                alert('Not connected to network');
+                return;
+            }
+            
+            // Create data connection first
+            dataConnection = peer.connect(targetPeerId, {
+                reliable: true
+            });
+            
+            handleIncomingConnection(dataConnection);
+            
+            updateStatus('Connecting to peer...');
+        }
+        
+        // Start a call with a peer
+        function startCall(targetPeerId) {
+            if (!peer || !localStream) {
+                alert('Please start camera and connect first');
+                return;
+            }
+            
+            console.log('Starting call with:', targetPeerId);
+            
+            // Make the call
+            currentCall = peer.call(targetPeerId, localStream);
+            
+            currentCall.on('stream', (remoteStream) => {
+                console.log('Received remote stream');
+                remoteVideo.srcObject = remoteStream;
+                hangupButton.disabled = false;
+                updateStatus('Call in progress', true);
+                roomNameElement.textContent = 'In call with ' + targetPeerId.substring(0, 8);
+            });
+            
+            currentCall.on('close', () => {
+                console.log('Call ended');
+                endCall();
+            });
+            
+            currentCall.on('error', (error) => {
+                console.error('Call error:', error);
+                endCall();
+            });
+        }
+        
+        // End call
+        hangupButton.addEventListener('click', endCall);
+        
+        function endCall() {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                remoteVideo.srcObject = null;
+            }
+            
+            hangupButton.disabled = true;
+            updateStatus('Connected to network', true);
+            
+            if (currentRoom) {
+                roomNameElement.textContent = currentRoom;
+            } else {
+                roomNameElement.textContent = 'No room';
+            }
+        }
+        
+        // Disconnect from network
+        disconnectButton.addEventListener('click', () => {
+            if (peer) {
+                peer.destroy();
+                peer = null;
+            }
+            
+            endCall();
+            
+            if (dataConnection) {
+                dataConnection.close();
+                dataConnection = null;
+            }
+            
+            connectButton.disabled = false;
+            disconnectButton.disabled = true;
+            createRoomButton.disabled = true;
+            joinRoomButton.disabled = true;
+            hangupButton.disabled = true;
+            connectToRoomButton.disabled = true;
+            connectToPeerButton.disabled = true;
+            copyPeerIdButton.disabled = true;
+            generateQRButton.disabled = true;
+            shareButton.disabled = true;
+            
+            updateStatus('Disconnected');
+            peerIdElement.textContent = 'Not connected';
+            roomNameElement.textContent = 'No room';
+            connectionData.classList.add('hidden');
+        });
+        
+        // Copy peer ID to clipboard
+        copyPeerIdButton.addEventListener('click', () => {
+            if (peerId) {
+                navigator.clipboard.writeText(peerId)
+                    .then(() => {
+                        alert('Peer ID copied to clipboard!');
+                    })
+                    .catch(err => {
+                        console.error('Copy failed:', err);
+                        // Fallback method
+                        const textArea = document.createElement('textarea');
+                        textArea.value = peerId;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('Peer ID copied!');
+                    });
+            }
+        });
+        
+        // Generate QR code
+        generateQRButton.addEventListener('click', generateQRCode);
+        
+        function generateQRCode() {
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+            
+            let qrData = window.location.href;
+            
+            // Add room info to URL if available
+            if (currentRoom) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('room', currentRoom);
+                qrData = url.toString();
+            }
+            
+            QRCode.toCanvas(document.createElement('canvas'), qrData, {
+                width: 200,
+                height: 200,
+                margin: 1
+            }, (error, canvas) => {
+                if (!error) {
+                    qrcodeDiv.appendChild(canvas);
+                }
+            });
+        }
+        
+        // Share room link
+        shareButton.addEventListener('click', () => {
+            if (!currentRoom) {
+                alert('Please create or join a room first');
+                return;
+            }
+            
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', currentRoom);
+            const shareUrl = url.toString();
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Join my WebRTC video chat room',
+                    text: `Join my video chat room: ${currentRoom}`,
+                    url: shareUrl
+                });
+            } else {
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => {
+                        alert('Room link copied to clipboard!\n\nShare this with the other user: ' + shareUrl);
+                    })
+                    .catch(() => {
+                        alert('Room link: ' + shareUrl + '\n\nCopy this link and share it with the other user.');
+                    });
+            }
+        });
+        
+        // Connection method selection
+        methodPeerJS.addEventListener('click', () => {
+            connectionMethod = 'peerjs';
+            methodPeerJS.classList.add('active');
+            methodManual.classList.remove('active');
+            peerjsSection.classList.remove('hidden');
+            manualSection.classList.add('hidden');
+            updateStatus('Using PeerJS signaling');
+        });
+        
+        methodManual.addEventListener('click', () => {
+            connectionMethod = 'manual';
+            methodManual.classList.add('active');
+            methodPeerJS.classList.remove('active');
+            manualSection.classList.remove('hidden');
+            peerjsSection.classList.add('hidden');
+            updateStatus('Using manual connection');
+            
+            // For manual mode, we need to generate a peer ID if not already
+            if (!peer) {
+                // Generate a local peer ID for manual mode
+                const randomId = 'manual-' + Math.random().toString(36).substring(2, 9);
+                peerId = randomId;
+                yourPeerIdElement.textContent = randomId;
+                peerIdElement.textContent = randomId.substring(0, 12) + '...';
+            }
+        });
+        
+        // Check for room in URL parameters
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            
+            if (roomParam) {
+                roomIdInput.value = roomParam;
+                // Auto-join room when connected
+                setTimeout(() => {
+                    if (connectToRoomButton && !connectToRoomButton.disabled) {
+                        connectToRoom();
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            console.log('WebRTC Cross-Device Chat loaded');
+            updateStatus('Ready to start');
+            
+            // Check URL parameters
+            checkUrlParameters();
+            
+            // Auto-generate QR code after a delay
+            setTimeout(generateQRCode, 1500);
+        });
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (peer) {
+                peer.destroy();
+            }
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

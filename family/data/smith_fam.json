@@ -1,0 +1,38 @@
+[
+  {},
+{
+  "familyName": "Smith Family",
+  "person": {
+    "name": "John",
+    "surname": "Smith",
+    "birthDate": "1990-05-15",
+    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+    "father": {
+      "name": "Robert",
+      "surname": "Smith",
+      "birthDate": "1960-08-22",
+      "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+    },
+    "mother": {
+      "name": "Mary",
+      "surname": "Johnson",
+      "birthDate": "1962-11-10",
+      "photoUrl": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+    },
+    "brothers": [
+      {
+        "name": "Michael",
+        "surname": "Smith",
+        "birthDate": "1988-02-28",
+        "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+      },
+      {
+        "name": "David",
+        "surname": "Smith",
+        "birthDate": "1992-09-05",
+        "photoUrl": "https://images.unsplash.com/photo-1504257432389-52343af06ae3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+      }
+    ]
+  }
+}
+]

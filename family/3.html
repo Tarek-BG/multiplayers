@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree Gallery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .subtitle {
+            color: #b8b8d1;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .url-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .url-input {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .url-input input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .url-input input:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #3a0ca3, #4361ee);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .sample-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: #4cc9f0;
+            font-size: 1.2rem;
+        }
+        
+        .loading i {
+            margin-right: 15px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            display: none;
+            background: rgba(220, 53, 69, 0.2);
+            color: #f8d7da;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .gallery-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 600px;
+        }
+        
+        .gallery-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-size: 1.8rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(67, 97, 238, 0.5);
+        }
+        
+        /* Family Tree Chart Layout */
+        .family-chart {
+            position: relative;
+            padding: 40px 20px;
+        }
+        
+        .generation {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-bottom: 80px;
+            position: relative;
+        }
+        
+        .generation-title {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #b8b8d1;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .person-card {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(20, 20, 40, 0.9));
+            border-radius: 15px;
+            padding: 20px;
+            width: 250px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .person-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(67, 97, 238, 0.3);
+            border-color: rgba(67, 97, 238, 0.5);
+        }
+        
+        .person-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 4px solid;
+            position: relative;
+        }
+        
+        .person-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .person-role {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .person-main .person-photo {
+            border-color: #4cc9f0;
+        }
+        
+        .person-father .person-photo {
+            border-color: #4361ee;
+        }
+        
+        .person-mother .person-photo {
+            border-color: #f72585;
+        }
+        
+        .person-brother .person-photo {
+            border-color: #f8961e;
+        }
+        
+        .person-info {
+            text-align: center;
+        }
+        
+        .person-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .person-details {
+            color: #b8b8d1;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        
+        .person-age {
+            display: inline-block;
+            background: rgba(67, 97, 238, 0.2);
+            color: #4cc9f0;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        
+        /* Connection lines */
+        .connector {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .connector-vertical {
+            width: 2px;
+            height: 40px;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .connector-horizontal {
+            height: 2px;
+            width: 100px;
+            top: 50%;
+        }
+        
+        .connector-left {
+            left: -100px;
+        }
+        
+        .connector-right {
+            right: -100px;
+        }
+        
+        .connector-parents {
+            position: absolute;
+            width: 80%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            bottom: -40px;
+            left: 10%;
+        }
+        
+        /* Family connections */
+        .parents-row {
+            position: relative;
+        }
+        
+        .parents-row::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .siblings-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 40px;
+            position: relative;
+        }
+        
+        .siblings-container::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .siblings-title {
+            width: 100%;
+            text-align: center;
+            color: #b8b8d1;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #6c757d;
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .empty-state p {
+            font-size: 1.2rem;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #b8b8d1;
+            font-size: 0.95rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4cc9f0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #b8b8d1;
+        }
+        
+        @media (max-width: 1100px) {
+            .generation {
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+            
+            .parents-row::after {
+                height: 40px;
+                bottom: -40px;
+            }
+            
+            .connector-horizontal {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .url-section {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .person-card {
+                width: 220px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-images"></i> Family Tree Gallery</h1>
+            <p class="subtitle">Visualize family relationships with photos in an interactive chart. Load JSON data with family information and profile pictures.</p>
+        </header>
+        
+        <section class="controls">
+            <div class="url-section">
+                <div class="url-input">
+                    <input type="url" id="jsonUrl" placeholder="Enter JSON URL containing family data with photo URLs...">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="loadData">
+                        <i class="fas fa-cloud-download-alt"></i> Load Family Data
+                    </button>
+                    <button class="btn btn-secondary" id="sample1">
+                        <i class="fas fa-users"></i> Sample 1
+                    </button>
+                    <button class="btn btn-secondary" id="sample2">
+                        <i class="fas fa-user-friends"></i> Sample 2
+                    </button>
+                </div>
+            </div>
+            
+            <div class="sample-buttons">
+                <p style="width:100%; margin-bottom: 10px; color: #b8b8d1;">Sample JSON structures include profile photo URLs for each person.</p>
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <i class="fas fa-spinner"></i> Loading family data and photos...
+            </div>
+            
+            <div class="error" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Error loading data. Please check the URL and try again.</span>
+            </div>
+        </section>
+        
+        <section class="gallery-container">
+            <h2 class="gallery-title" id="galleryTitle">Family Tree Gallery</h2>
+            <div id="familyGallery">
+                <div class="empty-state">
+                    <i class="fas fa-images"></i>
+                    <p>Load a JSON file with family data to display the family tree with photos.</p>
+                    <p style="margin-top: 15px; font-size: 1rem;">JSON should include name, surname, birthDate, and photoUrl for each person.</p>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p>Family Tree Gallery Viewer &copy; 2023 | Displays family relationships with photos</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalMembers">0</div>
+                    <div class="stat-label">Family Members</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalPhotos">0</div>
+                    <div class="stat-label">Photos Loaded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgAge">0</div>
+                    <div class="stat-label">Average Age</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const jsonUrlInput = document.getElementById('jsonUrl');
+            const loadDataButton = document.getElementById('loadData');
+            const sample1Button = document.getElementById('sample1');
+            const sample2Button = document.getElementById('sample2');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const familyGallery = document.getElementById('familyGallery');
+            const galleryTitle = document.getElementById('galleryTitle');
+            
+            // Stats elements
+            const totalMembers = document.getElementById('totalMembers');
+            const totalPhotos = document.getElementById('totalPhotos');
+            const avgAge = document.getElementById('avgAge');
+            
+            // Sample JSON data with photo URLs
+            const sampleData1 = {
+                "familyName": "Smith Family",
+                "person": {
+                    "name": "John",
+                    "surname": "Smith",
+                    "birthDate": "1990-05-15",
+                    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                    "father": {
+                        "name": "Robert",
+                        "surname": "Smith",
+                        "birthDate": "1960-08-22",
+                        "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "mother": {
+                        "name": "Mary",
+                        "surname": "Johnson",
+                        "birthDate": "1962-11-10",
+                        "photoUrl": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "brothers": [
+                        {
+                            "name": "Michael",
+                            "surname": "Smith",
+                            "birthDate": "1988-02-28",
+                            "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        },
+                        {
+                            "name": "David",
+                            "surname": "Smith",
+                            "birthDate": "1992-09-05",
+                            "photoUrl": "https://images.unsplash.com/photo-1504257432389-52343af06ae3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        }
+                    ]
+                }
+            };
+            
+            const sampleData2 = {
+                "familyName": "Williams Family",
+                "person": {
+                    "name": "Emma",
+                    "surname": "Williams",
+                    "birthDate": "1985-11-30",
+                    "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                    "father": {
+                        "name": "James",
+                        "surname": "Williams",
+                        "birthDate": "1955-03-12",
+                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "father": {
+                            "name": "George",
+                            "surname": "Williams",
+                            "birthDate": "1925-07-04",
+                            "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        },
+                        "mother": {
+                            "name": "Elizabeth",
+                            "surname": "Brown",
+                            "birthDate": "1930-01-20",
+                            "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        }
+                    },
+                    "mother": {
+                        "name": "Patricia",
+                        "surname": "Miller",
+                        "birthDate": "1958-09-18",
+                        "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "brothers": [
+                        {
+                            "name": "Thomas",
+                            "surname": "Williams",
+                            "birthDate": "1983-06-22",
+                            "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        }
+                    ]
+                }
+            };
+            
+            // Default JSON URL
+            jsonUrlInput.value = 'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
+            
+            // Event listeners
+            loadDataButton.addEventListener('click', loadFamilyData);
+            sample1Button.addEventListener('click', () => loadSampleData(sampleData1, "Smith Family"));
+            sample2Button.addEventListener('click', () => loadSampleData(sampleData2, "Williams Family"));
+            
+            // Load family data from JSON URL
+            async function loadFamilyData() {
+                const url = jsonUrlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a JSON URL');
+                    return;
+                }
+                
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                try {
+                    const response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Check if data has expected structure
+                    if (!data.person || !data.person.name) {
+                        throw new Error('Invalid JSON structure. Expected "person" object with "name" property.');
+                    }
+                    
+                    // Display the family gallery
+                    displayFamilyGallery(data);
+                    
+                } catch (error) {
+                    console.error('Error loading family data:', error);
+                    showError(`Failed to load data: ${error.message}. Using sample data instead.`);
+                    
+                    // Fallback to sample data
+                    displayFamilyGallery(sampleData1);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+            
+            // Load sample data
+            function loadSampleData(data, familyName) {
+                jsonUrlInput.value = `sample://${familyName.toLowerCase().replace(' ', '-')}`;
+                
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                setTimeout(() => {
+                    displayFamilyGallery(data);
+                    loadingIndicator.style.display = 'none';
+                }, 500);
+            }
+            
+            // Display family gallery
+            function displayFamilyGallery(data) {
+                const person = data.person;
+                const familyName = data.familyName || `${person.name} ${person.surname}'s Family`;
+                
+                // Update gallery title
+                galleryTitle.textContent = `${familyName} Tree`;
+                
+                // Build the family tree HTML
+                let galleryHTML = `
+                    <div class="family-chart">
+                        <div class="generation parents-row">
+                            <div class="generation-title">Parents Generation</div>
+                            ${person.father ? createPersonCard(person.father, 'father', 'Father') : ''}
+                            ${person.mother ? createPersonCard(person.mother, 'mother', 'Mother') : ''}
+                        </div>
+                        
+                        <div class="generation">
+                            <div class="generation-title">Current Generation</div>
+                            ${createPersonCard(person, 'person', 'Main Person')}
+                        </div>
+                `;
+                
+                // Add brothers if available
+                if (person.brothers && person.brothers.length > 0) {
+                    galleryHTML += `
+                        <div class="siblings-container">
+                            <div class="siblings-title">Siblings</div>
+                            ${person.brothers.map(brother => createPersonCard(brother, 'brother', 'Brother')).join('')}
+                        </div>
+                    `;
+                }
+                
+                // Add grandparents if available
+                let grandparentsHTML = '';
+                if (person.father && (person.father.father || person.father.mother)) {
+                    grandparentsHTML += createPersonCard(person.father.father, 'father', 'Grandfather', true);
+                    grandparentsHTML += createPersonCard(person.father.mother, 'mother', 'Grandmother', true);
+                }
+                
+                if (person.mother && (person.mother.father || person.mother.mother)) {
+                    grandparentsHTML += createPersonCard(person.mother.father, 'father', 'Grandfather', true);
+                    grandparentsHTML += createPersonCard(person.mother.mother, 'mother', 'Grandmother', true);
+                }
+                
+                if (grandparentsHTML) {
+                    galleryHTML = `
+                        <div class="generation">
+                            <div class="generation-title">Grandparents Generation</div>
+                            ${grandparentsHTML}
+                        </div>
+                    ` + galleryHTML;
+                }
+                
+                galleryHTML += `</div>`;
+                
+                familyGallery.innerHTML = galleryHTML;
+                
+                // Calculate and display statistics
+                updateStatistics(data);
+                
+                // Add event listeners to person cards
+                document.querySelectorAll('.person-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        // Remove any existing selection
+                        document.querySelectorAll('.person-card').forEach(c => {
+                            c.style.boxShadow = '';
+                            c.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        });
+                        
+                        // Highlight selected card
+                        this.style.boxShadow = '0 0 0 3px rgba(67, 97, 238, 0.7)';
+                        this.style.borderColor = 'rgba(67, 97, 238, 0.9)';
+                    });
+                });
+            }
+            
+            // Create a person card with photo
+            function createPersonCard(personData, type, role, isGrandparent = false) {
+                if (!personData) return '';
+                
+                // Calculate age from birth date
+                const age = personData.birthDate ? calculateAge(personData.birthDate) : 'Unknown';
+                
+                // Default photo if none provided
+                const photoUrl = personData.photoUrl || getDefaultPhoto(type);
+                
+                return `
+                    <div class="person-card person-${type} ${isGrandparent ? 'grandparent' : ''}">
+                        <div class="person-role">${role}</div>
+                        <div class="person-photo">
+                            <img src="${photoUrl}" alt="${personData.name} ${personData.surname}" 
+                                 onerror="this.src='${getDefaultPhoto(type)}'">
+                        </div>
+                        <div class="person-info">
+                            <div class="person-name">${personData.name} ${personData.surname}</div>
+                            <div class="person-details">${formatDate(personData.birthDate)}</div>
+                            <div class="person-age">${age} years</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Get default photo based on role
+            function getDefaultPhoto(type) {
+                const defaultPhotos = {
+                    'person': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'father': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'mother': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'brother': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300'
+                };
+                
+                return defaultPhotos[type] || defaultPhotos.person;
+            }
+            
+            // Calculate age from birth date
+            function calculateAge(birthDate) {
+                if (!birthDate) return 'Unknown';
+                
+                try {
+                    const today = new Date();
+                    const birth = new Date(birthDate);
+                    let age = today.getFullYear() - birth.getFullYear();
+                    const monthDiff = today.getMonth() - birth.getMonth();
+                    
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                        age--;
+                    }
+                    
+                    return age;
+                } catch (error) {
+                    return 'Unknown';
+                }
+            }
+            
+            // Format date for display
+            function formatDate(dateString) {
+                if (!dateString) return 'Birth date unknown';
+                
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                } catch (error) {
+                    return dateString;
+                }
+            }
+            
+            // Update statistics
+            function updateStatistics(data) {
+                // Count all family members
+                const members = collectAllMembers(data.person);
+                totalMembers.textContent = members.length;
+                
+                // Count photos (assuming all have photos)
+                totalPhotos.textContent = members.filter(m => m.photoUrl).length;
+                
+                // Calculate average age
+                const ages = members
+                    .map(m => calculateAge(m.birthDate))
+                    .filter(age => typeof age === 'number');
+                
+                if (ages.length > 0) {
+                    const averageAge = Math.round(ages.reduce((a, b) => a + b, 0) / ages.length);
+                    avgAge.textContent = averageAge;
+                } else {
+                    avgAge.textContent = 'N/A';
+                }
+            }
+            
+            // Recursively collect all family members
+            function collectAllMembers(person, members = []) {
+                if (!person) return members;
+                
+                members.push(person);
+                
+                if (person.father) collectAllMembers(person.father, members);
+                if (person.mother) collectAllMembers(person.mother, members);
+                
+                if (person.brothers) {
+                    person.brothers.forEach(brother => {
+                        collectAllMembers(brother, members);
+                    });
+                }
+                
+                return members;
+            }
+            
+            // Show error message
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            
+            // Load initial data
+            loadSampleData(sampleData1, "Smith Family");
+        });
+    </script>
+</body>
+</html>
