@@ -485,7 +485,7 @@
         <section class="controls">
             <div class="url-section">
                 <div class="url-input">
-                    <input type="url" id="jsonUrl" placeholder="Enter JSON URL containing family data with photo URLs...">
+                    <input type="url" id="jsonUrl" placeholder="https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json">
                 </div>
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="loadData">
@@ -505,7 +505,7 @@
             </div>
             
             <div class="sample-buttons">
-                <p style="width:100%; margin-bottom: 10px; color: #b8b8d1;">Sample JSON structures include profile photo URLs for each person.</p>
+                <p style="width:100%; margin-bottom: 10px; color: #b8b8d1;">https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json</p>
             </div>
             
             <div class="loading" id="loadingIndicator">
@@ -529,7 +529,7 @@
         </section>
         
         <footer class="footer">
-            <p>Family Tree Gallery Viewer &copy; 2023 | Displays family relationships with photos</p>
+            <p>Family Tree Gallery Viewer &copy; 2026 | Displays family relationships with photos</p>
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-value" id="totalMembers">0</div>
@@ -689,7 +689,7 @@
             };
             
             // Default JSON URL
-            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/dly_fam.json';//'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
+            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';//'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
             
             // Event listeners
             loadDataButton.addEventListener('click', loadFamilyData);
