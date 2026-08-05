@@ -485,7 +485,7 @@
         <section class="controls">
             <div class="url-section">
                 <div class="url-input">
-                    <input type="url" id="jsonUrl" placeholder="https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json">
+                    <input type="url" id="jsonUrl" placeholder="You URL" value="https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json">
                 </div>
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="loadData">
@@ -738,7 +738,7 @@
             
             // Load sample data
             function loadSampleData(data, familyName) {
-                jsonUrlInput.value = `sample://${familyName.toLowerCase().replace(' ', '-')}`;
+                jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';//`sample://${familyName.toLowerCase().replace(' ', '-')}`;
                 
                 loadingIndicator.style.display = 'flex';
                 errorMessage.style.display = 'none';
