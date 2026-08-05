@@ -497,6 +497,10 @@
                     <button class="btn btn-secondary" id="sample2">
                         <i class="fas fa-user-friends"></i> Sample 2
                     </button>
+
+                     <button class="btn btn-secondary" id="sample3">
+                        <i class="fas fa-user-friends"></i> Sample 3
+                    </button>                   
                 </div>
             </div>
             
@@ -550,6 +554,8 @@
             const loadDataButton = document.getElementById('loadData');
             const sample1Button = document.getElementById('sample1');
             const sample2Button = document.getElementById('sample2');
+            const sample3Button = document.getElementById('sample3');//tarek
+
             const loadingIndicator = document.getElementById('loadingIndicator');
             const errorMessage = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
@@ -640,19 +646,62 @@
                 }
             };
             
+            const sampleData3 = {
+                "familyName": "dly Family",
+                "person": {
+                    "name": "A",
+                    "surname": "W",
+                    "birthDate": "1985-11-30",
+                    "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                    "father": {
+                        "name": "B",
+                        "surname": "W",
+                        "birthDate": "1955-03-12",
+                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "father": {
+                            "name": "C",
+                            "surname": "W",
+                            "birthDate": "1925-07-04",
+                            "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        },
+                        "mother": {
+                            "name": "AA",
+                            "surname": "X",
+                            "birthDate": "1930-01-20",
+                            "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        }
+                    },
+                    "mother": {
+                        "name": "BB",
+                        "surname": "Y",
+                        "birthDate": "1958-09-18",
+                        "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "brothers": [
+                        {
+                            "name": "BY",
+                            "surname": "W",
+                            "birthDate": "1983-06-22",
+                            "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        }
+                    ]
+                }
+            };
+            
             // Default JSON URL
-            jsonUrlInput.value = 'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
+            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/dly_fam.json';//'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
             
             // Event listeners
             loadDataButton.addEventListener('click', loadFamilyData);
             sample1Button.addEventListener('click', () => loadSampleData(sampleData1, "Smith Family"));
             sample2Button.addEventListener('click', () => loadSampleData(sampleData2, "Williams Family"));
+            sample3Button.addEventListener('click', () => loadSampleData(sampleData3, "dly Family"));
             
             // Load family data from JSON URL
             async function loadFamilyData() {
                 const url = jsonUrlInput.value.trim();
                 if (!url) {
-                    showError('Please enter a JSON URL');
+                    showError('https://github.com/Tarek-BG/multiplayers/tree/main/family/data/dly_fam.json');//('Please enter a JSON URL');
                     return;
                 }
                 
