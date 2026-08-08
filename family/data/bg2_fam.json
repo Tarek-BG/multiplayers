@@ -41,11 +41,17 @@
             "birthDate": "1936-01-18",
             "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png"
         },
-        "sister": [
+        "brothers": [
             {
-                "name": "hamida_bg",
+                "name": "amel_bg",
                 "surname": "ben gadha",
                 "birthDate": "1958-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "besma_bg",
+                "surname": "ben gadha",
+                "birthDate": "1960-11-22",
                 "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
             }
         ]
