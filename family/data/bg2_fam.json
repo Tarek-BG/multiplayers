@@ -53,6 +53,12 @@
                 "surname": "ben gadha",
                 "birthDate": "1960-11-22",
                 "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "iness_bg",
+                "surname": "ben gadha",
+                "birthDate": "1969-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
             }
         ]
     }
