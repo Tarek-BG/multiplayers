@@ -647,46 +647,70 @@
             };
             
             const sampleData3 = {
-                "familyName": "dly Family",
-                "person": {
-                    "name": "A",
-                    "surname": "W",
-                    "birthDate": "1985-11-30",
-                    "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
-                    "father": {
-                        "name": "B",
-                        "surname": "W",
-                        "birthDate": "1955-03-12",
-                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
-                        "father": {
-                            "name": "C",
-                            "surname": "W",
-                            "birthDate": "1925-07-04",
-                            "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
-                        },
-                        "mother": {
-                            "name": "AA",
-                            "surname": "X",
-                            "birthDate": "1930-01-20",
-                            "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
-                        }
-                    },
-                    "mother": {
-                        "name": "BB",
-                        "surname": "Y",
-                        "birthDate": "1958-09-18",
-                        "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
-                    },
-                    "brothers": [
-                        {
-                            "name": "BY",
-                            "surname": "W",
-                            "birthDate": "1983-06-22",
-                            "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
-                        }
-                    ]
+    "familyName": "bg Family",
+    "person": {
+        "name": "tarek",
+        "surname": "ben gadha",
+        "birthDate": "1964-05-12",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+        "father": {
+            "name": "ezzedine",
+            "surname": "ben gadha",
+            "birthDate": "1924-03-27",
+            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/ezzedine_bg.png",
+            "father": {
+                "name": "abdelkader",
+                "surname": "ben gadha",
+                "birthDate": "1900-10-30",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+                "father": {
+                    "name": "abdelkader2",
+                    "surname": "ben gadha",
+                    "birthDate": "1870-10-30",
+                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
+                },
+                "mother": {
+                    "name": "",
+                    "surname": "mami",
+                    "birthDate": "1880-01-20",
+                    "photoUrl": ""
                 }
-            };
+                },
+            "mother": {
+                "name": "",
+                "surname": "kissy",
+                "birthDate": "1930-01-20",
+                "photoUrl": ""
+            }
+        },
+        "mother": {
+            "name": "wassila",
+            "surname": "zarrouk",
+            "birthDate": "1936-01-18",
+            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png"
+        },
+        "brothers": [
+            {
+                "name": "amel_bg",
+                "surname": "ben gadha",
+                "birthDate": "1958-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "besma_bg",
+                "surname": "ben gadha",
+                "birthDate": "1960-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "iness_bg",
+                "surname": "ben gadha",
+                "birthDate": "1969-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            }
+        ]
+    }
+};
             
             // Default JSON URL
             jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';//'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
@@ -947,7 +971,7 @@
             }
             
             // Load initial data
-            loadSampleData(sampleData1, "Smith Family");
+            loadSampleData(sampleData1, "bg Family");
         });
     </script>
 </body>
