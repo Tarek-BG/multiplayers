@@ -238,12 +238,19 @@
             overflow: hidden;
             border: 4px solid;
             position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .person-photo:hover {
+            transform: scale(1.05);
         }
         
         .person-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
         
         .person-role {
@@ -256,6 +263,7 @@
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            z-index: 2;
         }
         
         .person-main .person-photo {
@@ -300,43 +308,6 @@
             font-size: 0.9rem;
             margin-top: 8px;
             font-weight: 600;
-        }
-        
-        /* Connection lines */
-        .connector {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .connector-vertical {
-            width: 2px;
-            height: 40px;
-            bottom: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .connector-horizontal {
-            height: 2px;
-            width: 100px;
-            top: 50%;
-        }
-        
-        .connector-left {
-            left: -100px;
-        }
-        
-        .connector-right {
-            right: -100px;
-        }
-        
-        .connector-parents {
-            position: absolute;
-            width: 80%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.2);
-            bottom: -40px;
-            left: 10%;
         }
         
         /* Family connections */
@@ -439,6 +410,186 @@
             color: #b8b8d1;
         }
         
+        /* ===== PIE MENU STYLES ===== */
+        .pie-menu {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.5) rotate(-180deg);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .pie-menu.active {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            pointer-events: all;
+        }
+        
+        .pie-menu-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .pie-item {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 40, 0.98));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            transform: translate(-50%, -50%);
+            pointer-events: all;
+            text-decoration: none;
+            user-select: none;
+        }
+        
+        .pie-item:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            border-color: #4cc9f0;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
+        }
+        
+        .pie-item .tooltip {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .pie-item:hover .tooltip {
+            opacity: 1;
+        }
+        
+        /* Pie item positions - 6 items at 60 degree intervals */
+        .pie-item-1 { top: 0%; left: 50%; }
+        .pie-item-2 { top: 25%; left: 93.3%; }
+        .pie-item-3 { top: 75%; left: 93.3%; }
+        .pie-item-4 { top: 100%; left: 50%; }
+        .pie-item-5 { top: 75%; left: 6.7%; }
+        .pie-item-6 { top: 25%; left: 6.7%; }
+        
+        /* Different colors for each pie item */
+        .pie-item-1 { background: linear-gradient(145deg, #4361ee, #3a0ca3); border-color: #4361ee; }
+        .pie-item-2 { background: linear-gradient(145deg, #4cc9f0, #0ea5e9); border-color: #4cc9f0; }
+        .pie-item-3 { background: linear-gradient(145deg, #f72585, #d946ef); border-color: #f72585; }
+        .pie-item-4 { background: linear-gradient(145deg, #f8961e, #f59e0b); border-color: #f8961e; }
+        .pie-item-5 { background: linear-gradient(145deg, #10b981, #059669); border-color: #10b981; }
+        .pie-item-6 { background: linear-gradient(145deg, #8b5cf6, #7c3aed); border-color: #8b5cf6; }
+        
+        /* Pie center (selected person info) */
+        .pie-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+        
+        .pie-center .initials {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4cc9f0;
+        }
+        
+        .pie-center .small-name {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            margin-top: 2px;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Pie menu backdrop */
+        .pie-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(2px);
+        }
+        
+        .pie-backdrop.active {
+            display: block;
+        }
+        
+        /* Notification toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .toast i {
+            font-size: 1.2rem;
+        }
+        
+        .toast-success i { color: #10b981; }
+        .toast-info i { color: #4cc9f0; }
+        .toast-warning i { color: #f8961e; }
+        .toast-error i { color: #f72585; }
+        
         @media (max-width: 1100px) {
             .generation {
                 flex-direction: column;
@@ -449,10 +600,6 @@
             .parents-row::after {
                 height: 40px;
                 bottom: -40px;
-            }
-            
-            .connector-horizontal {
-                display: none;
             }
         }
         
@@ -472,6 +619,26 @@
             h1 {
                 font-size: 2rem;
             }
+            
+            .pie-menu {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .pie-item {
+                width: 44px;
+                height: 44px;
+                font-size: 1rem;
+            }
+            
+            .pie-center {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .pie-center .initials {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -479,7 +646,7 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-images"></i> Family Tree Gallery</h1>
-            <p class="subtitle">Visualize family relationships with photos in an interactive chart. Load JSON data with family information and profile pictures.</p>
+            <p class="subtitle">Visualize family relationships with photos in an interactive chart. Double-click a photo to open the pie menu.</p>
         </header>
         
         <section class="controls">
@@ -497,8 +664,7 @@
                     <button class="btn btn-secondary" id="sample2">
                         <i class="fas fa-user-friends"></i> Sample 2
                     </button>
-
-                     <button class="btn btn-secondary" id="sample3">
+                    <button class="btn btn-secondary" id="sample3">
                         <i class="fas fa-user-friends"></i> Sample 3
                     </button>                   
                 </div>
@@ -523,7 +689,7 @@
                 <div class="empty-state">
                     <i class="fas fa-images"></i>
                     <p>Load a JSON file with family data to display the family tree with photos.</p>
-                    <p style="margin-top: 15px; font-size: 1rem;">JSON should include name, surname, birthDate, and photoUrl for each person.</p>
+                    <p style="margin-top: 15px; font-size: 1rem;">Double-click a photo to open the pie menu.</p>
                 </div>
             </div>
         </section>
@@ -547,6 +713,47 @@
         </footer>
     </div>
 
+    <!-- Pie Menu -->
+    <div class="pie-backdrop" id="pieBackdrop"></div>
+    <div class="pie-menu" id="pieMenu">
+        <div class="pie-menu-inner">
+            <div class="pie-item pie-item-1" data-action="view-profile">
+                <i class="fas fa-user"></i>
+                <span class="tooltip">View Profile</span>
+            </div>
+            <div class="pie-item pie-item-2" data-action="edit">
+                <i class="fas fa-pen"></i>
+                <span class="tooltip">Edit</span>
+            </div>
+            <div class="pie-item pie-item-3" data-action="message">
+                <i class="fas fa-envelope"></i>
+                <span class="tooltip">Message</span>
+            </div>
+            <div class="pie-item pie-item-4" data-action="share">
+                <i class="fas fa-share-alt"></i>
+                <span class="tooltip">Share</span>
+            </div>
+            <div class="pie-item pie-item-5" data-action="download">
+                <i class="fas fa-download"></i>
+                <span class="tooltip">Download</span>
+            </div>
+            <div class="pie-item pie-item-6" data-action="delete">
+                <i class="fas fa-trash"></i>
+                <span class="tooltip">Delete</span>
+            </div>
+            <div class="pie-center" id="pieCenter">
+                <span class="initials" id="pieInitials">JD</span>
+                <span class="small-name" id="pieName">John Doe</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage">Action performed</span>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM elements
@@ -554,8 +761,7 @@
             const loadDataButton = document.getElementById('loadData');
             const sample1Button = document.getElementById('sample1');
             const sample2Button = document.getElementById('sample2');
-            const sample3Button = document.getElementById('sample3');//tarek
-
+            const sample3Button = document.getElementById('sample3');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const errorMessage = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
@@ -566,6 +772,21 @@
             const totalMembers = document.getElementById('totalMembers');
             const totalPhotos = document.getElementById('totalPhotos');
             const avgAge = document.getElementById('avgAge');
+            
+            // Pie menu elements
+            const pieMenu = document.getElementById('pieMenu');
+            const pieBackdrop = document.getElementById('pieBackdrop');
+            const pieCenter = document.getElementById('pieCenter');
+            const pieInitials = document.getElementById('pieInitials');
+            const pieName = document.getElementById('pieName');
+            const pieItems = document.querySelectorAll('.pie-item');
+            
+            // Toast elements
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            let selectedPersonData = null;
+            let toastTimeout = null;
             
             // Sample JSON data with photo URLs
             const sampleData1 = {
@@ -647,79 +868,98 @@
             };
             
             const sampleData3 = {
-    "familyName": "bg Family",
-    "person": {
-        "name": "tarek",
-        "surname": "ben gadha",
-        "birthDate": "1964-05-12",
-        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
-        "father": {
-            "name": "ezzedine",
-            "surname": "ben gadha",
-            "birthDate": "1924-03-27",
-            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
-            "father": {
-                "name": "abdelkader",
-                "surname": "ben gadha",
-                "birthDate": "1900-10-30",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
-                "father": {
-                    "name": "abdelkader2",
+                "familyName": "bg Family",
+                "person": {
+                    "name": "tarek",
                     "surname": "ben gadha",
-                    "birthDate": "1870-10-30",
-                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
-                },
-                "mother": {
-                    "name": "",
-                    "surname": "mami",
-                    "birthDate": "1880-01-20",
-                    "photoUrl": ""
+                    "birthDate": "1964-05-12",
+                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+                    "father": {
+                        "name": "ezzedine",
+                        "surname": "ben gadha",
+                        "birthDate": "1924-03-27",
+                        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+                        "father": {
+                            "name": "abdelkader",
+                            "surname": "ben gadha",
+                            "birthDate": "1900-10-30",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+                            "father": {
+                                "name": "abdelkader2",
+                                "surname": "ben gadha",
+                                "birthDate": "1870-10-30",
+                                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
+                            },
+                            "mother": {
+                                "name": "",
+                                "surname": "mami",
+                                "birthDate": "1880-01-20",
+                                "photoUrl": ""
+                            }
+                        },
+                        "mother": {
+                            "name": "",
+                            "surname": "kissy",
+                            "birthDate": "1930-01-20",
+                            "photoUrl": ""
+                        }
+                    },
+                    "mother": {
+                        "name": "wassila",
+                        "surname": "zarrouk",
+                        "birthDate": "1936-01-18",
+                        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png"
+                    },
+                    "brothers": [
+                        {
+                            "name": "amel_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1958-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        },
+                        {
+                            "name": "besma_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1960-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        },
+                        {
+                            "name": "iness_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1969-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        }
+                    ]
                 }
-                },
-            "mother": {
-                "name": "",
-                "surname": "kissy",
-                "birthDate": "1930-01-20",
-                "photoUrl": ""
-            }
-        },
-        "mother": {
-            "name": "wassila",
-            "surname": "zarrouk",
-            "birthDate": "1936-01-18",
-            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png"
-        },
-        "brothers": [
-            {
-                "name": "amel_bg",
-                "surname": "ben gadha",
-                "birthDate": "1958-11-22",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
-            },
-                        {
-                "name": "besma_bg",
-                "surname": "ben gadha",
-                "birthDate": "1960-11-22",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
-            },
-                        {
-                "name": "iness_bg",
-                "surname": "ben gadha",
-                "birthDate": "1969-11-22",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
-            }
-        ]
-    }
-};
+            };
             
             // Default JSON URL
-            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';//'https://api.npoint.io/a5f7a5b5d5c5e5d5a3e7e';
+            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';
             
             // Event listeners
             loadDataButton.addEventListener('click', loadFamilyData);
             sample1Button.addEventListener('click', () => loadSampleData(sampleData1, "Smith Family"));
             sample2Button.addEventListener('click', () => loadSampleData(sampleData2, "Williams Family"));
-            sample3Button.addEventListener('click', () => loadSampleData(sampleData3, "dly Family"));
+            sample3Button.addEventListener('click', () => loadSampleData(sampleData3, "bg Family"));
+            
+            // Pie menu event listeners
+            pieItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const action = this.dataset.action;
+                    handlePieAction(action);
+                });
+            });
+            
+            // Click outside to close pie menu
+            pieBackdrop.addEventListener('click', closePieMenu);
+            
+            // ESC key to close pie menu
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePieMenu();
+                }
+            });
             
             // Load family data from JSON URL
             async function loadFamilyData() {
@@ -741,19 +981,15 @@
                     
                     const data = await response.json();
                     
-                    // Check if data has expected structure
                     if (!data.person || !data.person.name) {
                         throw new Error('Invalid JSON structure. Expected "person" object with "name" property.');
                     }
                     
-                    // Display the family gallery
                     displayFamilyGallery(data);
                     
                 } catch (error) {
                     console.error('Error loading family data:', error);
                     showError(`Failed to load data: ${error.message}. Using sample data instead.`);
-                    
-                    // Fallback to sample data
                     displayFamilyGallery(sampleData1);
                 } finally {
                     loadingIndicator.style.display = 'none';
@@ -762,7 +998,7 @@
             
             // Load sample data
             function loadSampleData(data, familyName) {
-                jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';//`sample://${familyName.toLowerCase().replace(' ', '-')}`;
+                jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json';
                 
                 loadingIndicator.style.display = 'flex';
                 errorMessage.style.display = 'none';
@@ -778,10 +1014,8 @@
                 const person = data.person;
                 const familyName = data.familyName || `${person.name} ${person.surname}'s Family`;
                 
-                // Update gallery title
                 galleryTitle.textContent = `${familyName} Tree`;
                 
-                // Build the family tree HTML
                 let galleryHTML = `
                     <div class="family-chart">
                         <div class="generation parents-row">
@@ -796,7 +1030,6 @@
                         </div>
                 `;
                 
-                // Add brothers if available
                 if (person.brothers && person.brothers.length > 0) {
                     galleryHTML += `
                         <div class="siblings-container">
@@ -806,7 +1039,6 @@
                     `;
                 }
                 
-                // Add grandparents if available
                 let grandparentsHTML = '';
                 if (person.father && (person.father.father || person.father.mother)) {
                     grandparentsHTML += createPersonCard(person.father.father, 'father', 'Grandfather', true);
@@ -831,45 +1063,75 @@
                 
                 familyGallery.innerHTML = galleryHTML;
                 
-                // Calculate and display statistics
                 updateStatistics(data);
                 
-                // Add event listeners to person cards
-                document.querySelectorAll('.person-card').forEach(card => {
-                    card.addEventListener('click', function() {
-                        // Remove any existing selection
-                        document.querySelectorAll('.person-card').forEach(c => {
-                            c.style.boxShadow = '';
-                            c.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                        });
-                        
-                        // Highlight selected card
-                        this.style.boxShadow = '0 0 0 3px rgba(67, 97, 238, 0.7)';
-                        this.style.borderColor = 'rgba(67, 97, 238, 0.9)';
+                // Add double-click event to photo containers
+                document.querySelectorAll('.person-photo').forEach(photo => {
+                    photo.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        const card = this.closest('.person-card');
+                        if (card) {
+                            const nameEl = card.querySelector('.person-name');
+                            const name = nameEl ? nameEl.textContent.trim() : 'Unknown';
+                            const roleEl = card.querySelector('.person-role');
+                            const role = roleEl ? roleEl.textContent.trim() : '';
+                            
+                            // Extract person data from card
+                            const personData = extractPersonData(card);
+                            if (personData) {
+                                openPieMenu(e.clientX, e.clientY, personData);
+                            }
+                        }
                     });
                 });
+            }
+            
+            // Extract person data from card
+            function extractPersonData(card) {
+                const nameEl = card.querySelector('.person-name');
+                const detailsEl = card.querySelector('.person-details');
+                const ageEl = card.querySelector('.person-age');
+                const roleEl = card.querySelector('.person-role');
+                const imgEl = card.querySelector('.person-photo img');
+                
+                if (!nameEl) return null;
+                
+                const nameParts = nameEl.textContent.trim().split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+                
+                return {
+                    name: firstName,
+                    surname: lastName,
+                    fullName: nameEl.textContent.trim(),
+                    birthDate: detailsEl ? detailsEl.textContent.trim().replace('Born: ', '') : '',
+                    age: ageEl ? ageEl.textContent.trim().replace(' years', '') : '',
+                    role: roleEl ? roleEl.textContent.trim() : '',
+                    photoUrl: imgEl ? imgEl.src : ''
+                };
             }
             
             // Create a person card with photo
             function createPersonCard(personData, type, role, isGrandparent = false) {
                 if (!personData) return '';
                 
-                // Calculate age from birth date
                 const age = personData.birthDate ? calculateAge(personData.birthDate) : 'Unknown';
-                
-                // Default photo if none provided
                 const photoUrl = personData.photoUrl || getDefaultPhoto(type);
+                const displayName = personData.name || 'Unknown';
+                const displaySurname = personData.surname || '';
+                const birthDisplay = personData.birthDate ? formatDate(personData.birthDate) : 'Birth date unknown';
                 
                 return `
-                    <div class="person-card person-${type} ${isGrandparent ? 'grandparent' : ''}">
+                    <div class="person-card person-${type} ${isGrandparent ? 'grandparent' : ''}" 
+                         data-person='${JSON.stringify({name: displayName, surname: displaySurname, birthDate: personData.birthDate, photoUrl: photoUrl, role: role})}'>
                         <div class="person-role">${role}</div>
                         <div class="person-photo">
-                            <img src="${photoUrl}" alt="${personData.name} ${personData.surname}" 
+                            <img src="${photoUrl}" alt="${displayName} ${displaySurname}" 
                                  onerror="this.src='${getDefaultPhoto(type)}'">
                         </div>
                         <div class="person-info">
-                            <div class="person-name">${personData.name} ${personData.surname}</div>
-                            <div class="person-details">${formatDate(personData.birthDate)}</div>
+                            <div class="person-name">${displayName} ${displaySurname}</div>
+                            <div class="person-details">${birthDisplay}</div>
                             <div class="person-age">${age} years</div>
                         </div>
                     </div>
@@ -926,14 +1188,10 @@
             
             // Update statistics
             function updateStatistics(data) {
-                // Count all family members
                 const members = collectAllMembers(data.person);
                 totalMembers.textContent = members.length;
-                
-                // Count photos (assuming all have photos)
                 totalPhotos.textContent = members.filter(m => m.photoUrl).length;
                 
-                // Calculate average age
                 const ages = members
                     .map(m => calculateAge(m.birthDate))
                     .filter(age => typeof age === 'number');
@@ -968,6 +1226,135 @@
             function showError(message) {
                 errorText.textContent = message;
                 errorMessage.style.display = 'block';
+            }
+            
+            // ===== PIE MENU FUNCTIONS =====
+            function openPieMenu(x, y, personData) {
+                selectedPersonData = personData;
+                
+                // Get initials
+                const initials = personData.name.charAt(0).toUpperCase() + (personData.surname ? personData.surname.charAt(0).toUpperCase() : '');
+                pieInitials.textContent = initials || '?';
+                pieName.textContent = personData.fullName || `${personData.name} ${personData.surname}`;
+                
+                // Position the pie menu
+                const menuSize = Math.min(window.innerWidth * 0.3, 200);
+                const halfSize = menuSize / 2;
+                
+                let left = x - halfSize;
+                let top = y - halfSize;
+                
+                // Keep menu within viewport
+                if (left < 20) left = 20;
+                if (top < 20) top = 20;
+                if (left + menuSize > window.innerWidth - 20) left = window.innerWidth - menuSize - 20;
+                if (top + menuSize > window.innerHeight - 20) top = window.innerHeight - menuSize - 20;
+                
+                pieMenu.style.left = left + 'px';
+                pieMenu.style.top = top + 'px';
+                pieMenu.style.width = menuSize + 'px';
+                pieMenu.style.height = menuSize + 'px';
+                
+                // Show the pie menu
+                pieBackdrop.classList.add('active');
+                pieMenu.classList.add('active');
+                
+                // Adjust pie item sizes based on menu size
+                const itemSize = menuSize * 0.28;
+                document.querySelectorAll('.pie-item').forEach(item => {
+                    item.style.width = itemSize + 'px';
+                    item.style.height = itemSize + 'px';
+                    item.style.fontSize = (itemSize * 0.35) + 'px';
+                });
+                
+                // Adjust center size
+                const centerSize = menuSize * 0.35;
+                document.querySelector('.pie-center').style.width = centerSize + 'px';
+                document.querySelector('.pie-center').style.height = centerSize + 'px';
+                document.querySelector('.pie-center .initials').style.fontSize = (centerSize * 0.25) + 'px';
+                document.querySelector('.pie-center .small-name').style.fontSize = (centerSize * 0.12) + 'px';
+            }
+            
+            function closePieMenu() {
+                pieBackdrop.classList.remove('active');
+                pieMenu.classList.remove('active');
+                selectedPersonData = null;
+            }
+            
+            function handlePieAction(action) {
+                const personName = selectedPersonData ? selectedPersonData.fullName || 'Unknown' : 'Unknown';
+                let icon = 'fa-info-circle';
+                let type = 'info';
+                let message = '';
+                
+                switch(action) {
+                    case 'view-profile':
+                        message = `Viewing profile of ${personName}`;
+                        icon = 'fa-user';
+                        type = 'info';
+                        break;
+                    case 'edit':
+                        message = `Editing ${personName}'s profile`;
+                        icon = 'fa-pen';
+                        type = 'info';
+                        break;
+                    case 'message':
+                        message = `Composing message to ${personName}`;
+                        icon = 'fa-envelope';
+                        type = 'info';
+                        break;
+                    case 'share':
+                        message = `Sharing ${personName}'s profile`;
+                        icon = 'fa-share-alt';
+                        type = 'success';
+                        break;
+                    case 'download':
+                        message = `Downloading ${personName}'s photo`;
+                        icon = 'fa-download';
+                        type = 'success';
+                        break;
+                    case 'delete':
+                        message = `Are you sure you want to delete ${personName}'s profile?`;
+                        icon = 'fa-trash';
+                        type = 'warning';
+                        break;
+                    default:
+                        message = `Action: ${action} on ${personName}`;
+                }
+                
+                showToast(message, icon, type);
+                closePieMenu();
+                
+                // Log the action for debugging
+                console.log(`Pie action: ${action} on`, selectedPersonData);
+                
+                // You can add custom logic here for each action
+                // For example, trigger other functions based on the action
+            }
+            
+            // ===== TOAST FUNCTIONS =====
+            function showToast(message, icon = 'fa-info-circle', type = 'info') {
+                // Clear existing timeout
+                if (toastTimeout) {
+                    clearTimeout(toastTimeout);
+                }
+                
+                toastMessage.textContent = message;
+                toast.className = 'toast';
+                toast.classList.add(`toast-${type}`);
+                
+                const iconEl = toast.querySelector('i');
+                iconEl.className = `fas ${icon}`;
+                
+                // Show toast
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 50);
+                
+                // Hide after 3 seconds
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
             }
             
             // Load initial data
