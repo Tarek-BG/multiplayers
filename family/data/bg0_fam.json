@@ -1,0 +1,57 @@
+{
+    "familyName": "bg Family",
+    "person": {
+	"idx": "A03*BGADHA",
+        "name": "tarek",
+        "surname": "ben gadha",
+	"mother idx":""
+        "birthDate": "1964-05-12",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png"
+            },
+     "person": {
+	"idx": "Z03*BGADHA",
+        "name": "ezzedine",
+        "surname": "ben gadha",
+        "birthDate": "1924-03-27",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/ezzedine_bg.png"
+            },
+      "person": {
+	"idx": "Y03*BGADHA",
+        "name": "abdelkader",
+        "surname": "ben gadha",
+        "birthDate": "1900-10-30",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png"
+            },
+       "person":{
+	"idx": "X03*BGADHA",
+        "name": "hamida_bg",
+        "surname": "ben gadha",
+        "birthDate": "1878-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+      "person": {
+	"idx": "A03*MEMY",
+        "name": "",
+        "surname": "memy",
+        "birthDate": "1890-01-20",
+        "photoUrl": ""
+            }      
+      "person": {
+	"idx": "Y04*KISSY",
+        "name": "",
+        "surname": "kissy",
+        "birthDate": "1910-01-20",
+        "photoUrl": ""
+            }
+        },
+        "person": {
+	"idx": "Z05*BGADHA",
+        "name": "wassila",
+        "surname": "zarrouk",
+        "birthDate": "1936-01-18",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png"
+        },
+
+        ]
+    }
+}
