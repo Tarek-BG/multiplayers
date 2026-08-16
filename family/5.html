@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree - Connection Spheres</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee, #f72585);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .subtitle {
+            color: #b8b8d1;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .url-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .url-input {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .url-input input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .url-input input:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #3a0ca3, #4361ee);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: #4cc9f0;
+            font-size: 1.2rem;
+        }
+        
+        .loading i {
+            margin-right: 15px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            display: none;
+            background: rgba(220, 53, 69, 0.2);
+            color: #f8d7da;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .tree-container {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-height: 600px;
+            overflow: auto;
+            position: relative;
+        }
+        
+        .tree-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-size: 1.8rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(67, 97, 238, 0.3);
+        }
+        
+        /* ===== TREE SVG STYLES ===== */
+        .tree-svg-container {
+            width: 100%;
+            min-height: 600px;
+            position: relative;
+        }
+        
+        .tree-svg-container svg {
+            display: block;
+            margin: 0 auto;
+            background: radial-gradient(ellipse at center, rgba(67, 97, 238, 0.05), transparent 70%);
+        }
+        
+        /* Node styles */
+        .tree-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tree-node:hover .node-circle {
+            filter: brightness(1.3);
+            stroke-width: 4;
+        }
+        
+        .tree-node:hover .node-label {
+            opacity: 1;
+        }
+        
+        .node-circle {
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 10px rgba(67, 97, 238, 0.3));
+        }
+        
+        .node-circle.main-person {
+            stroke: #4cc9f0;
+            stroke-width: 3;
+        }
+        
+        .node-circle.father {
+            stroke: #4361ee;
+            stroke-width: 3;
+        }
+        
+        .node-circle.mother {
+            stroke: #f72585;
+            stroke-width: 3;
+        }
+        
+        .node-circle.brother {
+            stroke: #f8961e;
+            stroke-width: 3;
+        }
+        
+        .node-circle.grandfather {
+            stroke: #7209b7;
+            stroke-width: 3;
+        }
+        
+        .node-circle.grandmother {
+            stroke: #d946ef;
+            stroke-width: 3;
+        }
+        
+        /* Connection line styles */
+        .connection-line {
+            transition: all 0.3s ease;
+        }
+        
+        .connection-line:hover {
+            stroke-width: 3;
+            opacity: 0.8;
+        }
+        
+        .connection-line.father-connection {
+            stroke: #4361ee;
+            stroke-dasharray: none;
+        }
+        
+        .connection-line.mother-connection {
+            stroke: #f72585;
+            stroke-dasharray: none;
+        }
+        
+        .connection-line.brother-connection {
+            stroke: #f8961e;
+            stroke-dasharray: 6,4;
+        }
+        
+        .connection-line.grandparent-connection {
+            stroke: #7209b7;
+            stroke-dasharray: 4,4;
+        }
+        
+        /* ===== SPHERE STYLES ===== */
+        .connection-sphere {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-sphere:hover {
+            transform: scale(1.4);
+            filter: brightness(1.5) drop-shadow(0 0 20px currentColor);
+        }
+        
+        .connection-sphere.active {
+            transform: scale(1.3);
+            filter: brightness(1.5) drop-shadow(0 0 25px currentColor);
+            animation: pulse-sphere 1s ease-in-out infinite;
+        }
+        
+        .connection-sphere .sphere-tooltip {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 9px;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .connection-sphere:hover .sphere-tooltip {
+            opacity: 1;
+        }
+        
+        @keyframes pulse-sphere {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+        }
+        
+        /* Sphere colors for different relationships */
+        .sphere-father {
+            fill: #4361ee;
+            stroke: #4cc9f0;
+        }
+        
+        .sphere-mother {
+            fill: #f72585;
+            stroke: #ff6b9d;
+        }
+        
+        .sphere-brother {
+            fill: #f8961e;
+            stroke: #fbbf24;
+        }
+        
+        .sphere-grandfather {
+            fill: #7209b7;
+            stroke: #a855f7;
+        }
+        
+        .sphere-grandmother {
+            fill: #d946ef;
+            stroke: #e879f9;
+        }
+        
+        .sphere-spouse {
+            fill: #10b981;
+            stroke: #34d399;
+        }
+        
+        /* Legend styles */
+        .legend-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .legend-title {
+            color: #aaa;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            color: #ccc;
+        }
+        
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .legend-sphere {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            flex-shrink: 0;
+        }
+        
+        /* Node label styles */
+        .node-label {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #e0e0e0;
+            text-anchor: middle;
+            opacity: 0.9;
+            pointer-events: none;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+        
+        .node-sub-label {
+            font-size: 9px;
+            fill: #8888aa;
+            text-anchor: middle;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        /* Stats Panel */
+        .stats-panel {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            padding: 20px;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4cc9f0;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #8888aa;
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .toast i {
+            font-size: 1.2rem;
+        }
+        
+        .toast-success i { color: #10b981; }
+        .toast-info i { color: #4cc9f0; }
+        .toast-warning i { color: #f8961e; }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #6c757d;
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .empty-state p {
+            font-size: 1.2rem;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #8888aa;
+            font-size: 0.95rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .url-section {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .stats-panel {
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tree-container {
+                padding: 10px;
+            }
+            
+            .legend-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-circle-nodes"></i> Family Tree <span style="color: #4cc9f0;">Connection</span> <span style="color: #f72585;">Spheres</span></h1>
+            <p class="subtitle">Interactive family tree with colored connection spheres distinguishing parents, brothers, and grandparents.</p>
+        </header>
+        
+        <section class="controls">
+            <div class="url-section">
+                <div class="url-input">
+                    <input type="url" id="jsonUrl" placeholder="Enter JSON URL..." value="https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="loadData">
+                        <i class="fas fa-cloud-download-alt"></i> Load Tree
+                    </button>
+                    <button class="btn btn-secondary" id="sample1">
+                        <i class="fas fa-users"></i> Sample 1
+                    </button>
+                    <button class="btn btn-secondary" id="sample2">
+                        <i class="fas fa-user-friends"></i> Sample 2
+                    </button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <i class="fas fa-spinner"></i> Loading family tree...
+            </div>
+            
+            <div class="error" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Error loading data.</span>
+            </div>
+        </section>
+        
+        <section class="tree-container" id="treeContainer">
+            <h2 class="tree-title" id="treeTitle">Family Tree</h2>
+            <div id="treeView" style="position: relative;">
+                <div class="empty-state">
+                    <i class="fas fa-sitemap"></i>
+                    <p>Load a JSON file to display the family tree with connection spheres.</p>
+                    <p style="margin-top: 15px; font-size: 1rem;">Colored spheres distinguish: <span style="color:#4361ee;">Father</span> · <span style="color:#f72585;">Mother</span> · <span style="color:#f8961e;">Brother</span> · <span style="color:#7209b7;">Grandparent</span></p>
+                </div>
+            </div>
+            
+            <div class="stats-panel" id="statsPanel" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalMembers">0</div>
+                    <div class="stat-label">Total Members</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalGenerations">0</div>
+                    <div class="stat-label">Generations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalSpheres">0</div>
+                    <div class="stat-label">Connection Spheres</div>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p>Family Tree Connection Spheres &copy; 2026 | Click any sphere to see relationship details</p>
+        </footer>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage">Action performed</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const jsonUrlInput = document.getElementById('jsonUrl');
+            const loadDataButton = document.getElementById('loadData');
+            const sample1Button = document.getElementById('sample1');
+            const sample2Button = document.getElementById('sample2');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const treeView = document.getElementById('treeView');
+            const treeTitle = document.getElementById('treeTitle');
+            const statsPanel = document.getElementById('statsPanel');
+            
+            // Stats elements
+            const totalMembers = document.getElementById('totalMembers');
+            const totalGenerations = document.getElementById('totalGenerations');
+            const totalSpheres = document.getElementById('totalSpheres');
+            
+            // Toast elements
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            let toastTimeout = null;
+            
+            // Sample data
+            const sampleData1 = {
+                "familyName": "Smith Family",
+                "person": {
+                    "name": "John",
+                    "surname": "Smith",
+                    "birthDate": "1990-05-15",
+                    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300",
+                    "father": {
+                        "name": "Robert",
+                        "surname": "Smith",
+                        "birthDate": "1960-08-22",
+                        "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "mother": {
+                        "name": "Mary",
+                        "surname": "Johnson",
+                        "birthDate": "1962-11-10",
+                        "photoUrl": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "brothers": [
+                        {
+                            "name": "Michael",
+                            "surname": "Smith",
+                            "birthDate": "1988-02-28",
+                            "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                        },
+                        {
+                            "name": "David",
+                            "surname": "Smith",
+                            "birthDate": "1992-09-05",
+                            "photoUrl": "https://images.unsplash.com/photo-1504257432389-52343af06ae3?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                        }
+                    ]
+                }
+            };
+            
+            const sampleData2 = {
+                "familyName": "Williams Family",
+                "person": {
+                    "name": "Emma",
+                    "surname": "Williams",
+                    "birthDate": "1985-11-30",
+                    "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300",
+                    "father": {
+                        "name": "James",
+                        "surname": "Williams",
+                        "birthDate": "1955-03-12",
+                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300",
+                        "father": {
+                            "name": "George",
+                            "surname": "Williams",
+                            "birthDate": "1925-07-04",
+                            "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                        },
+                        "mother": {
+                            "name": "Elizabeth",
+                            "surname": "Brown",
+                            "birthDate": "1930-01-20",
+                            "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                        }
+                    },
+                    "mother": {
+                        "name": "Patricia",
+                        "surname": "Miller",
+                        "birthDate": "1958-09-18",
+                        "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                    },
+                    "brothers": [
+                        {
+                            "name": "Thomas",
+                            "surname": "Williams",
+                            "birthDate": "1983-06-22",
+                            "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300"
+                        }
+                    ]
+                }
+            };
+            
+            const sampleData3 = {
+                "familyName": "BG Family",
+                "person": {
+                    "name": "tarek",
+                    "surname": "ben gadha",
+                    "birthDate": "1964-05-12",
+                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+                    "father": {
+                        "name": "ezzedine",
+                        "surname": "ben gadha",
+                        "birthDate": "1924-03-27",
+                        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+                        "father": {
+                            "name": "abdelkader",
+                            "surname": "ben gadha",
+                            "birthDate": "1900-10-30",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+                            "father": {
+                                "name": "abdelkader2",
+                                "surname": "ben gadha",
+                                "birthDate": "1870-10-30",
+                                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
+                            },
+                            "mother": {
+                                "name": "",
+                                "surname": "mami",
+                                "birthDate": "1880-01-20",
+                                "photoUrl": ""
+                            }
+                        },
+                        "mother": {
+                            "name": "",
+                            "surname": "kissy",
+                            "birthDate": "1930-01-20",
+                            "photoUrl": ""
+                        }
+                    },
+                    "mother": {
+                        "name": "wassila",
+                        "surname": "zarrouk",
+                        "birthDate": "1936-01-18",
+                        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png"
+                    },
+                    "brothers": [
+                        {
+                            "name": "amel_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1958-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        },
+                        {
+                            "name": "besma_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1960-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        },
+                        {
+                            "name": "iness_bg",
+                            "surname": "ben gadha",
+                            "birthDate": "1969-11-22",
+                            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                        }
+                    ]
+                }
+            };
+            
+            // Event listeners
+            loadDataButton.addEventListener('click', loadFamilyData);
+            sample1Button.addEventListener('click', () => loadSampleData(sampleData1, "Smith Family"));
+            sample2Button.addEventListener('click', () => loadSampleData(sampleData2, "Williams Family"));
+            
+            // Load family data from URL
+            async function loadFamilyData() {
+                const url = jsonUrlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a JSON URL');
+                    return;
+                }
+                
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    if (!data.person || !data.person.name) {
+                        throw new Error('Invalid JSON structure. Expected "person" object with "name" property.');
+                    }
+                    
+                    renderTree(data);
+                    
+                } catch (error) {
+                    console.error('Error loading family data:', error);
+                    showError(`Failed to load data: ${error.message}. Using sample data instead.`);
+                    renderTree(sampleData1);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+            
+            // Load sample data
+            function loadSampleData(data, familyName) {
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                
+                setTimeout(() => {
+                    renderTree(data);
+                    loadingIndicator.style.display = 'none';
+                }, 300);
+            }
+            
+            // ===== MAIN TREE RENDER FUNCTION =====
+            function renderTree(data) {
+                const person = data.person;
+                const familyName = data.familyName || `${person.name} ${person.surname}'s Family`;
+                
+                treeTitle.textContent = `${familyName} Tree`;
+                
+                // Build tree data structure with relationship info
+                const treeData = buildTreeData(person);
+                
+                // Calculate tree layout
+                const layout = calculateTreeLayout(treeData);
+                
+                // Generate SVG with connection spheres
+                const svg = generateTreeSVG(layout, treeData);
+                
+                treeView.innerHTML = svg;
+                statsPanel.style.display = 'flex';
+                
+                // Update stats
+                const allMembers = collectAllMembers(person);
+                totalMembers.textContent = allMembers.length;
+                totalGenerations.textContent = layout.maxDepth + 1;
+                totalSpheres.textContent = layout.totalSpheres;
+                
+                // Add click events to spheres
+                document.querySelectorAll('.connection-sphere').forEach(sphere => {
+                    sphere.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const personName = this.dataset.personName || 'Unknown';
+                        const relationship = this.dataset.relationship || 'Family';
+                        const fromName = this.dataset.fromName || '';
+                        const toName = this.dataset.toName || '';
+                        
+                        // Highlight clicked sphere
+                        document.querySelectorAll('.connection-sphere').forEach(s => s.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        let message = `🔗 ${fromName} → ${toName} (${relationship})`;
+                        showToast(message, 'fa-circle-nodes', 'info');
+                        
+                        console.log('Sphere clicked:', { fromName, toName, relationship });
+                    });
+                });
+            }
+            
+            // ===== TREE DATA BUILDING =====
+            function buildTreeData(person, depth = 0, role = 'main', parent = null) {
+                if (!person) return null;
+                
+                const node = {
+                    id: `${person.name}-${person.surname}-${depth}-${Date.now()}-${Math.random()}`,
+                    name: person.name || 'Unknown',
+                    surname: person.surname || '',
+                    birthDate: person.birthDate || '',
+                    photoUrl: person.photoUrl || '',
+                    role: role,
+                    depth: depth,
+                    parent: parent,
+                    children: [],
+                    spouse: null
+                };
+                
+                // Add father
+                if (person.father) {
+                    const fatherNode = buildTreeData(person.father, depth + 1, 'father', node);
+                    if (fatherNode) {
+                        fatherNode.relationship = 'father';
+                        node.children.push(fatherNode);
+                    }
+                }
+                
+                // Add mother
+                if (person.mother) {
+                    const motherNode = buildTreeData(person.mother, depth + 1, 'mother', node);
+                    if (motherNode) {
+                        motherNode.relationship = 'mother';
+                        node.children.push(motherNode);
+                    }
+                }
+                
+                // Add brothers
+                if (person.brothers && person.brothers.length > 0) {
+                    person.brothers.forEach((brother, index) => {
+                        const brotherNode = buildTreeData(brother, depth + 1, 'brother', node);
+                        if (brotherNode) {
+                            brotherNode.relationship = 'brother';
+                            brotherNode.siblingIndex = index;
+                            node.children.push(brotherNode);
+                        }
+                    });
+                }
+                
+                // Mark grandparents
+                if (node.role === 'father' || node.role === 'mother') {
+                    if (person.father) {
+                        const grandparent = buildTreeData(person.father, depth + 1, 'grandfather', node);
+                        if (grandparent) {
+                            grandparent.relationship = 'grandfather';
+                            node.children.push(grandparent);
+                        }
+                    }
+                    if (person.mother) {
+                        const grandparent = buildTreeData(person.mother, depth + 1, 'grandmother', node);
+                        if (grandparent) {
+                            grandparent.relationship = 'grandmother';
+                            node.children.push(grandparent);
+                        }
+                    }
+                }
+                
+                return node;
+            }
+            
+            // ===== TREE LAYOUT CALCULATION =====
+            function calculateTreeLayout(root) {
+                if (!root) return { nodes: [], edges: [], maxDepth: 0, totalSpheres: 0 };
+                
+                const nodes = [];
+                const edges = [];
+                const nodePositions = {};
+                let maxDepth = 0;
+                let totalSpheres = 0;
+                
+                // BFS to calculate positions
+                const levels = {};
+                const queue = [{ node: root, parent: null, level: 0, index: 0 }];
+                
+                while (queue.length > 0) {
+                    const { node, parent, level, index } = queue.shift();
+                    
+                    if (!levels[level]) levels[level] = [];
+                    levels[level].push(node);
+                    
+                    // Assign position
+                    const x = index * 180 + 100;
+                    const y = level * 150 + 80;
+                    
+                    nodePositions[node.id] = { x, y, level };
+                    nodes.push(node);
+                    
+                    if (level > maxDepth) maxDepth = level;
+                    
+                    // Add edge to parent with relationship info
+                    if (parent) {
+                        const relType = node.relationship || 'child';
+                        edges.push({
+                            from: parent.id,
+                            to: node.id,
+                            type: relType,
+                            fromName: parent.name,
+                            toName: node.name
+                        });
+                        totalSpheres++;
+                    }
+                    
+                    // Process children with updated indices
+                    node.children.forEach((child, childIndex) => {
+                        queue.push({
+                            node: child,
+                            parent: node,
+                            level: level + 1,
+                            index: childIndex * (node.children.length > 1 ? 1 : 0.5)
+                        });
+                    });
+                }
+                
+                // Recalculate positions for better centering
+                Object.keys(levels).forEach(level => {
+                    const levelNodes = levels[level];
+                    const totalWidth = levelNodes.length * 180;
+                    const startX = (totalWidth > 0) ? (800 - totalWidth) / 2 : 400;
+                    
+                    levelNodes.forEach((node, idx) => {
+                        if (nodePositions[node.id]) {
+                            nodePositions[node.id].x = startX + idx * 180 + 90;
+                        }
+                    });
+                });
+                
+                return {
+                    nodes,
+                    edges,
+                    positions: nodePositions,
+                    maxDepth,
+                    totalSpheres
+                };
+            }
+            
+            // ===== SVG GENERATION =====
+            function generateTreeSVG(layout, treeData) {
+                const { nodes, edges, positions, maxDepth } = layout;
+                
+                if (nodes.length === 0) {
+                    return '<div class="empty-state"><i class="fas fa-sitemap"></i><p>No family data to display</p></div>';
+                }
+                
+                const svgWidth = Math.max(900, nodes.length * 180 + 200);
+                const svgHeight = Math.max(650, (maxDepth + 1) * 180 + 100);
+                
+                let svg = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" style="background: transparent;">`;
+                
+                // Add definitions
+                svg += `<defs>
+                    <radialGradient id="sphereGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.3)"/>
+                        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                    </radialGradient>
+                    <filter id="sphereGlowFilter">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>`;
+                
+                // Draw connections with relationship-specific styling
+                edges.forEach((edge, index) => {
+                    const fromPos = positions[edge.from];
+                    const toPos = positions[edge.to];
+                    
+                    if (fromPos && toPos) {
+                        let strokeColor = 'rgba(255,255,255,0.15)';
+                        let dashArray = 'none';
+                        let className = '';
+                        
+                        switch(edge.type) {
+                            case 'father':
+                                strokeColor = '#4361ee';
+                                className = 'father-connection';
+                                break;
+                            case 'mother':
+                                strokeColor = '#f72585';
+                                className = 'mother-connection';
+                                break;
+                            case 'brother':
+                                strokeColor = '#f8961e';
+                                dashArray = '6,4';
+                                className = 'brother-connection';
+                                break;
+                            case 'grandfather':
+                                strokeColor = '#7209b7';
+                                dashArray = '4,4';
+                                className = 'grandparent-connection';
+                                break;
+                            case 'grandmother':
+                                strokeColor = '#d946ef';
+                                dashArray = '4,4';
+                                className = 'grandparent-connection';
+                                break;
+                            default:
+                                strokeColor = 'rgba(255,255,255,0.15)';
+                        }
+                        
+                        // Main connection line
+                        svg += `<line x1="${fromPos.x}" y1="${fromPos.y}" x2="${toPos.x}" y2="${toPos.y}" 
+                                 class="connection-line ${className}" 
+                                 stroke="${strokeColor}" 
+                                 stroke-width="2" 
+                                 stroke-dasharray="${dashArray}" 
+                                 opacity="0.6"/>`;
+                        
+                        // Add glow effect on the line
+                        svg += `<line x1="${fromPos.x}" y1="${fromPos.y}" x2="${toPos.x}" y2="${toPos.y}" 
+                                 stroke="${strokeColor}" 
+                                 stroke-width="4" 
+                                 stroke-dasharray="${dashArray}" 
+                                 opacity="0.1"/>`;
+                        
+                        // ===== CONNECTION SPHERE =====
+                        // Position sphere at the midpoint of the connection
+                        const midX = (fromPos.x + toPos.x) / 2;
+                        const midY = (fromPos.y + toPos.y) / 2;
+                        
+                        // Determine sphere color based on relationship
+                        let sphereColor = 'rgba(255,255,255,0.2)';
+                        let sphereClass = '';
+                        let sphereLabel = '';
+                        
+                        switch(edge.type) {
+                            case 'father':
+                                sphereColor = '#4361ee';
+                                sphereClass = 'sphere-father';
+                                sphereLabel = 'Father';
+                                break;
+                            case 'mother':
+                                sphereColor = '#f72585';
+                                sphereClass = 'sphere-mother';
+                                sphereLabel = 'Mother';
+                                break;
+                            case 'brother':
+                                sphereColor = '#f8961e';
+                                sphereClass = 'sphere-brother';
+                                sphereLabel = 'Brother';
+                                break;
+                            case 'grandfather':
+                                sphereColor = '#7209b7';
+                                sphereClass = 'sphere-grandfather';
+                                sphereLabel = 'Grandfather';
+                                break;
+                            case 'grandmother':
+                                sphereColor = '#d946ef';
+                                sphereClass = 'sphere-grandmother';
+                                sphereLabel = 'Grandmother';
+                                break;
+                            default:
+                                sphereColor = 'rgba(255,255,255,0.2)';
+                                sphereClass = 'sphere-default';
+                        }
+                        
+                        // Sphere with glow
+                        svg += `<g class="connection-sphere ${sphereClass}" 
+                                 data-relationship="${edge.type}" 
+                                 data-from-name="${edge.fromName}" 
+                                 data-to-name="${edge.toName}"
+                                 data-person-name="${edge.toName}"
+                                 data-index="${index}">`;
+                        
+                        // Glow background
+                        svg += `<circle cx="${midX}" cy="${midY}" r="14" fill="url(#sphereGlow)" opacity="0.3"/>`;
+                        
+                        // Main sphere
+                        svg += `<circle cx="${midX}" cy="${midY}" r="7" 
+                                 fill="${sphereColor}" 
+                                 stroke="rgba(255,255,255,0.4)" 
+                                 stroke-width="1.5"
+                                 filter="url(#sphereGlowFilter)"/>`;
+                        
+                        // Inner highlight
+                        svg += `<circle cx="${midX - 2}" cy="${midY - 2}" r="2.5" fill="rgba(255,255,255,0.3)"/>`;
+                        
+                        // Relationship label (tooltip)
+                        svg += `<text x="${midX}" y="${midY - 14}" class="sphere-tooltip" 
+                                 font-size="8" fill="white" text-anchor="middle" 
+                                 font-weight="500" opacity="0">${edge.fromName} → ${edge.toName}</text>`;
+                        
+                        // Small relationship icon
+                        let icon = '👤';
+                        if (edge.type === 'father') icon = '👨';
+                        else if (edge.type === 'mother') icon = '👩';
+                        else if (edge.type === 'brother') icon = '👦';
+                        else if (edge.type === 'grandfather') icon = '👴';
+                        else if (edge.type === 'grandmother') icon = '👵';
+                        
+                        svg += `<text x="${midX}" y="${midY + 3}" font-size="7" 
+                                 fill="white" text-anchor="middle" opacity="0.8">${icon}</text>`;
+                        
+                        svg += `</g>`;
+                    }
+                });
+                
+                // Draw nodes (people)
+                nodes.forEach(node => {
+                    const pos = positions[node.id];
+                    if (!pos) return;
+                    
+                    const isMain = node.role === 'main';
+                    const isFather = node.role === 'father';
+                    const isMother = node.role === 'mother';
+                    const isBrother = node.role === 'brother';
+                    const isGrandparent = node.role === 'grandfather' || node.role === 'grandmother';
+                    
+                    let color = '#4cc9f0';
+                    let nodeClass = 'main-person';
+                    
+                    if (isMain) { color = '#4cc9f0'; nodeClass = 'main-person'; }
+                    else if (isFather || node.role === 'grandfather') { color = '#4361ee'; nodeClass = 'father'; }
+                    else if (isMother || node.role === 'grandmother') { color = '#f72585'; nodeClass = 'mother'; }
+                    else if (isBrother) { color = '#f8961e'; nodeClass = 'brother'; }
+                    else if (isGrandparent) { color = '#7209b7'; nodeClass = 'grandfather'; }
+                    
+                    const radius = isMain ? 24 : 18;
+                    const fontSize = isMain ? 13 : 11;
+                    
+                    svg += `<g class="tree-node" data-id="${node.id}">`;
+                    
+                    // Node shadow
+                    svg += `<circle cx="${pos.x + 2}" cy="${pos.y + 2}" r="${radius}" fill="rgba(0,0,0,0.3)"/>`;
+                    
+                    // Node circle
+                    svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${radius}" 
+                             class="node-circle ${nodeClass}" 
+                             fill="rgba(20, 20, 40, 0.85)" 
+                             stroke="${color}" 
+                             stroke-width="${isMain ? 3 : 2.5}"/>`;
+                    
+                    // Inner glow
+                    svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${radius * 0.5}" 
+                             fill="none" stroke="${color}" stroke-width="1" opacity="0.2"/>`;
+                    
+                    // Initials
+                    const initials = (node.name.charAt(0) + (node.surname ? node.surname.charAt(0) : '')).toUpperCase();
+                    svg += `<text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" 
+                             fill="white" font-size="${fontSize}" font-weight="700" 
+                             font-family="'Segoe UI', sans-serif">${initials}</text>`;
+                    
+                    // Name label
+                    const labelY = pos.y + radius + 22;
+                    svg += `<text x="${pos.x}" y="${labelY}" class="node-label" font-size="${isMain ? 13 : 11}">${node.name}</text>`;
+                    
+                    // Surname
+                    if (node.surname) {
+                        svg += `<text x="${pos.x}" y="${labelY + 16}" class="node-sub-label" font-size="9">${node.surname}</text>`;
+                    }
+                    
+                    // Role indicator
+                    const roleY = labelY + (node.surname ? 28 : 18);
+                    const roleIcon = node.role === 'main' ? '⭐' : 
+                                     node.role === 'father' ? '👨' : 
+                                     node.role === 'mother' ? '👩' : 
+                                     node.role === 'brother' ? '👦' : 
+                                     node.role === 'grandfather' ? '👴' : 
+                                     node.role === 'grandmother' ? '👵' : '👤';
+                    svg += `<text x="${pos.x}" y="${roleY + 8}" text-anchor="middle" 
+                             fill="rgba(255,255,255,0.3)" font-size="10">${roleIcon}</text>`;
+                    
+                    svg += `</g>`;
+                });
+                
+                // Add legend
+                svg += `
+                    <g transform="translate(${svgWidth - 200}, 20)">
+                        <rect x="0" y="0" width="180" height="230" rx="10" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.05)"/>
+                        <text x="15" y="22" fill="white" font-size="12" font-weight="600">Connection Spheres</text>
+                        <text x="15" y="38" fill="#888" font-size="9">Click any sphere for details</text>
+                        
+                        <line x1="15" y1="52" x2="165" y2="52" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                        
+                        <circle cx="20" cy="70" r="7" fill="#4361ee" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                        <text x="38" y="74" fill="#ccc" font-size="11">Father</text>
+                        <text x="130" y="74" fill="#666" font-size="9">👨</text>
+                        
+                        <circle cx="20" cy="96" r="7" fill="#f72585" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                        <text x="38" y="100" fill="#ccc" font-size="11">Mother</text>
+                        <text x="130" y="100" fill="#666" font-size="9">👩</text>
+                        
+                        <circle cx="20" cy="122" r="7" fill="#f8961e" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                        <text x="38" y="126" fill="#ccc" font-size="11">Brother</text>
+                        <text x="130" y="126" fill="#666" font-size="9">👦</text>
+                        
+                        <circle cx="20" cy="148" r="7" fill="#7209b7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                        <text x="38" y="152" fill="#ccc" font-size="11">Grandfather</text>
+                        <text x="130" y="152" fill="#666" font-size="9">👴</text>
+                        
+                        <circle cx="20" cy="174" r="7" fill="#d946ef" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                        <text x="38" y="178" fill="#ccc" font-size="11">Grandmother</text>
+                        <text x="130" y="178" fill="#666" font-size="9">👵</text>
+                        
+                        <line x1="15" y1="195" x2="165" y2="195" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                        
+                        <text x="15" y="215" fill="#666" font-size="9">Total Spheres: ${layout.totalSpheres}</text>
+                    </g>
+                `;
+                
+                svg += `</svg>`;
+                
+                return svg;
+            }
+            
+            // ===== HELPER FUNCTIONS =====
+            function collectAllMembers(person, members = []) {
+                if (!person) return members;
+                members.push(person);
+                if (person.father) collectAllMembers(person.father, members);
+                if (person.mother) collectAllMembers(person.mother, members);
+                if (person.brothers) {
+                    person.brothers.forEach(b => collectAllMembers(b, members));
+                }
+                return members;
+            }
+            
+            function showToast(message, icon = 'fa-info-circle', type = 'info') {
+                if (toastTimeout) clearTimeout(toastTimeout);
+                
+                toastMessage.textContent = message;
+                toast.className = 'toast';
+                toast.classList.add(`toast-${type}`);
+                const iconEl = toast.querySelector('i');
+                iconEl.className = `fas ${icon}`;
+                
+                setTimeout(() => toast.classList.add('show'), 50);
+                toastTimeout = setTimeout(() => toast.classList.remove('show'), 4000);
+            }
+            
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            
+            // ===== INITIAL LOAD =====
+            setTimeout(() => {
+                loadSampleData(sampleData3, "BG Family");
+            }, 300);
+        });
+    </script>
+</body>
+</html>
