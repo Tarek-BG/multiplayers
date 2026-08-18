@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree Gallery</title>
+    <title>شجرة العائلة</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -478,8 +478,8 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-images"></i> Family Tree Gallery</h1>
-            <p class="subtitle">Visualize family relationships with photos in an interactive chart. Load JSON data with family information and profile pictures.</p>
+            <h1><i class="fas fa-images"></i> شجرة العائلة Gallery</h1>
+            <p class="subtitle">نشر شجرة العئلة و العلاقة بين الافراد. اختار و حمل القرص </p>
         </header>
         
         <section class="controls">
@@ -489,36 +489,36 @@
                 </div>
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="loadData">
-                        <i class="fas fa-cloud-download-alt"></i> Load Family Data
+                        <i class="fas fa-cloud-download-alt"></i> Load شجرة العائلة ملف
                     </button>
                     <button class="btn btn-secondary" id="sample1">
-                        <i class="fas fa-users"></i> Sample 1
+                        <i class="fas fa-users"></i> العائلة 1
                     </button>
                     <button class="btn btn-secondary" id="sample2">
-                        <i class="fas fa-user-friends"></i> Sample 2
+                        <i class="fas fa-user-friends"></i> العائلة 2
                     </button>
 
                      <button class="btn btn-secondary" id="sample3">
-                        <i class="fas fa-user-friends"></i> Sample 3
+                        <i class="fas fa-user-friends"></i> العائلة 3
                     </button>                   
                 </div>
             </div>
             
             <div class="sample-buttons">
-                <p style="width:100%; margin-bottom: 10px; color: #b8b8d1;">https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/bg_fam.json</p>
+                <p style="width:100%; margin-bottom: 10px; color: #b8b8d1;">https://raw.githubusercontent.com/***.json</p>
             </div>
             
             <div class="loading" id="loadingIndicator">
-                <i class="fas fa-spinner"></i> Loading family data and photos...
+                <i class="fas fa-spinner"></i> Loading شجرة العائلة ملف تحميل...
             </div>
             
             <div class="error" id="errorMessage">
-                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Error loading data. Please check the URL and try again.</span>
+                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Error loading شجرة العائلة ملف  data.  URL التحقق من.</span>
             </div>
         </section>
         
         <section class="gallery-container">
-            <h2 class="gallery-title" id="galleryTitle">Family Tree Gallery</h2>
+            <h2 class="gallery-title" id="galleryTitle">شجرة العائلة صور رواق</h2>
             <div id="familyGallery">
                 <div class="empty-state">
                     <i class="fas fa-images"></i>
@@ -529,19 +529,19 @@
         </section>
         
         <footer class="footer">
-            <p>Family Tree Gallery Viewer &copy; 2026 | Displays family relationships with photos</p>
+            <p>شجرة العائلة صور رواق Viewer &copy; 2026 | نشر شجرة العئلة و العلاقة بين الافراد. اختار و حمل القرص</p>
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-value" id="totalMembers">0</div>
-                    <div class="stat-label">Family Members</div>
+                    <div class="stat-label">افراد العائلة</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="totalPhotos">0</div>
-                    <div class="stat-label">Photos Loaded</div>
+                    <div class="stat-label">الصور المحملة</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="avgAge">0</div>
-                    <div class="stat-label">Average Age</div>
+                    <div class="stat-label">متوسط العمر</div>
                 </div>
             </div>
         </footer>
@@ -569,36 +569,36 @@
             
             // Sample JSON data with photo URLs
             const sampleData1 = {
-                "familyName": "Smith Family",
+                "familyName": "عائلة بن قدحة",
                 "person": {
-                    "name": "John",
-                    "surname": "Smith",
-                    "birthDate": "1990-05-15",
-                    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                    "name": "طاارق",
+                    "surname": "بن قدحة",
+                    "birthDate": "1964-05-12",
+                    "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/tarek_bg.png",
                     "father": {
-                        "name": "Robert",
-                        "surname": "Smith",
-                        "birthDate": "1960-08-22",
-                        "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        "name": "عزالدين",
+                        "surname": "بن قدحة",
+                        "birthDate": "1924-03-27",
+                        "photoUrl": "https://drive.google.com/file/d/1bSn3iCf-g-mdfrwjfpwWndVyblPbtNx9/view?usp=drive_link"
                     },
                     "mother": {
-                        "name": "Mary",
-                        "surname": "Johnson",
-                        "birthDate": "1962-11-10",
-                        "photoUrl": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                        "name": "وسييلة",
+                        "surname": "زروق",
+                        "birthDate": "1936-01-10",
+                        "photoUrl": "https://drive.google.com/file/d/1DKcVBZ_KuPki0vVfKG9Jo_lND5ILbLLg/view?usp=drive_link"
                     },
                     "brothers": [
                         {
-                            "name": "Michael",
-                            "surname": "Smith",
+                            "name": "أمال",
+                            "surname": "بن قدحة",
                             "birthDate": "1988-02-28",
-                            "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                            "photoUrl": ""
                         },
                         {
-                            "name": "David",
-                            "surname": "Smith",
+                            "name": "بسمة",
+                            "surname": "بن قدحة",
                             "birthDate": "1992-09-05",
-                            "photoUrl": "https://images.unsplash.com/photo-1504257432389-52343af06ae3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                            "photoUrl": ""
                         }
                     ]
                 }
@@ -610,23 +610,23 @@
                     "name": "Emma",
                     "surname": "Williams",
                     "birthDate": "1985-11-30",
-                    "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/adadE.png?auto=format&fit=crop&w=300&q=300",
                     "father": {
                         "name": "James",
                         "surname": "Williams",
                         "birthDate": "1955-03-12",
-                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/adadE.png",
                         "father": {
                             "name": "George",
                             "surname": "Williams",
                             "birthDate": "1925-07-04",
-                            "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                            "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/dadE.png?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
                         },
                         "mother": {
                             "name": "Elizabeth",
                             "surname": "Brown",
                             "birthDate": "1930-01-20",
-                            "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                            "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/dadE.png?auto=format&fit=crop&w=200&q=200"
                         }
                     },
                     "mother": {
@@ -640,7 +640,7 @@
                             "name": "Thomas",
                             "surname": "Williams",
                             "birthDate": "1983-06-22",
-                            "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
+                            "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300"
                         }
                     ]
                 }
@@ -652,22 +652,22 @@
         "name": "tarek",
         "surname": "ben gadha",
         "birthDate": "1964-05-12",
-        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+        "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/tarek_bg.png",
         "father": {
             "name": "ezzedine",
             "surname": "ben gadha",
             "birthDate": "1924-03-27",
-            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+            "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/dadE.png",
             "father": {
                 "name": "abdelkader",
                 "surname": "ben gadha",
                 "birthDate": "1900-10-30",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+                "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/abdelkder_bg.png",
                 "father": {
                     "name": "abdelkader2",
                     "surname": "ben gadha",
                     "birthDate": "1870-10-30",
-                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
+                    "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/hamida_bg.png"                
                 },
                 "mother": {
                     "name": "",
@@ -687,14 +687,14 @@
             "name": "wassila",
             "surname": "zarrouk",
             "birthDate": "1936-01-18",
-            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png"
+            "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/momW.png"
         },
         "brothers": [
             {
                 "name": "amel_bg",
                 "surname": "ben gadha",
                 "birthDate": "1958-11-22",
-                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+                "photoUrl": "https://tarek-bg.github.io/multiplayers/family/data/foto/hamida_bg.png"
             },
                         {
                 "name": "besma_bg",
@@ -785,13 +785,13 @@
                 let galleryHTML = `
                     <div class="family-chart">
                         <div class="generation parents-row">
-                            <div class="generation-title">Parents Generation</div>
+                            <div class="generation-title"> الجيل السابق</div>
                             ${person.father ? createPersonCard(person.father, 'father', 'Father') : ''}
                             ${person.mother ? createPersonCard(person.mother, 'mother', 'Mother') : ''}
                         </div>
                         
                         <div class="generation">
-                            <div class="generation-title">Current Generation</div>
+                            <div class="generation-title">الجيل الحالي</div>
                             ${createPersonCard(person, 'person', 'Main Person')}
                         </div>
                 `;
@@ -800,7 +800,7 @@
                 if (person.brothers && person.brothers.length > 0) {
                     galleryHTML += `
                         <div class="siblings-container">
-                            <div class="siblings-title">Siblings</div>
+                            <div class="siblings-title">الإخوة</div>
                             ${person.brothers.map(brother => createPersonCard(brother, 'brother', 'Brother')).join('')}
                         </div>
                     `;
@@ -821,7 +821,7 @@
                 if (grandparentsHTML) {
                     galleryHTML = `
                         <div class="generation">
-                            <div class="generation-title">Grandparents Generation</div>
+                            <div class="generation-title"> الجيل  قبل السابق</div>
                             ${grandparentsHTML}
                         </div>
                     ` + galleryHTML;
@@ -870,7 +870,7 @@
                         <div class="person-info">
                             <div class="person-name">${personData.name} ${personData.surname}</div>
                             <div class="person-details">${formatDate(personData.birthDate)}</div>
-                            <div class="person-age">${age} years</div>
+                            <div class="person-age">${age} سنة</div>
                         </div>
                     </div>
                 `;
