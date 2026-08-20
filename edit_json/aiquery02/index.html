@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delphi-Style SQL Query Builder</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <span class="icon">🔍</span>
+                <h1>Query Builder</h1>
+                <span class="version">v2.0</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="executeBtn">▶ Execute</button>
+                <button class="btn btn-secondary" id="clearBtn">✕ Clear</button>
+                <button class="btn btn-secondary" id="saveQueryBtn">💾 Save</button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Left Panel - Database Objects -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📁</span>
+                    <span>Database Objects</span>
+                </div>
+                
+                <!-- Tables Section -->
+                <div class="tree-section">
+                    <div class="tree-header" data-toggle="tables">
+                        <span class="arrow">▼</span>
+                        <span>Tables</span>
+                        <span class="badge" id="tableCount">0</span>
+                    </div>
+                    <div class="tree-content" id="tablesTree">
+                        <!-- Tables will be populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Views Section -->
+                <div class="tree-section">
+                    <div class="tree-header" data-toggle="views">
+                        <span class="arrow">▼</span>
+                        <span>Views</span>
+                        <span class="badge" id="viewCount">0</span>
+                    </div>
+                    <div class="tree-content" id="viewsTree">
+                        <!-- Views will be populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Queries Section -->
+                <div class="tree-section">
+                    <div class="tree-header" data-toggle="queries">
+                        <span class="arrow">▼</span>
+                        <span>Saved Queries</span>
+                        <span class="badge" id="queryCount">0</span>
+                    </div>
+                    <div class="tree-content" id="queriesTree">
+                        <!-- Saved queries will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Query Builder -->
+            <div class="center-panel">
+                <!-- Query Tabs -->
+                <div class="query-tabs">
+                    <button class="tab active" data-tab="builder">📝 Builder</button>
+                    <button class="tab" data-tab="sql">💻 SQL</button>
+                    <button class="tab" data-tab="unions">🔗 Unions</button>
+                </div>
+
+                <!-- Builder Tab -->
+                <div class="tab-content active" id="builderTab">
+                    <!-- SELECT Clause -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">SELECT</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addColumnBtn">+ Column</button>
+                                <button class="btn-sm btn-secondary" id="clearColumnsBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="columnsContainer">
+                            <!-- Columns will be added here -->
+                            <div class="empty-state">Click "+ Column" to add fields</div>
+                        </div>
+                    </div>
+
+                    <!-- FROM Clause -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">FROM</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addTableBtn">+ Table</button>
+                                <button class="btn-sm btn-secondary" id="clearTablesBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="tablesContainer">
+                            <div class="empty-state">Click "+ Table" to add tables</div>
+                        </div>
+                    </div>
+
+                    <!-- JOIN Clause -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">JOIN</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addJoinBtn">+ Join</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="joinsContainer">
+                            <div class="empty-state">No joins defined</div>
+                        </div>
+                    </div>
+
+                    <!-- WHERE Clause -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">WHERE</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addWhereBtn">+ Condition</button>
+                                <button class="btn-sm btn-secondary" id="clearWhereBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="whereContainer">
+                            <div class="empty-state">No conditions defined</div>
+                        </div>
+                    </div>
+
+                    <!-- GROUP BY -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">GROUP BY</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addGroupBtn">+ Group</button>
+                                <button class="btn-sm btn-secondary" id="clearGroupBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="groupContainer">
+                            <div class="empty-state">No group by defined</div>
+                        </div>
+                    </div>
+
+                    <!-- HAVING -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">HAVING</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addHavingBtn">+ Condition</button>
+                                <button class="btn-sm btn-secondary" id="clearHavingBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="havingContainer">
+                            <div class="empty-state">No having conditions</div>
+                        </div>
+                    </div>
+
+                    <!-- ORDER BY -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">ORDER BY</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addOrderBtn">+ Order</button>
+                                <button class="btn-sm btn-secondary" id="clearOrderBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="orderContainer">
+                            <div class="empty-state">No order by defined</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SQL Tab -->
+                <div class="tab-content" id="sqlTab">
+                    <div class="sql-editor-container">
+                        <textarea id="sqlEditor" class="sql-editor" placeholder="Generated SQL will appear here..."></textarea>
+                        <div class="sql-actions">
+                            <button class="btn btn-primary" id="executeSqlBtn">▶ Execute SQL</button>
+                            <button class="btn btn-secondary" id="copySqlBtn">📋 Copy</button>
+                            <button class="btn btn-secondary" id="formatSqlBtn">✨ Format</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unions Tab -->
+                <div class="tab-content" id="unionsTab">
+                    <div class="unions-container">
+                        <div class="union-section">
+                            <div class="union-header">
+                                <span>UNION Queries</span>
+                                <button class="btn-sm btn-primary" id="addUnionBtn">+ Add UNION</button>
+                            </div>
+                            <div id="unionsContainer">
+                                <div class="empty-state">No UNION queries defined</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Field Properties -->
+            <div class="right-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">⚙️</span>
+                    <span>Properties</span>
+                </div>
+                <div id="propertiesContent">
+                    <div class="empty-state" style="padding:20px;">
+                        <p>Select a field to view properties</p>
+                    </div>
+                    <div class="property-group" id="fieldProperties" style="display:none;">
+                        <div class="property-row">
+                            <label>Field</label>
+                            <input type="text" id="propField" readonly />
+                        </div>
+                        <div class="property-row">
+                            <label>Alias</label>
+                            <input type="text" id="propAlias" />
+                        </div>
+                        <div class="property-row">
+                            <label>Aggregate</label>
+                            <select id="propAggregate">
+                                <option value="">None</option>
+                                <option value="COUNT">COUNT</option>
+                                <option value="SUM">SUM</option>
+                                <option value="AVG">AVG</option>
+                                <option value="MIN">MIN</option>
+                                <option value="MAX">MAX</option>
+                            </select>
+                        </div>
+                        <div class="property-row">
+                            <label>Sort Type</label>
+                            <select id="propSortType">
+                                <option value="">None</option>
+                                <option value="ASC">ASC</option>
+                                <option value="DESC">DESC</option>
+                            </select>
+                        </div>
+                        <div class="property-row">
+                            <label>Sort Order</label>
+                            <input type="number" id="propSortOrder" min="1" />
+                        </div>
+                        <div class="property-row">
+                            <label>Grouping</label>
+                            <select id="propGrouping">
+                                <option value="">None</option>
+                                <option value="GROUP">GROUP BY</option>
+                            </select>
+                        </div>
+                        <div class="property-row">
+                            <label>Criteria</label>
+                            <input type="text" id="propCriteria" placeholder="e.g., > 100" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Grid -->
+        <div class="results-panel">
+            <div class="results-header">
+                <span class="results-icon">📊</span>
+                <span>Results</span>
+                <span id="resultsCount" class="results-count">0 rows</span>
+                <span id="resultsTime" class="results-time"></span>
+                <div class="results-actions">
+                    <button class="btn-sm btn-secondary" id="exportCsvBtn">📥 Export CSV</button>
+                    <button class="btn-sm btn-secondary" id="clearResultsBtn">✕ Clear</button>
+                </div>
+            </div>
+            <div class="results-grid-container" id="resultsContainer">
+                <div class="empty-state">
+                    <span style="font-size:2rem;display:block;">📋</span>
+                    <p>Execute a query to see results here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="query-builder.js"></script>
+</body>
+</html>

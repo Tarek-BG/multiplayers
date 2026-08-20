@@ -1,0 +1,264 @@
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const jsonUrlInput = document.getElementById('jsonUrl');
+            const loadDataButton = document.getElementById('loadData');
+            const sample1Button = document.getElementById('sample1');
+            const sample2Button = document.getElementById('sample2');
+            const sample3Button = document.getElementById('sample3');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const familyGallery = document.getElementById('familyGallery');
+            const galleryTitle = document.getElementById('galleryTitle');
+            const totalMembers = document.getElementById('totalMembers');
+            const totalPhotos = document.getElementById('totalPhotos');
+            const avgAge = document.getElementById('avgAge');
+
+            // ---- SAMPLE DATA (new format) ----
+            const sampleDataNew = {
+                "familyName": "dly Family",
+                "familyId": "bengadha",
+                "members": [
+                    {
+                        "id": "X04Ybengadha000",
+                        "name": "C",
+                        "surname": "W",
+                        "birthDate": "1925-07-04",
+                        "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": null
+                    },
+                    {
+                        "id": "X04Xbengadha000",
+                        "name": "AA",
+                        "surname": "X",
+                        "birthDate": "1930-01-20",
+                        "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": null
+                    },
+                    {
+                        "id": "Z02YbengadhaX04",
+                        "name": "B",
+                        "surname": "W",
+                        "birthDate": "1955-03-12",
+                        "photoUrl": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": null
+                    },
+                    {
+                        "id": "Z02Xbengadha000",
+                        "name": "BB",
+                        "surname": "Y",
+                        "birthDate": "1958-09-18",
+                        "photoUrl": "https://images.unsplash.com/photo-1557296387-5358ad7997bb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": null
+                    },
+                    {
+                        "id": "A01YbengadhaZ02",
+                        "name": "BY",
+                        "surname": "W",
+                        "birthDate": "1983-06-22",
+                        "photoUrl": "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": "Z02Xbengadha000"
+                    },
+                    {
+                        "id": "A03YbengadhaZ02",
+                        "name": "A",
+                        "surname": "W",
+                        "birthDate": "1985-11-30",
+                        "photoUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=300",
+                        "mother": "Z02Xbengadha000"
+                    }
+                ]
+            };
+
+            // ---- Set default URL ----
+            jsonUrlInput.value = 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/dly_fam.json';
+
+            // ---- Event listeners ----
+            loadDataButton.addEventListener('click', loadFamilyData);
+            sample1Button.addEventListener('click', () => loadSampleData(sampleDataNew, "dly Family"));
+            sample2Button.addEventListener('click', () => loadSampleData(sampleDataNew, "dly Family"));
+            sample3Button.addEventListener('click', () => loadSampleData(sampleDataNew, "dly Family"));
+
+            // ---- Load from URL ----
+            async function loadFamilyData() {
+                const url = jsonUrlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a JSON URL');
+                    return;
+                }
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    const data = await response.json();
+
+                    // Handle both array and object root
+                    let familyData = data;
+                    if (Array.isArray(data) && data.length > 0) familyData = data[0];
+
+                    if (!familyData.members || !Array.isArray(familyData.members)) {
+                        throw new Error('Invalid JSON: missing "members" array.');
+                    }
+
+                    displayFamilyGallery(familyData);
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError(`Failed to load data: ${error.message}. Using sample data.`);
+                    displayFamilyGallery(sampleDataNew);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            // ---- Load sample ----
+            function loadSampleData(data, familyName) {
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                setTimeout(() => {
+                    displayFamilyGallery(data);
+                    loadingIndicator.style.display = 'none';
+                }, 300);
+            }
+
+            // ---- Display gallery ----
+            function displayFamilyGallery(data) {
+                const members = data.members;
+                const familyName = data.familyName || 'Family Tree';
+                const familyId = data.familyId || '';
+
+                galleryTitle.textContent = familyName + ' Tree';
+
+                // Build the tree starting from the main person (we'll assume the one with id starting with "A03")
+                const mainPerson = members.find(m => m.id.startsWith('A03'));
+                if (!mainPerson) {
+                    familyGallery.innerHTML = `<div class="empty-state"><p>Main person not found.</p></div>`;
+                    return;
+                }
+
+                // Build nested tree
+                function buildNode(person) {
+                    // Find children (father's birth order equals this person's birth order)
+                    const children = members.filter(m => {
+                        const fatherBirthOrder = m.id.slice(-3);
+                        const famPart = m.id.slice(4, 12);
+                        return famPart === familyId && fatherBirthOrder === person.id.slice(0,3);
+                    });
+                    return {
+                        ...person,
+                        father: members.find(m => {
+                            const fb = person.id.slice(-3);
+                            return m.id.slice(0,3) === fb && m.id.slice(4,12) === familyId;
+                        }) || null,
+                        mother: members.find(m => m.id === person.mother) || null,
+                        children: children.map(c => buildNode(c))
+                    };
+                }
+
+                const tree = buildNode(mainPerson);
+
+                // ---- Render the tree as HTML ----
+                let html = '<div class="family-chart">';
+
+                // Recursive rendering function
+                function renderPerson(node, level) {
+                    if (!node) return '';
+                    const age = node.birthDate ? calculateAge(node.birthDate) : 'Unknown';
+                    const photo = node.photoUrl || getDefaultPhoto('person');
+                    const role = level === 0 ? 'Main Person' : (level === 1 ? 'Parent' : 'Grandparent');
+
+                    let card = `
+                        <div class="person-card person-person" style="margin: 10px;">
+                            <div class="person-role">${role}</div>
+                            <div class="person-photo">
+                                <img src="${photo}" alt="${node.name}" onerror="this.src='${getDefaultPhoto('person')}'">
+                            </div>
+                            <div class="person-info">
+                                <div class="person-name">${node.name} ${node.surname}</div>
+                                <div class="person-details">${formatDate(node.birthDate)}</div>
+                                <div class="person-age">${age} years</div>
+                                <div style="font-size:0.7rem;color:#888;margin-top:4px;">ID: ${node.id}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // If children exist, render them inside a siblings container
+                    if (node.children && node.children.length > 0) {
+                        let childrenHtml = '<div class="siblings-container"><div class="siblings-title">Children</div>';
+                        node.children.forEach(child => {
+                            childrenHtml += renderPerson(child, level + 1);
+                        });
+                        childrenHtml += '</div>';
+                        card += childrenHtml;
+                    }
+
+                    return card;
+                }
+
+                html += renderPerson(tree, 0);
+                html += '</div>';
+
+                familyGallery.innerHTML = html;
+
+                // Update stats
+                updateStatistics(members);
+            }
+
+            // ---- Helper: calculate age ----
+            function calculateAge(birthDate) {
+                if (!birthDate) return 'Unknown';
+                try {
+                    const today = new Date();
+                    const birth = new Date(birthDate);
+                    let age = today.getFullYear() - birth.getFullYear();
+                    const monthDiff = today.getMonth() - birth.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+                    return age;
+                } catch { return 'Unknown'; }
+            }
+
+            // ---- Helper: format date ----
+            function formatDate(dateString) {
+                if (!dateString) return 'Birth date unknown';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                } catch { return dateString; }
+            }
+
+            // ---- Helper: default photo ----
+            function getDefaultPhoto(type) {
+                const photos = {
+                    'person': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'father': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'mother': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300',
+                    'brother': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=300'
+                };
+                return photos[type] || photos.person;
+            }
+
+            // ---- Update statistics ----
+            function updateStatistics(members) {
+                totalMembers.textContent = members.length;
+                totalPhotos.textContent = members.filter(m => m.photoUrl).length;
+                const ages = members.map(m => calculateAge(m.birthDate)).filter(a => typeof a === 'number');
+                if (ages.length > 0) {
+                    const avg = Math.round(ages.reduce((a,b) => a+b, 0) / ages.length);
+                    avgAge.textContent = avg;
+                } else {
+                    avgAge.textContent = 'N/A';
+                }
+            }
+
+            // ---- Show error ----
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+
+            // ---- Initial load with sample ----
+            loadSampleData(sampleDataNew, "dly Family");
+        });
+</script>

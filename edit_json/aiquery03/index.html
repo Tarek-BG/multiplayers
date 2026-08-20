@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON Query Builder - Delphi Style</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <span class="icon">📊</span>
+                <h1>JSON Query Builder</h1>
+                <span class="version">v2.0</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="fetchBtn">📥 Fetch JSON</button>
+                <button class="btn btn-success" id="executeBtn">▶ Execute</button>
+                <button class="btn btn-secondary" id="clearBtn">✕ Clear</button>
+                <button class="btn btn-secondary" id="saveQueryBtn">💾 Save</button>
+            </div>
+        </div>
+
+        <!-- GitHub Connection Bar -->
+        <div class="github-bar">
+            <div class="github-fields">
+                <div class="field-group">
+                    <label>Repository</label>
+                    <input type="text" id="repoInput" value="Tarek-BG/multiplayers" placeholder="owner/repo" />
+                </div>
+                <div class="field-group">
+                    <label>File Path</label>
+                    <input type="text" id="pathInput" value="family/data/2_fam.json" placeholder="path/to/file.json" />
+                </div>
+                <div class="field-group">
+                    <label>Branch</label>
+                    <input type="text" id="branchInput" value="main" placeholder="branch" />
+                </div>
+            </div>
+            <div class="file-info" id="fileInfo">
+                <span id="shaDisplay">SHA: —</span>
+                <span id="sizeDisplay">Size: —</span>
+                <span id="nodeCount">Nodes: —</span>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Left Panel - JSON Structure -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">📂</span>
+                    <span>JSON Structure</span>
+                    <button class="btn-sm btn-secondary" id="expandAllBtn" style="margin-left:auto;">Expand All</button>
+                </div>
+                <div id="jsonTree" class="json-tree">
+                    <div class="empty-state">Fetch a JSON file to see structure</div>
+                </div>
+                <div class="panel-footer">
+                    <button class="btn-sm btn-secondary" id="selectAllNodes">Select All</button>
+                    <button class="btn-sm btn-secondary" id="deselectAllNodes">Deselect All</button>
+                </div>
+            </div>
+
+            <!-- Center Panel - Query Builder -->
+            <div class="center-panel">
+                <!-- Query Tabs -->
+                <div class="query-tabs">
+                    <button class="tab active" data-tab="builder">📝 Builder</button>
+                    <button class="tab" data-tab="jsonpath">🔍 JSONPath</button>
+                    <button class="tab" data-tab="preview">👁️ Preview</button>
+                </div>
+
+                <!-- Builder Tab -->
+                <div class="tab-content active" id="builderTab">
+                    <!-- Selected Nodes -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">📌 Selected Nodes</span>
+                            <span id="selectedCount" class="badge">0 nodes</span>
+                        </div>
+                        <div class="clause-body" id="selectedNodesDisplay">
+                            <div class="empty-state">Select nodes from the left panel</div>
+                        </div>
+                    </div>
+
+                    <!-- WHERE Conditions -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">WHERE</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addWhereBtn">+ Condition</button>
+                                <button class="btn-sm btn-secondary" id="clearWhereBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="whereContainer">
+                            <div class="empty-state">No conditions defined</div>
+                        </div>
+                    </div>
+
+                    <!-- Output Fields -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">📋 Output Fields</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addOutputBtn">+ Field</button>
+                                <button class="btn-sm btn-secondary" id="clearOutputBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="outputContainer">
+                            <div class="empty-state">Select fields to display</div>
+                        </div>
+                    </div>
+
+                    <!-- Aggregations -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">📊 Aggregations</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addAggBtn">+ Aggregate</button>
+                                <button class="btn-sm btn-secondary" id="clearAggBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="aggContainer">
+                            <div class="empty-state">No aggregations defined</div>
+                        </div>
+                    </div>
+
+                    <!-- ORDER BY -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">ORDER BY</span>
+                            <div class="clause-actions">
+                                <button class="btn-sm btn-primary" id="addOrderBtn">+ Order</button>
+                                <button class="btn-sm btn-secondary" id="clearOrderBtn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="clause-body" id="orderContainer">
+                            <div class="empty-state">No order by defined</div>
+                        </div>
+                    </div>
+
+                    <!-- Limit -->
+                    <div class="clause-section">
+                        <div class="clause-header">
+                            <span class="clause-label">📏 Limit</span>
+                        </div>
+                        <div class="clause-body">
+                            <div class="limit-row">
+                                <input type="number" id="limitInput" placeholder="Limit results" value="100" min="1" style="width:120px;" />
+                                <span style="color:#a6adc8;font-size:0.8rem;margin-left:8px;">(max rows to return)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JSONPath Tab -->
+                <div class="tab-content" id="jsonpathTab">
+                    <div class="jsonpath-editor-container">
+                        <textarea id="jsonpathEditor" class="jsonpath-editor" placeholder="Enter JSONPath expression..."></textarea>
+                        <div class="jsonpath-actions">
+                            <button class="btn btn-primary" id="executeJsonpathBtn">▶ Execute JSONPath</button>
+                            <button class="btn btn-secondary" id="copyJsonpathBtn">📋 Copy</button>
+                            <button class="btn btn-secondary" id="formatJsonpathBtn">✨ Format</button>
+                        </div>
+                        <div class="jsonpath-help">
+                            <h4>JSONPath Examples:</h4>
+                            <div class="help-examples">
+                                <code>$..*</code> - All values
+                                <code>$..name</code> - All "name" properties
+                                <code>$.items[*]</code> - All items in array
+                                <code>$[?(@.age > 18)]</code> - Filter by age
+                                <code>$..[?(@.price &gt; 10)]</code> - Filter by price
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Tab -->
+                <div class="tab-content" id="previewTab">
+                    <div class="preview-container">
+                        <h4>Generated JSONPath Query:</h4>
+                        <div id="queryPreview" class="query-preview">
+                            <span style="color:#a6adc8;">Build a query to see the JSONPath expression</span>
+                        </div>
+                        <h4 style="margin-top:15px;">Query Description:</h4>
+                        <div id="queryDescription" class="query-description">
+                            <span style="color:#a6adc8;">Description will appear here</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Field Properties -->
+            <div class="right-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">⚙️</span>
+                    <span>Properties</span>
+                </div>
+                <div id="propertiesContent">
+                    <div class="empty-state" style="padding:20px;">
+                        <p>Select a node to view properties</p>
+                    </div>
+                    <div class="property-group" id="fieldProperties" style="display:none;">
+                        <div class="property-row">
+                            <label>Path</label>
+                            <input type="text" id="propPath" readonly />
+                        </div>
+                        <div class="property-row">
+                            <label>Type</label>
+                            <input type="text" id="propType" readonly />
+                        </div>
+                        <div class="property-row">
+                            <label>Value</label>
+                            <input type="text" id="propValue" readonly />
+                        </div>
+                        <div class="property-row">
+                            <label>Alias</label>
+                            <input type="text" id="propAlias" placeholder="Alias for output" />
+                        </div>
+                        <div class="property-row">
+                            <label>Aggregate</label>
+                            <select id="propAggregate">
+                                <option value="">None</option>
+                                <option value="COUNT">COUNT</option>
+                                <option value="SUM">SUM</option>
+                                <option value="AVG">AVG</option>
+                                <option value="MIN">MIN</option>
+                                <option value="MAX">MAX</option>
+                                <option value="DISTINCT">DISTINCT</option>
+                            </select>
+                        </div>
+                        <div class="property-row">
+                            <label>Sort Type</label>
+                            <select id="propSortType">
+                                <option value="">None</option>
+                                <option value="ASC">ASC</option>
+                                <option value="DESC">DESC</option>
+                            </select>
+                        </div>
+                        <div class="property-row">
+                            <label>Sort Order</label>
+                            <input type="number" id="propSortOrder" min="1" />
+                        </div>
+                        <div class="property-row">
+                            <label>Filter Criteria</label>
+                            <input type="text" id="propCriteria" placeholder="e.g., > 100, contains 'text'" />
+                        </div>
+                        <div class="property-row">
+                            <button class="btn-sm btn-primary" id="applyPropsBtn">Apply Properties</button>
+                            <button class="btn-sm btn-secondary" id="resetPropsBtn">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <div class="results-header">
+                <span class="results-icon">📊</span>
+                <span>Results</span>
+                <span id="resultsCount" class="results-count">0 rows</span>
+                <span id="resultsTime" class="results-time"></span>
+                <div class="results-actions">
+                    <button class="btn-sm btn-secondary" id="exportCsvBtn">📥 CSV</button>
+                    <button class="btn-sm btn-secondary" id="exportJsonBtn">📄 JSON</button>
+                    <button class="btn-sm btn-secondary" id="clearResultsBtn">✕ Clear</button>
+                </div>
+            </div>
+            <div class="results-grid-container" id="resultsContainer">
+                <div class="empty-state">
+                    <span style="font-size:2rem;display:block;">📋</span>
+                    <p>Execute a query to see results here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusBar" class="status-bar">Ready</div>
+
+    <script src="query-builder.js"></script>
+</body>
+</html>

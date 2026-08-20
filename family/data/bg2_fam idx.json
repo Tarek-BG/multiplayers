@@ -1,0 +1,65 @@
+{
+    "familyName": "bg Family",
+    "person": {
+        "name": "tarek",
+        "surname": "ben gadha",
+        "birthDate": "1964-05-12",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+        "father": {
+            "name": "ezzedine",
+            "surname": "ben gadha",
+            "birthDate": "1924-03-27",
+            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+            "father": {
+                "name": "abdelkader",
+                "surname": "ben gadha",
+                "birthDate": "1900-10-30",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+                "father": {
+                    "name": "abdelkader2",
+                    "surname": "ben gadha",
+                    "birthDate": "1870-10-30",
+                    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"                
+                },
+                "mother": {
+                    "name": "",
+                    "surname": "mami",
+                    "birthDate": "1880-01-20",
+                    "photoUrl": ""
+                }
+                },
+            "mother": {
+                "name": "",
+                "surname": "kissy",
+                "birthDate": "1930-01-20",
+                "photoUrl": ""
+            }
+        },
+        "mother": {
+            "name": "wassila",
+            "surname": "zarrouk",
+            "birthDate": "1936-01-18",
+            "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png"
+        },
+        "brothers": [
+            {
+                "name": "amel_bg",
+                "surname": "ben gadha",
+                "birthDate": "1958-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "besma_bg",
+                "surname": "ben gadha",
+                "birthDate": "1960-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            },
+                        {
+                "name": "iness_bg",
+                "surname": "ben gadha",
+                "birthDate": "1969-11-22",
+                "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png"
+            }
+        ]
+    }
+}

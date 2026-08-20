@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub JSON Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        body {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #f6f8fa;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .sub {
+            color: #57606a;
+            margin-top: -0.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #fafbfc;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: 2px solid #0969da;
+            border-color: transparent;
+        }
+        textarea {
+            height: 320px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            tab-size: 2;
+        }
+        .row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        .row > div {
+            flex: 1 1 200px;
+        }
+        button {
+            background: #2da44e;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+            margin-top: 0.5rem;
+        }
+        button:hover {
+            background: #22863a;
+        }
+        button.danger {
+            background: #cf222e;
+        }
+        button.danger:hover {
+            background: #a0111f;
+        }
+        button.secondary {
+            background: #6e7781;
+        }
+        button.secondary:hover {
+            background: #57606a;
+        }
+        button.primary {
+            background: #0969da;
+        }
+        button.primary:hover {
+            background: #0550ae;
+        }
+        button.purple {
+            background: #8250df;
+        }
+        button.purple:hover {
+            background: #6e40c9;
+        }
+        button.teal {
+            background: #1b7c8c;
+        }
+        button.teal:hover {
+            background: #156572;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        .status {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            background: #f1f8ff;
+            border-left: 4px solid #0969da;
+            margin: 0.75rem 0;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .status.error {
+            background: #ffeef0;
+            border-left-color: #cf222e;
+        }
+        .status.success {
+            background: #dafbe1;
+            border-left-color: #2da44e;
+        }
+        .file-info {
+            background: #f8f9fb;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0969da;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            .card { padding: 1rem; }
+            .row { flex-direction: column; }
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e1e4e8;
+            flex-shrink: 0;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .modal-body {
+            flex: 1;
+            overflow: auto;
+            padding: 15px 0;
+        }
+
+        /* Query Builder Styles */
+        .qb-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .qb-sidebar {
+            flex: 0 0 280px;
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .qb-main {
+            flex: 1;
+            min-width: 500px;
+        }
+        .qb-tree {
+            font-size: 0.9rem;
+        }
+        .qb-tree .node {
+            padding: 4px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .qb-tree .node:hover {
+            background: #e8ecf0;
+            border-radius: 4px;
+        }
+        .qb-tree .node-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .qb-tree .node-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .qb-tree .node-icon {
+            font-size: 0.8rem;
+            color: #57606a;
+        }
+        .qb-tree .node-children {
+            padding-left: 24px;
+        }
+        .qb-tree .node-highlight {
+            background: #ddf4ff;
+            border-radius: 4px;
+        }
+        .qb-tree .node-selected {
+            background: #0969da;
+            color: white;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+        .qb-tree .node-selected .node-icon {
+            color: white;
+        }
+        .qb-tree .node .badge {
+            background: #d0d7de;
+            border-radius: 12px;
+            padding: 0 8px;
+            font-size: 0.7rem;
+            color: #57606a;
+        }
+
+        /* Query Conditions */
+        .qb-conditions {
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .qb-condition-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #d0d7de;
+        }
+        .qb-condition-row select,
+        .qb-condition-row input {
+            width: auto;
+            flex: 1;
+            min-width: 80px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .qb-condition-row .condition-label {
+            font-weight: 500;
+            color: #24292f;
+            min-width: 80px;
+        }
+        .qb-condition-row .remove-condition {
+            background: none;
+            border: none;
+            color: #cf222e;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 8px;
+            margin: 0;
+        }
+        .qb-condition-row .remove-condition:hover {
+            color: #a0111f;
+        }
+        .qb-logic-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 4px 0;
+        }
+        .qb-logic-group select {
+            width: auto;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .qb-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .qb-actions button {
+            margin: 0;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+        }
+
+        .qb-results {
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+        .qb-results .result-item {
+            padding: 4px 8px;
+            border-bottom: 1px solid #e1e4e8;
+            white-space: pre-wrap;
+        }
+        .qb-results .result-item:last-child {
+            border-bottom: none;
+        }
+        .qb-stats {
+            color: #57606a;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            padding: 8px 12px;
+            background: #f8f9fb;
+            border-radius: 6px;
+        }
+        .qb-query-preview {
+            background: #f0f2f4;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+
+        /* Table styles for grid */
+        .grid-container {
+            overflow-x: auto;
+        }
+        .grid-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .grid-container th {
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .grid-container td {
+            border: 1px solid #d0d7de;
+            padding: 8px 12px;
+            vertical-align: top;
+        }
+        .grid-container tr:nth-child(even) {
+            background: #f8f9fb;
+        }
+        .grid-container tr:hover {
+            background: #f1f8ff;
+        }
+        .grid-container .array-value {
+            color: #0969da;
+            font-size: 0.85rem;
+        }
+        .grid-container .object-value {
+            color: #8250df;
+            font-size: 0.85rem;
+        }
+        .grid-container .null-value {
+            color: #6e7781;
+            font-style: italic;
+        }
+
+        .qb-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 2px solid #d0d7de;
+            margin-bottom: 15px;
+        }
+        .qb-tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: 500;
+            color: #57606a;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .qb-tab.active {
+            color: #0969da;
+            border-bottom-color: #0969da;
+        }
+        .qb-tab:hover {
+            color: #24292f;
+        }
+        .qb-tab-content {
+            display: none;
+        }
+        .qb-tab-content.active {
+            display: block;
+        }
+
+        .selected-nodes-info {
+            background: #f1f8ff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            border-left: 3px solid #0969da;
+        }
+        .selected-nodes-info .node-tag {
+            display: inline-block;
+            background: #0969da;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin: 2px 4px 2px 0;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📄 GitHub JSON Editor</h1>
+<p class="sub">Fetch, edit, and commit JSON files from your repository</p>
+
+<div class="card">
+    <div class="row">
+        <div>
+            <label for="repoInput">Repository (owner/repo)</label>
+            <input type="text" id="repoInput" placeholder="e.g. octocat/Hello-World" value="Tarek-BG/multiplayers" />
+        </div>
+        <div>
+            <label for="pathInput">File path</label>
+            <input type="text" id="pathInput" placeholder="e.g. data/settings.json" value="family/data/2_fam.json" />
+        </div>
+        <div>
+            <label for="branchInput">Branch</label>
+            <input type="text" id="branchInput" placeholder="main" value="main" />
+        </div>
+        <div style="flex: 0 0 auto;">
+            <button id="fetchBtn">⬇️ Fetch file</button>
+        </div>
+    </div>
+
+    <div class="file-info" style="margin-top:0.75rem;">
+        <span id="shaDisplay">SHA: —</span> &nbsp;|&nbsp; <span id="sizeDisplay">size: —</span>
+    </div>
+
+    <div id="statusMessage" class="status">Ready. Enter repo details and click Fetch.</div>
+</div>
+
+<div class="card">
+    <label for="editor">📝 JSON content (edit freely)</label>
+    <textarea id="editor" placeholder="JSON will appear here after fetch...">{}</textarea>
+
+    <div class="btn-group">
+        <button id="saveBtn">💾 Commit changes</button>
+        <button id="formatBtn" class="secondary">✨ Format JSON</button>
+        <button id="resetBtn" class="secondary">↩️ Reset to fetched</button>
+        <button id="createBtn" class="teal">➕ Create new file</button>
+        <button id="gridBtn" class="primary">📊 View as Grid</button>
+        <button id="queryBtn" class="purple">🔍 Query Builder</button>
+    </div>
+    <div style="margin-top:0.75rem;">
+        <label for="commitMsgInput" style="font-weight:500;">Commit message</label>
+        <input type="text" id="commitMsgInput" placeholder="Update JSON file" value="Update JSON via editor" />
+    </div>
+</div>
+
+<!-- Grid Modal -->
+<div id="gridModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📊 JSON Grid View</h2>
+            <span class="close" id="closeGrid">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="gridContainer" class="grid-container">
+                <p>No data loaded. Fetch a file first.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Query Builder Modal -->
+<div id="queryModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🔍 JSON Query Builder</h2>
+            <span class="close" id="closeQuery">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="qb-container">
+                <!-- Sidebar: Node Tree -->
+                <div class="qb-sidebar">
+                    <h4 style="margin-top:0;margin-bottom:8px;">📂 Select Nodes</h4>
+                    <p style="font-size:0.8rem;color:#57606a;margin-bottom:10px;">Check nodes to query. Parent nodes include all children.</p>
+                    <div id="nodeTree" class="qb-tree">
+                        <p style="color:#57606a;font-size:0.85rem;">Load JSON first</p>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <button id="selectAllNodes" class="secondary" style="font-size:0.8rem;padding:4px 12px;">Select All</button>
+                        <button id="deselectAllNodes" class="secondary" style="font-size:0.8rem;padding:4px 12px;">Deselect All</button>
+                    </div>
+                </div>
+
+                <!-- Main: Query Builder -->
+                <div class="qb-main">
+                    <div class="selected-nodes-info" id="selectedNodesInfo">
+                        <span style="color:#57606a;">No nodes selected. Check nodes in the sidebar.</span>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="qb-tabs">
+                        <button class="qb-tab active" data-tab="conditions">📋 Conditions</button>
+                        <button class="qb-tab" data-tab="preview">👁️ Preview</button>
+                        <button class="qb-tab" data-tab="results">📊 Results</button>
+                    </div>
+
+                    <!-- Conditions Tab -->
+                    <div id="tab-conditions" class="qb-tab-content active">
+                        <div class="qb-conditions">
+                            <div id="conditionContainer">
+                                <div class="qb-condition-row" data-index="0">
+                                    <span class="condition-label">Where</span>
+                                    <select class="condition-field">
+                                        <option value="*">* (any field)</option>
+                                    </select>
+                                    <select class="condition-operator">
+                                        <option value="==">==</option>
+                                        <option value="!=">!=</option>
+                                        <option value=">">&gt;</option>
+                                        <option value="<">&lt;</option>
+                                        <option value=">=">&gt;=</option>
+                                        <option value="<=">&lt;=</option>
+                                        <option value="contains">contains</option>
+                                        <option value="starts">starts with</option>
+                                        <option value="ends">ends with</option>
+                                    </select>
+                                    <input type="text" class="condition-value" placeholder="value" />
+                                    <button class="remove-condition" style="display:none;">×</button>
+                                </div>
+                            </div>
+                            <div class="qb-logic-group">
+                                <span>Combine with:</span>
+                                <select id="logicOperator">
+                                    <option value="AND">AND</option>
+                                    <option value="OR">OR</option>
+                                </select>
+                            </div>
+                            <div class="qb-actions">
+                                <button id="addConditionBtn" class="secondary" style="font-size:0.8rem;padding:4px 12px;">➕ Add Condition</button>
+                                <button id="clearConditionsBtn" class="secondary" style="font-size:0.8rem;padding:4px 12px;">🗑️ Clear All</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+                            <button id="buildAndRunQueryBtn" class="primary">▶️ Build & Run Query</button>
+                            <button id="clearQueryBtn" class="secondary">Clear Results</button>
+                        </div>
+
+                        <div class="qb-query-preview" id="queryPreview">
+                            <span style="color:#57606a;">Query preview will appear here.</span>
+                        </div>
+                    </div>
+
+                    <!-- Preview Tab -->
+                    <div id="tab-preview" class="qb-tab-content">
+                        <div class="qb-query-preview" id="fullQueryPreview" style="min-height:100px;white-space:pre-wrap;font-family:monospace;">
+                            <span style="color:#57606a;">Build a query to see the full JSONPath expression.</span>
+                        </div>
+                    </div>
+
+                    <!-- Results Tab -->
+                    <div id="tab-results" class="qb-tab-content">
+                        <div id="queryResults" class="qb-results">
+                            <span style="color:#57606a;">Run a query to see results here.</span>
+                        </div>
+                        <div id="queryStats" class="qb-stats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // DOM refs
+        const repoInput = document.getElementById('repoInput');
+        const pathInput = document.getElementById('pathInput');
+        const branchInput = document.getElementById('branchInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const formatBtn = document.getElementById('formatBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const createBtn = document.getElementById('createBtn');
+        const gridBtn = document.getElementById('gridBtn');
+        const queryBtn = document.getElementById('queryBtn');
+        const editor = document.getElementById('editor');
+        const statusDiv = document.getElementById('statusMessage');
+        const shaSpan = document.getElementById('shaDisplay');
+        const sizeSpan = document.getElementById('sizeDisplay');
+        const commitMsgInput = document.getElementById('commitMsgInput');
+
+        // Modal refs
+        const gridModal = document.getElementById('gridModal');
+        const queryModal = document.getElementById('queryModal');
+        const closeGrid = document.getElementById('closeGrid');
+        const closeQuery = document.getElementById('closeQuery');
+        const gridContainer = document.getElementById('gridContainer');
+
+        // Query Builder refs
+        const nodeTree = document.getElementById('nodeTree');
+        const selectedNodesInfo = document.getElementById('selectedNodesInfo');
+        const conditionContainer = document.getElementById('conditionContainer');
+        const logicOperator = document.getElementById('logicOperator');
+        const addConditionBtn = document.getElementById('addConditionBtn');
+        const clearConditionsBtn = document.getElementById('clearConditionsBtn');
+        const buildAndRunQueryBtn = document.getElementById('buildAndRunQueryBtn');
+        const clearQueryBtn = document.getElementById('clearQueryBtn');
+        const queryPreview = document.getElementById('queryPreview');
+        const fullQueryPreview = document.getElementById('fullQueryPreview');
+        const queryResults = document.getElementById('queryResults');
+        const queryStats = document.getElementById('queryStats');
+        const selectAllNodes = document.getElementById('selectAllNodes');
+        const deselectAllNodes = document.getElementById('deselectAllNodes');
+
+        // State
+        let currentSha = null;
+        let currentRepo = '';
+        let currentPath = '';
+        let currentBranch = '';
+        let originalContent = '';
+        let lastFetchedJson = null;
+        let isNewFile = false;
+        let currentJsonData = null;
+        let nodeCheckboxes = {};
+        let selectedNodePaths = new Set();
+
+        // ---------------- Helper Functions ----------------
+        function setStatus(msg, type = 'info') {
+            statusDiv.textContent = msg;
+            statusDiv.className = 'status';
+            if (type === 'error') statusDiv.classList.add('error');
+            else if (type === 'success') statusDiv.classList.add('success');
+            else statusDiv.classList.remove('error', 'success');
+        }
+
+        function parseRepo(repo) {
+            const parts = repo.trim().split('/');
+            if (parts.length === 2 && parts[0].length > 0 && parts[1].length > 0) {
+                return { owner: parts[0], repo: parts[1] };
+            }
+            return null;
+        }
+
+        function buildApiUrl(repo, path, branch) {
+            const { owner, repo: repoName } = parseRepo(repo);
+            if (!owner || !repoName) throw new Error('Invalid repository format. Use owner/repo');
+            return `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+        }
+
+        // ---------------- Node Tree Builder ----------------
+        function buildNodeTree(data, path = '$', name = 'root') {
+            let html = '';
+            const isArray = Array.isArray(data);
+            const isObject = data && typeof data === 'object' && !isArray;
+
+            if (isArray) {
+                const nodeId = path;
+                html += `<div class="node">`;
+                html += `<input type="checkbox" class="node-checkbox" data-path="${nodeId}" id="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}" />`;
+                html += `<label class="node-label" for="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}">`;
+                html += `<span class="node-icon">📋</span>`;
+                html += `<span>${name} <span class="badge">array [${data.length}]</span></span>`;
+                html += `</label>`;
+                html += `<div class="node-children">`;
+                data.forEach((item, idx) => {
+                    html += buildNodeTree(item, `${path}[${idx}]`, `[${idx}]`);
+                });
+                html += `</div></div>`;
+            } else if (isObject) {
+                const nodeId = path;
+                const keys = Object.keys(data);
+                html += `<div class="node">`;
+                html += `<input type="checkbox" class="node-checkbox" data-path="${nodeId}" id="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}" />`;
+                html += `<label class="node-label" for="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}">`;
+                html += `<span class="node-icon">📁</span>`;
+                html += `<span>${name} <span class="badge">object {${keys.length}}</span></span>`;
+                html += `</label>`;
+                html += `<div class="node-children">`;
+                keys.forEach(key => {
+                    html += buildNodeTree(data[key], `${path}.${key}`, key);
+                });
+                html += `</div></div>`;
+            } else {
+                // Leaf node
+                const nodeId = path;
+                const value = data === null ? 'null' : typeof data === 'string' ? `"${data}"` : String(data);
+                const icon = typeof data === 'string' ? '🔤' : typeof data === 'number' ? '🔢' : typeof data === 'boolean' ? '✅' : '⬛';
+                html += `<div class="node">`;
+                html += `<input type="checkbox" class="node-checkbox" data-path="${nodeId}" id="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}" />`;
+                html += `<label class="node-label" for="cb_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}">`;
+                html += `<span class="node-icon">${icon}</span>`;
+                html += `<span>${name}: ${value}</span>`;
+                html += `</label></div>`;
+            }
+            return html;
+        }
+
+        function populateNodeTree() {
+            if (!currentJsonData) {
+                nodeTree.innerHTML = '<p style="color:#57606a;">Load JSON first</p>';
+                return;
+            }
+            nodeTree.innerHTML = buildNodeTree(currentJsonData, '$', 'root');
+            
+            // Attach checkbox events
+            document.querySelectorAll('.node-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const path = this.dataset.path;
+                    if (this.checked) {
+                        selectedNodePaths.add(path);
+                        // Auto-select children
+                        document.querySelectorAll(`.node-checkbox[data-path^="${path}"]`).forEach(child => {
+                            if (child !== this) {
+                                child.checked = true;
+                                selectedNodePaths.add(child.dataset.path);
+                            }
+                        });
+                    } else {
+                        selectedNodePaths.delete(path);
+                        // Auto-deselect children
+                        document.querySelectorAll(`.node-checkbox[data-path^="${path}"]`).forEach(child => {
+                            if (child !== this) {
+                                child.checked = false;
+                                selectedNodePaths.delete(child.dataset.path);
+                            }
+                        });
+                    }
+                    updateSelectedNodesInfo();
+                    updateFieldOptions();
+                });
+            });
+            
+            // Select root by default
+            const rootCb = document.querySelector('.node-checkbox');
+            if (rootCb) {
+                rootCb.checked = true;
+                selectedNodePaths.add('$');
+                document.querySelectorAll('.node-checkbox').forEach(cb => {
+                    cb.checked = true;
+                    selectedNodePaths.add(cb.dataset.path);
+                });
+            }
+            updateSelectedNodesInfo();
+            updateFieldOptions();
+        }
+
+        function updateSelectedNodesInfo() {
+            const paths = Array.from(selectedNodePaths);
+            if (paths.length === 0) {
+                selectedNodesInfo.innerHTML = '<span style="color:#57606a;">No nodes selected. Check nodes in the sidebar.</span>';
+                return;
+            }
+            let html = '<strong>Selected nodes:</strong> ';
+            paths.forEach(path => {
+                const shortPath = path.length > 30 ? '…' + path.substring(path.length - 27) : path;
+                html += `<span class="node-tag">${shortPath}</span>`;
+            });
+            selectedNodesInfo.innerHTML = html;
+        }
+
+        function updateFieldOptions() {
+            // Update condition field dropdowns with selected nodes
+            const selects = document.querySelectorAll('.condition-field');
+            const paths = Array.from(selectedNodePaths);
+            
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '';
+                // Add options
+                const allPaths = ['* (any field)', ...paths];
+                allPaths.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p === '* (any field)' ? '*' : p;
+                    opt.textContent = p;
+                    select.appendChild(opt);
+                });
+                if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+                    select.value = currentVal;
+                }
+            });
+        }
+
+        // ---------------- Condition Management ----------------
+        function addCondition(field = '*', operator = '==', value = '') {
+            const container = conditionContainer;
+            const index = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'qb-condition-row';
+            row.dataset.index = index;
+            
+            row.innerHTML = `
+                <span class="condition-label">${index === 0 ? 'Where' : 'And'}</span>
+                <select class="condition-field">
+                    <option value="*">* (any field)</option>
+                </select>
+                <select class="condition-operator">
+                    <option value="==" ${operator === '==' ? 'selected' : ''}>==</option>
+                    <option value="!=" ${operator === '!=' ? 'selected' : ''}>!=</option>
+                    <option value=">" ${operator === '>' ? 'selected' : ''}>&gt;</option>
+                    <option value="<" ${operator === '<' ? 'selected' : ''}>&lt;</option>
+                    <option value=">=" ${operator === '>=' ? 'selected' : ''}>&gt;=</option>
+                    <option value="<=" ${operator === '<=' ? 'selected' : ''}>&lt;=</option>
+                    <option value="contains" ${operator === 'contains' ? 'selected' : ''}>contains</option>
+                    <option value="starts" ${operator === 'starts' ? 'selected' : ''}>starts with</option>
+                    <option value="ends" ${operator === 'ends' ? 'selected' : ''}>ends with</option>
+                </select>
+                <input type="text" class="condition-value" placeholder="value" value="${value}" />
+                <button class="remove-condition">×</button>
+            `;
+            
+            container.appendChild(row);
+            
+            // Update field options for new row
+            updateFieldOptions();
+            
+            // Set the field value if provided
+            if (field !== '*') {
+                const fieldSelect = row.querySelector('.condition-field');
+                if (Array.from(fieldSelect.options).some(o => o.value === field)) {
+                    fieldSelect.value = field;
+                }
+            }
+            
+            // Remove button handler
+            const removeBtn = row.querySelector('.remove-condition');
+            removeBtn.addEventListener('click', function() {
+                if (container.children.length > 1) {
+                    row.remove();
+                    // Update labels
+                    container.querySelectorAll('.qb-condition-row').forEach((r, i) => {
+                        const label = r.querySelector('.condition-label');
+                        if (i === 0) label.textContent = 'Where';
+                        else label.textContent = 'And';
+                    });
+                }
+            });
+            
+            // Update field options when selected nodes change
+            row.querySelector('.condition-field').addEventListener('change', updateFieldOptions);
+        }
+
+        function clearConditions() {
+            conditionContainer.innerHTML = '';
+            addCondition('*', '==', '');
+        }
+
+        // ---------------- Query Builder ----------------
+        function buildJSONPath() {
+            const selectedNodes = Array.from(selectedNodePaths);
+            if (selectedNodes.length === 0) return '';
+            
+            // Get conditions
+            const rows = conditionContainer.querySelectorAll('.qb-condition-row');
+            const conditions = [];
+            rows.forEach(row => {
+                const field = row.querySelector('.condition-field').value;
+                const operator = row.querySelector('.condition-operator').value;
+                const value = row.querySelector('.condition-value').value.trim();
+                if (value !== '') {
+                    conditions.push({ field, operator, value });
+                }
+            });
+            
+            // Build the path
+            let path = '';
+            const logic = logicOperator.value;
+            
+            // For multiple nodes, use union or intersection
+            if (selectedNodes.length > 1 && conditions.length === 0) {
+                // Just return all selected nodes as OR
+                path = selectedNodes.map(n => n).join(' || ');
+            } else if (selectedNodes.length === 1 && conditions.length === 0) {
+                path = selectedNodes[0];
+            } else if (conditions.length > 0) {
+                // Build with conditions
+                const nodePath = selectedNodes.length === 1 ? selectedNodes[0] : `(${selectedNodes.join(' || ')})`;
+                const conditionStr = conditions.map(c => {
+                    const fieldPath = c.field === '*' ? '@' : `@.${c.field.replace(/^\$\./, '')}`;
+                    let val = c.value;
+                    if (!isNaN(val) && val !== '') val = parseFloat(val);
+                    else if (val !== '') val = `"${val}"`;
+                    switch(c.operator) {
+                        case '==': return `${fieldPath} == ${val}`;
+                        case '!=': return `${fieldPath} != ${val}`;
+                        case '>': return `${fieldPath} > ${val}`;
+                        case '<': return `${fieldPath} < ${val}`;
+                        case '>=': return `${fieldPath} >= ${val}`;
+                        case '<=': return `${fieldPath} <= ${val}`;
+                        case 'contains': return `${fieldPath}.includes(${val})`;
+                        case 'starts': return `${fieldPath}.startsWith(${val})`;
+                        case 'ends': return `${fieldPath}.endsWith(${val})`;
+                        default: return '';
+                    }
+                }).filter(s => s).join(` ${logic} `);
+                
+                path = `${nodePath}[?(${conditionStr})]`;
+            }
+            
+            return path || '$.';
+        }
+
+        function runQuery() {
+            const query = buildJSONPath();
+            if (!query || query === '$.') {
+                queryResults.innerHTML = '<span style="color:#57606a;">Please select nodes and/or add conditions.</span>';
+                queryStats.textContent = '';
+                return;
+            }
+            
+            if (!currentJsonData) {
+                queryResults.innerHTML = '<span style="color:#cf222e;">No data loaded. Fetch a file first.</span>';
+                queryStats.textContent = '';
+                return;
+            }
+            
+            try {
+                const results = executeQuery(currentJsonData, query);
+                if (results.length === 0) {
+                    queryResults.innerHTML = '<span style="color:#57606a;">No results found.</span>';
+                    queryStats.textContent = '0 results';
+                } else {
+                    let html = '';
+                    results.forEach((item, idx) => {
+                        const display = typeof item === 'object' ? 
+                            JSON.stringify(item, null, 2) : 
+                            String(item);
+                        html += `<div class="result-item"><strong>${idx + 1}.</strong> ${display}</div>`;
+                    });
+                    queryResults.innerHTML = html;
+                    queryStats.textContent = `${results.length} result${results.length > 1 ? 's' : ''}`;
+                }
+                // Update previews
+                queryPreview.textContent = `Query: ${query}`;
+                fullQueryPreview.textContent = `JSONPath: ${query}\n\nResults: ${results.length} item(s)`;
+            } catch (err) {
+                queryResults.innerHTML = `<span style="color:#cf222e;">Error: ${err.message}</span>`;
+                queryStats.textContent = '';
+            }
+        }
+
+        function executeQuery(obj, path) {
+            // Simple execution for demonstration
+            // In production, you'd use a proper JSONPath library
+            const results = [];
+            
+            // Handle simple paths
+            if (path.includes('[') && path.includes('?(')) {
+                // Filter expression
+                const match = path.match(/^(.+)\[\(\?(.+)\)\]$/);
+                if (match) {
+                    const basePath = match[1];
+                    const filterExpr = match[2];
+                    const baseData = getValueByPath(obj, basePath);
+                    if (Array.isArray(baseData)) {
+                        return baseData.filter(item => evaluateFilter(item, filterExpr));
+                    }
+                    return [];
+                }
+            }
+            
+            // Simple path
+            const result = getValueByPath(obj, path);
+            if (result !== undefined) {
+                return Array.isArray(result) ? result : [result];
+            }
+            
+            // Try as multiple paths (OR)
+            if (path.includes('||')) {
+                const paths = path.split('||').map(p => p.trim());
+                paths.forEach(p => {
+                    const val = getValueByPath(obj, p);
+                    if (val !== undefined) {
+                        if (Array.isArray(val)) results.push(...val);
+                        else results.push(val);
+                    }
+                });
+                return results;
+            }
+            
+            return results;
+        }
+
+        function getValueByPath(obj, path) {
+            if (!path || path === '$') return obj;
+            const parts = path.replace(/^\$\./, '').split('.');
+            let current = obj;
+            for (const part of parts) {
+                if (current && typeof current === 'object' && part in current) {
+                    current = current[part];
+                } else {
+                    return undefined;
+                }
+            }
+            return current;
+        }
+
+        function evaluateFilter(item, filterExpr) {
+            // Simple filter evaluation
+            try {
+                // Extract field and value
+                const match = filterExpr.match(/@\.([^ ]+)\s*(==|!=|>|<|>=|<=)\s*(.+)/);
+                if (match) {
+                    const field = match[1];
+                    const op = match[2];
+                    let value = match[3].trim();
+                    // Remove quotes
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.substring(1, value.length - 1);
+                    } else if (!isNaN(value)) {
+                        value = parseFloat(value);
+                    }
+                    
+                    const itemVal = getValueByPath(item, field);
+                    switch(op) {
+                        case '==': return itemVal == value;
+                        case '!=': return itemVal != value;
+                        case '>': return itemVal > value;
+                        case '<': return itemVal < value;
+                        case '>=': return itemVal >= value;
+                        case '<=': return itemVal <= value;
+                        default: return false;
+                    }
+                }
+                // contains
+                const containsMatch = filterExpr.match(/@\.([^ ]+)\.includes\((.+)\)/);
+                if (containsMatch) {
+                    const field = containsMatch[1];
+                    let value = containsMatch[2].trim();
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.substring(1, value.length - 1);
+                    }
+                    const itemVal = getValueByPath(item, field);
+                    return String(itemVal).includes(String(value));
+                }
+            } catch (e) {
+                return false;
+            }
+            return false;
+        }
+
+        // ---------------- Grid View ----------------
+        function renderGrid(data) {
+            if (!data) {
+                gridContainer.innerHTML = '<p>No data to display.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            
+            let items = Array.isArray(data) ? data : [data];
+            let keys = new Set();
+            
+            items.forEach(item => {
+                if (item && typeof item === 'object') {
+                    Object.keys(item).forEach(k => keys.add(k));
+                }
+            });
+
+            if (keys.size === 0) {
+                if (Array.isArray(data)) {
+                    html += '<th>Index</th><th>Value</th></tr></thead><tbody>';
+                    data.forEach((val, idx) => {
+                        html += `<tr><td>${idx}</td><td>${formatValue(val)}</td></tr>`;
+                    });
+                } else {
+                    html += '<th>Key</th><th>Value</th></tr></thead><tbody>';
+                    Object.entries(data).forEach(([k, v]) => {
+                        html += `<tr><td>${k}</td><td>${formatValue(v)}</td></tr>`;
+                    });
+                }
+            } else {
+                const keyArray = Array.from(keys);
+                keyArray.forEach(k => {
+                    html += `<th>${k}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+
+                items.forEach((item, idx) => {
+                    html += '<tr>';
+                    keyArray.forEach(k => {
+                        const val = item && typeof item === 'object' ? item[k] : undefined;
+                        html += `<td>${formatValue(val)}</td>`;
+                    });
+                    html += '</tr>';
+                });
+            }
+
+            html += '</tbody></table>';
+            gridContainer.innerHTML = html;
+        }
+
+        function formatValue(val) {
+            if (val === null || val === undefined) {
+                return '<span class="null-value">null</span>';
+            }
+            if (typeof val === 'string') {
+                return val.length > 100 ? val.substring(0, 100) + '…' : val;
+            }
+            if (typeof val === 'object') {
+                if (Array.isArray(val)) {
+                    return `<span class="array-value">[${val.length} items]</span>`;
+                }
+                return `<span class="object-value">{${Object.keys(val).length} keys}</span>`;
+            }
+            return String(val);
+        }
+
+        // ---------------- Main Functions ----------------
+        async function fetchFile() {
+            const repo = repoInput.value.trim();
+            const path = pathInput.value.trim();
+            const branch = branchInput.value.trim();
+
+            if (!repo || !path || !branch) {
+                setStatus('❌ Please fill in repository, file path, and branch.', 'error');
+                return;
+            }
+
+            if (!parseRepo(repo)) {
+                setStatus('❌ Repository must be in format "owner/repo"', 'error');
+                return;
+            }
+
+            currentRepo = repo;
+            currentPath = path;
+            currentBranch = branch;
+            isNewFile = false;
+
+            const url = buildApiUrl(repo, path, branch);
+            setStatus(`⏳ Fetching ${path} from ${repo} (${branch})...`, 'info');
+            fetchBtn.disabled = true;
+
+            try {
+                const response = await fetch(url);
+
+                if (response.status === 404) {
+                    setStatus(`⚠️ File "${path}" not found. You can create it by clicking "Create new file".`, 'info');
+                    currentSha = null;
+                    originalContent = '';
+                    lastFetchedJson = null;
+                    currentJsonData = null;
+                    shaSpan.textContent = 'SHA: —';
+                    sizeSpan.textContent = 'size: —';
+                    editor.value = '{\n  \n}';
+                    isNewFile = true;
+                    fetchBtn.disabled = false;
+                    return;
+                }
+
+                if (!response.ok) {
+                    let errMsg = `GitHub API error (${response.status})`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.message) errMsg += `: ${errData.message}`;
+                    } catch (_) { /* ignore */ }
+                    throw new Error(errMsg);
+                }
+
+                const data = await response.json();
+
+                if (!data.content || !data.sha) {
+                    throw new Error('Unexpected response structure – missing content or sha');
+                }
+
+                const contentBase64 = data.content;
+                const decoded = atob(contentBase64.replace(/\s/g, ''));
+                currentSha = data.sha;
+                originalContent = decoded;
+                isNewFile = false;
+
+                editor.value = decoded;
+                shaSpan.textContent = `SHA: ${currentSha.substring(0, 7)}…`;
+                sizeSpan.textContent = `size: ${(data.size || decoded.length)} bytes`;
+
+                try {
+                    lastFetchedJson = JSON.parse(decoded);
+                    currentJsonData = lastFetchedJson;
+                } catch (parseErr) {
+                    lastFetchedJson = null;
+                    currentJsonData = null;
+                }
+
+                setStatus(`✅ Successfully fetched ${path} (SHA: ${currentSha.substring(0,7)}…)`, 'success');
+            } catch (err) {
+                setStatus(`❌ ${err.message}`, 'error');
+                currentSha = null;
+                originalContent = '';
+                lastFetchedJson = null;
+                currentJsonData = null;
+                shaSpan.textContent = 'SHA: —';
+                sizeSpan.textContent = 'size: —';
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+
+        function formatJson() {
+            const raw = editor.value;
+            try {
+                const parsed = JSON.parse(raw);
+                const pretty = JSON.stringify(parsed, null, 2);
+                editor.value = pretty;
+                setStatus('✨ Formatted JSON.', 'success');
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}`, 'error');
+            }
+        }
+
+        function resetToFetched() {
+            if (originalContent === '' && !isNewFile) {
+                setStatus('⚠️ No fetched content to reset to. Fetch a file first.', 'error');
+                return;
+            }
+            if (isNewFile) {
+                editor.value = '{\n  \n}';
+                setStatus('↩️ Reset to empty JSON template.', 'info');
+                return;
+            }
+            editor.value = originalContent;
+            setStatus('↩️ Reset to fetched version.', 'info');
+        }
+
+        async function saveFile() {
+            const repo = currentRepo;
+            const path = currentPath;
+            const branch = currentBranch;
+            const sha = currentSha;
+
+            if (!repo || !path || !branch) {
+                setStatus('❌ No file loaded. Fetch a file first.', 'error');
+                return;
+            }
+
+            const newContent = editor.value;
+            try {
+                JSON.parse(newContent);
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}. Please fix before committing.`, 'error');
+                return;
+            }
+
+            let token = sessionStorage.getItem('github_token');
+            if (!token) {
+                token = prompt('Enter your GitHub Personal Access Token (classic) with repo scope:');
+                if (!token) {
+                    setStatus('❌ Token is required to commit.', 'error');
+                    return;
+                }
+                sessionStorage.setItem('github_token', token);
+            }
+
+            const encoded = btoa(unescape(encodeURIComponent(newContent)));
+            const commitMsg = commitMsgInput.value.trim() || 'Update JSON via editor';
+            const { owner, repo: repoName } = parseRepo(repo);
+            const url = `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`;
+
+            const payload = {
+                message: commitMsg,
+                content: encoded,
+                branch: branch
+            };
+
+            if (sha && !isNewFile) {
+                payload.sha = sha;
+            }
+
+            setStatus(`⏳ Committing to ${repo}/${path} (${branch})...`, 'info');
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errMsg = `GitHub API error (${response.status})`;
+                    if (response.status === 401 || response.status === 403) {
+                        errMsg += ' — check your token permissions (needs repo scope).';
+                        sessionStorage.removeItem('github_token');
+                    }
+                    if (response.status === 409) {
+                        errMsg += ' — file was modified. Fetch latest version first.';
+                    }
+                    try {
+                        const errData = await response.json();
+                        if (errData.message) errMsg += `: ${errData.message}`;
+                    } catch (_) { /* ignore */ }
+                    throw new Error(errMsg);
+                }
+
+                const result = await response.json();
+                if (result.content && result.content.sha) {
+                    currentSha = result.content.sha;
+                    shaSpan.textContent = `SHA: ${currentSha.substring(0,7)}…`;
+                    originalContent = newContent;
+                    isNewFile = false;
+                    try {
+                        lastFetchedJson = JSON.parse(newContent);
+                        currentJsonData = lastFetchedJson;
+                    } catch (_) { /* ignore */ }
+                }
+
+                setStatus(`✅ Successfully committed! New SHA: ${currentSha.substring(0,7)}…`, 'success');
+            } catch (err) {
+                setStatus(`❌ ${err.message}`, 'error');
+            } finally {
+                saveBtn.disabled = false;
+            }
+        }
+
+        async function createNewFile() {
+            editor.value = '{\n  \n}';
+            currentSha = null;
+            isNewFile = true;
+            originalContent = '{\n  \n}';
+            currentJsonData = null;
+            shaSpan.textContent = 'SHA: —';
+            sizeSpan.textContent = 'size: 0 bytes';
+            setStatus('📝 New file ready. Click "Commit changes" to create it on GitHub.', 'success');
+        }
+
+        // ---------------- Modal Functions ----------------
+        function openGridModal() {
+            try {
+                const content = editor.value;
+                const data = JSON.parse(content);
+                currentJsonData = data;
+                renderGrid(data);
+                gridModal.style.display = 'block';
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}. Cannot display grid.`, 'error');
+            }
+        }
+
+        function openQueryModal() {
+            try {
+                const content = editor.value;
+                const data = JSON.parse(content);
+                currentJsonData = data;
+                queryModal.style.display = 'block';
+                queryResults.innerHTML = '<span style="color:#57606a;">Build a query using the conditions and click "Build & Run".</span>';
+                queryStats.textContent = '';
+                populateNodeTree();
+                // Reset conditions
+                clearConditions();
+                // Update preview
+                queryPreview.textContent = 'Query preview will appear here.';
+                fullQueryPreview.textContent = 'Build a query to see the full JSONPath expression.';
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}. Cannot open query builder.`, 'error');
+            }
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+        }
+
+        // ---------------- Tab Management ----------------
+        document.querySelectorAll('.qb-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.qb-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.qb-tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ---------------- Event Listeners ----------------
+        fetchBtn.addEventListener('click', fetchFile);
+        formatBtn.addEventListener('click', formatJson);
+        resetBtn.addEventListener('click', resetToFetched);
+        saveBtn.addEventListener('click', saveFile);
+        createBtn.addEventListener('click', createNewFile);
+        gridBtn.addEventListener('click', openGridModal);
+        queryBtn.addEventListener('click', openQueryModal);
+
+        closeGrid.addEventListener('click', () => closeModal(gridModal));
+        closeQuery.addEventListener('click', () => closeModal(queryModal));
+        window.addEventListener('click', (e) => {
+            if (e.target === gridModal) closeModal(gridModal);
+            if (e.target === queryModal) closeModal(queryModal);
+        });
+
+        // Query Builder events
+        addConditionBtn.addEventListener('click', () => addCondition('*', '==', ''));
+        clearConditionsBtn.addEventListener('click', clearConditions);
+        buildAndRunQueryBtn.addEventListener('click', runQuery);
+        clearQueryBtn.addEventListener('click', () => {
+            queryResults.innerHTML = '<span style="color:#57606a;">Run a query to see results here.</span>';
+            queryStats.textContent = '';
+        });
+
+        selectAllNodes.addEventListener('click', () => {
+            document.querySelectorAll('.node-checkbox').forEach(cb => {
+                cb.checked = true;
+                selectedNodePaths.add(cb.dataset.path);
+            });
+            updateSelectedNodesInfo();
+            updateFieldOptions();
+        });
+
+        deselectAllNodes.addEventListener('click', () => {
+            document.querySelectorAll('.node-checkbox').forEach(cb => {
+                cb.checked = false;
+                selectedNodePaths.delete(cb.dataset.path);
+            });
+            updateSelectedNodesInfo();
+            updateFieldOptions();
+        });
+
+        // Enter key on inputs triggers fetch
+        [repoInput, pathInput, branchInput].forEach(inp => {
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchBtn.click();
+                }
+            });
+        });
+
+        // Set defaults
+        if (!repoInput.value || repoInput.value === 'YOUR_USERNAME/YOUR_REPO') {
+            repoInput.value = 'Tarek-BG/multiplayers';
+        }
+        if (!pathInput.value) {
+            pathInput.value = 'family/data/2_fam.json';
+        }
+        if (!branchInput.value) {
+            branchInput.value = 'main';
+        }
+
+        setStatus('🔑 You need a GitHub Personal Access Token (classic) with repo scope. You will be prompted when committing.', 'info');
+
+        console.log('ℹ️ To clear stored token: sessionStorage.removeItem("github_token")');
+    })();
+</script>
+
+</body>
+</html>
