@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub JSON Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        body {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #f6f8fa;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .sub {
+            color: #57606a;
+            margin-top: -0.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #fafbfc;
+        }
+        input:focus, textarea:focus {
+            outline: 2px solid #0969da;
+            border-color: transparent;
+        }
+        textarea {
+            height: 320px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            tab-size: 2;
+        }
+        .row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        .row > div {
+            flex: 1 1 200px;
+        }
+        button {
+            background: #2da44e;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+            margin-top: 0.5rem;
+        }
+        button:hover {
+            background: #22863a;
+        }
+        button.danger {
+            background: #cf222e;
+        }
+        button.danger:hover {
+            background: #a0111f;
+        }
+        button.secondary {
+            background: #6e7781;
+        }
+        button.secondary:hover {
+            background: #57606a;
+        }
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        .status {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            background: #f1f8ff;
+            border-left: 4px solid #0969da;
+            margin: 0.75rem 0;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .status.error {
+            background: #ffeef0;
+            border-left-color: #cf222e;
+        }
+        .status.success {
+            background: #dafbe1;
+            border-left-color: #2da44e;
+        }
+        .meta {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #57606a;
+            margin-top: 0.5rem;
+        }
+        .meta span {
+            background: #f0f2f4;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 1.2rem 0;
+        }
+        .file-info {
+            background: #f8f9fb;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+            .card { padding: 1rem; }
+            .row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>📄 GitHub JSON Editor</h1>
+<p class="sub">Fetch, edit, and commit JSON files from your repository</p>
+
+<div class="card">
+    <div class="row">
+        <div>
+            <label for="repoInput">Repository (owner/repo)</label>
+            <input type="text" id="repoInput" placeholder="e.g. octocat/Hello-World" value="YOUR_USERNAME/YOUR_REPO" />
+        </div>
+        <div>
+            <label for="pathInput">File path</label>
+            <input type="text" id="pathInput" placeholder="e.g. data/settings.json" value="data.json" />
+        </div>
+        <div>
+            <label for="branchInput">Branch</label>
+            <input type="text" id="branchInput" placeholder="main" value="main" />
+        </div>
+        <div style="flex: 0 0 auto;">
+            <button id="fetchBtn">⬇️ Fetch file</button>
+        </div>
+    </div>
+
+    <div class="file-info" id="fileInfo" style="margin-top:0.75rem;">
+        <span id="shaDisplay">SHA: —</span> &nbsp;|&nbsp; <span id="sizeDisplay">size: —</span>
+    </div>
+
+    <div id="statusMessage" class="status">Ready. Enter repo details and click Fetch.</div>
+</div>
+
+<div class="card">
+    <label for="editor">📝 JSON content (edit freely)</label>
+    <textarea id="editor" placeholder="JSON will appear here after fetch...">{}</textarea>
+
+    <div class="btn-group">
+        <button id="saveBtn">💾 Commit changes</button>
+        <button id="formatBtn" class="secondary">✨ Format JSON</button>
+        <button id="resetBtn" class="secondary">↩️ Reset to fetched</button>
+    </div>
+    <div style="margin-top:0.75rem;">
+        <label for="commitMsgInput" style="font-weight:500;">Commit message</label>
+        <input type="text" id="commitMsgInput" placeholder="Update JSON file" value="Update JSON via editor" />
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // DOM refs
+        const repoInput = document.getElementById('repoInput');
+        const pathInput = document.getElementById('pathInput');
+        const branchInput = document.getElementById('branchInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const formatBtn = document.getElementById('formatBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const editor = document.getElementById('editor');
+        const statusDiv = document.getElementById('statusMessage');
+        const shaSpan = document.getElementById('shaDisplay');
+        const sizeSpan = document.getElementById('sizeDisplay');
+        const commitMsgInput = document.getElementById('commitMsgInput');
+
+        // State
+        let currentSha = null;
+        let currentRepo = '';
+        let currentPath = '';
+        let currentBranch = '';
+        let originalContent = '';   // raw string as fetched
+        let lastFetchedJson = null; // parsed object (for reset)
+
+        // Helper: set status
+        function setStatus(msg, type = 'info') {
+            statusDiv.textContent = msg;
+            statusDiv.className = 'status';
+            if (type === 'error') statusDiv.classList.add('error');
+            else if (type === 'success') statusDiv.classList.add('success');
+            else statusDiv.classList.remove('error', 'success');
+        }
+
+        // Validate repo format
+        function parseRepo(repo) {
+            const parts = repo.trim().split('/');
+            if (parts.length === 2 && parts[0].length > 0 && parts[1].length > 0) {
+                return { owner: parts[0], repo: parts[1] };
+            }
+            return null;
+        }
+
+        // Build GitHub API URL for file
+        function buildApiUrl(repo, path, branch) {
+            const { owner, repo: repoName } = parseRepo(repo);
+            if (!owner || !repoName) throw new Error('Invalid repository format. Use owner/repo');
+            return `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+        }
+
+        // Fetch file from GitHub
+        async function fetchFile() {
+            const repo = repoInput.value.trim();
+            const path = pathInput.value.trim();
+            const branch = branchInput.value.trim();
+
+            if (!repo || !path || !branch) {
+                setStatus('❌ Please fill in repository, file path, and branch.', 'error');
+                return;
+            }
+
+            if (!parseRepo(repo)) {
+                setStatus('❌ Repository must be in format "owner/repo"', 'error');
+                return;
+            }
+
+            currentRepo = repo;
+            currentPath = path;
+            currentBranch = branch;
+
+            const url = buildApiUrl(repo, path, branch);
+            setStatus(`⏳ Fetching ${path} from ${repo} (${branch})...`, 'info');
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    let errMsg = `GitHub API error (${response.status})`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.message) errMsg += `: ${errData.message}`;
+                    } catch (_) { /* ignore */ }
+                    throw new Error(errMsg);
+                }
+
+                const data = await response.json();
+
+                // data.sha, data.content (base64), data.size
+                if (!data.content || !data.sha) {
+                    throw new Error('Unexpected response structure – missing content or sha');
+                }
+
+                const contentBase64 = data.content;
+                const decoded = atob(contentBase64.replace(/\s/g, ''));
+                currentSha = data.sha;
+                originalContent = decoded;
+
+                // Update UI
+                editor.value = decoded;
+                shaSpan.textContent = `SHA: ${currentSha.substring(0, 7)}…`;
+                sizeSpan.textContent = `size: ${(data.size || decoded.length)} bytes`;
+
+                // Try to parse and store for reset/format
+                try {
+                    lastFetchedJson = JSON.parse(decoded);
+                } catch (parseErr) {
+                    lastFetchedJson = null;
+                    // but we still show raw content
+                }
+
+                setStatus(`✅ Successfully fetched ${path} (SHA: ${currentSha.substring(0,7)}…)`, 'success');
+            } catch (err) {
+                setStatus(`❌ ${err.message}`, 'error');
+                currentSha = null;
+                originalContent = '';
+                lastFetchedJson = null;
+                shaSpan.textContent = 'SHA: —';
+                sizeSpan.textContent = 'size: —';
+            }
+        }
+
+        // Format JSON in editor
+        function formatJson() {
+            const raw = editor.value;
+            try {
+                const parsed = JSON.parse(raw);
+                const pretty = JSON.stringify(parsed, null, 2);
+                editor.value = pretty;
+                setStatus('✨ Formatted JSON.', 'success');
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}`, 'error');
+            }
+        }
+
+        // Reset editor to last fetched content
+        function resetToFetched() {
+            if (originalContent === '') {
+                setStatus('⚠️ No fetched content to reset to. Fetch a file first.', 'error');
+                return;
+            }
+            editor.value = originalContent;
+            setStatus('↩️ Reset to fetched version.', 'info');
+        }
+
+        // Commit changes to GitHub
+        async function saveFile() {
+            const repo = currentRepo;
+            const path = currentPath;
+            const branch = currentBranch;
+            const sha = currentSha;
+
+            if (!repo || !path || !branch) {
+                setStatus('❌ No file loaded. Fetch a file first.', 'error');
+                return;
+            }
+
+            if (!sha) {
+                setStatus('❌ Missing SHA. Fetch the file again to get current SHA.', 'error');
+                return;
+            }
+
+            const newContent = editor.value;
+            let contentToCommit = newContent;
+
+            // Validate JSON
+            try {
+                JSON.parse(newContent);
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}. Please fix before committing.`, 'error');
+                return;
+            }
+
+            // Encode to base64
+            const encoded = btoa(unescape(encodeURIComponent(contentToCommit)));
+
+            const commitMsg = commitMsgInput.value.trim() || 'Update JSON via editor';
+
+            const { owner, repo: repoName } = parseRepo(repo);
+            const url = `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`;
+
+            const payload = {
+                message: commitMsg,
+                content: encoded,
+                sha: sha,
+                branch: branch
+            };
+
+            setStatus(`⏳ Committing to ${repo}/${path} (${branch})...`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json',
+                        // Important: GitHub requires authentication for write operations.
+                        // We'll use a personal access token (classic) with repo scope.
+                        // The user will be prompted to enter it.
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errMsg = `GitHub API error (${response.status})`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.message) errMsg += `: ${errData.message}`;
+                    } catch (_) { /* ignore */ }
+                    throw new Error(errMsg);
+                }
+
+                const result = await response.json();
+                // Update SHA to the new commit's SHA
+                if (result.content && result.content.sha) {
+                    currentSha = result.content.sha;
+                    shaSpan.textContent = `SHA: ${currentSha.substring(0,7)}…`;
+                    // Also update originalContent to match new committed content
+                    originalContent = contentToCommit;
+                    try {
+                        lastFetchedJson = JSON.parse(contentToCommit);
+                    } catch (_) { /* ignore */ }
+                }
+
+                setStatus(`✅ Successfully committed! New SHA: ${currentSha.substring(0,7)}…`, 'success');
+            } catch (err) {
+                setStatus(`❌ ${err.message}`, 'error');
+            }
+        }
+
+        // ---- event listeners ----
+        fetchBtn.addEventListener('click', fetchFile);
+
+        formatBtn.addEventListener('click', formatJson);
+
+        resetBtn.addEventListener('click', resetToFetched);
+
+        saveBtn.addEventListener('click', saveFile);
+
+        // Also allow Enter key on inputs to trigger fetch (optional)
+        [repoInput, pathInput, branchInput].forEach(inp => {
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchBtn.click();
+                }
+            });
+        });
+
+        // initial hint: set a default example if fields are empty
+        if (repoInput.value.trim() === '' || repoInput.value.trim() === 'YOUR_USERNAME/YOUR_REPO') {
+            repoInput.value = 'YOUR_USERNAME/YOUR_REPO';
+        }
+        if (pathInput.value.trim() === '') {
+            pathInput.value = 'data.json';
+        }
+        if (branchInput.value.trim() === '') {
+            branchInput.value = 'main';
+        }
+
+        setStatus('🔑 You need a GitHub Personal Access Token (classic) with repo scope. The browser will prompt for it when you commit.', 'info');
+        // Override save to handle token via prompt (since we can't store it securely)
+        // We'll patch the save function to include Authorization header
+
+        // Save original saveFile reference, but we need to inject token.
+        // We'll wrap the fetch inside saveFile to ask for token if not provided.
+        // Actually we'll modify the saveFile function to prompt for token.
+        const originalSave = saveFile;
+        saveFile = async function() {
+            // Prompt for token only when committing
+            let token = sessionStorage.getItem('github_token');
+            if (!token) {
+                token = prompt('Enter your GitHub Personal Access Token (classic) with repo scope:');
+                if (!token) {
+                    setStatus('❌ Token is required to commit.', 'error');
+                    return;
+                }
+                sessionStorage.setItem('github_token', token);
+            }
+
+            // We need to override fetch in saveFile to include Authorization
+            // but we can't easily override fetch globally. We'll re-implement save logic with token.
+
+            const repo = currentRepo;
+            const path = currentPath;
+            const branch = currentBranch;
+            const sha = currentSha;
+
+            if (!repo || !path || !branch) {
+                setStatus('❌ No file loaded. Fetch a file first.', 'error');
+                return;
+            }
+
+            if (!sha) {
+                setStatus('❌ Missing SHA. Fetch the file again to get current SHA.', 'error');
+                return;
+            }
+
+            const newContent = editor.value;
+            try {
+                JSON.parse(newContent);
+            } catch (err) {
+                setStatus(`❌ Invalid JSON: ${err.message}. Please fix before committing.`, 'error');
+                return;
+            }
+
+            const encoded = btoa(unescape(encodeURIComponent(newContent)));
+            const commitMsg = commitMsgInput.value.trim() || 'Update JSON via editor';
+            const { owner, repo: repoName } = parseRepo(repo);
+            const url = `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`;
+
+            const payload = {
+                message: commitMsg,
+                content: encoded,
+                sha: sha,
+                branch: branch
+            };
+
+            setStatus(`⏳ Committing to ${repo}/${path} (${branch})...`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errMsg = `GitHub API error (${response.status})`;
+                    if (response.status === 401 || response.status === 403) {
+                        errMsg += ' — check your token permissions (needs repo scope).';
+                        sessionStorage.removeItem('github_token');
+                    }
+                    try {
+                        const errData = await response.json();
+                        if (errData.message) errMsg += `: ${errData.message}`;
+                    } catch (_) { /* ignore */ }
+                    throw new Error(errMsg);
+                }
+
+                const result = await response.json();
+                if (result.content && result.content.sha) {
+                    currentSha = result.content.sha;
+                    shaSpan.textContent = `SHA: ${currentSha.substring(0,7)}…`;
+                    originalContent = newContent;
+                    try {
+                        lastFetchedJson = JSON.parse(newContent);
+                    } catch (_) { /* ignore */ }
+                }
+
+                setStatus(`✅ Successfully committed! New SHA: ${currentSha.substring(0,7)}…`, 'success');
+            } catch (err) {
+                setStatus(`❌ ${err.message}`, 'error');
+            }
+        };
+
+        // Also format and reset remain the same
+        // But we need to ensure the save button calls our new function
+        saveBtn.onclick = saveFile;
+
+        // re-bind fetch to update status about token
+        const originalFetch = fetchFile;
+        fetchFile = async function() {
+            await originalFetch.call(this);
+            // after fetch, if we have a token, show it
+            const token = sessionStorage.getItem('github_token');
+            if (token) {
+                setStatus(`✅ Fetched. Token is set. You can commit changes.`, 'success');
+            } else {
+                setStatus(`✅ Fetched. To commit, you'll be prompted for a token.`, 'info');
+            }
+        };
+        fetchBtn.onclick = fetchFile;
+
+        // Small helper to clear token (optional, not exposed but can be via console)
+        console.log('ℹ️ To clear stored token, run: sessionStorage.removeItem("github_token")');
+
+    })();
+</script>
+
+</body>
+</html>
