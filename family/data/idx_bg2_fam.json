@@ -1,0 +1,72 @@
+[
+{"id": "A03YbengadhaZ02", 
+	"name": "tarek",
+        "surname": "ben gadha",
+        "birthDate": "1964-05-12",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+	"mother": "B03zarrouk_Z02"
+},
+{"id": "Z02YbengadhaY01", 
+        "name": "ezzedine",
+        "surname": "ben gadha",
+        "birthDate": "1924-03-27",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+	"mother": "B03___kissyZ02"
+},
+{"id": "Y01YbengadhaX03", 
+        "name": "abdelkader",
+        "surname": "ben gadha",
+        "birthDate": "1900-10-30",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+	"mother": "B03_____mamiZ02"
+},
+{"id": "Q06YbengadhaP02", 
+        "name": "hamida",
+        "surname": "ben gadha",
+        "birthDate": "1870-10-30",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+	"mother": "B03____aaaaZ02"
+},               
+{"id": "W03Xmemi____V02", 
+        "name": "",
+        "surname": "mami",
+        "birthDate": "1880-01-20",
+        "photoUrl": "",
+	"mother": "B03_____mamiZ02"
+},
+{"id": "K03Xkissy____J02", 
+        "name": "",
+        "surname": "kissy",
+        "birthDate": "1930-01-20",
+        "photoUrl": "",
+	"mother": "B03___kissyZ02"
+},
+{"id": "B03Xzarrouk_Z02", 
+        "name": "wassila",
+        "surname": "zarrouk",
+        "birthDate": "1936-01-18",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png",
+	"mother": "B03amar____Z02"
+},
+{"id": "A01XbengadhaZ02", 
+        "name": "amel_bg",
+        "surname": "ben gadha",
+        "birthDate": "1958-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+	"mother": "B03zarrouk_Z02"
+},
+{"id": "A02XbengadhaZ02", 
+        "name": "besma_bg",
+        "surname": "ben gadha",
+        "birthDate": "1960-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+	"mother": "B03zarrouk_Z02"
+},
+{"id": "A04XbengadhaZ02", 
+        "name": "iness_bg",
+        "surname": "ben gadha",
+        "birthDate": "1969-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+	"mother": "B03zarrouk_Z02"
+}
+]
