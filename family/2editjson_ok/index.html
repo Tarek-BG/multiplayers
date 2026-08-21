@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Data Editor</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        .controls { margin-bottom: 20px; }
+        .controls button { margin-left: 10px; padding: 8px 16px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f4f4f4; }
+        input[type="text"], input[type="date"] { width: 90%; padding: 5px; border: 1px solid #ccc; }
+        input[type="checkbox"] { transform: scale(1.2); }
+    </style>
+</head>
+<body>
+    <h1>Edit JSON Data</h1>
+
+    <div class="controls">
+        <label for="fileInput">Load JSON File:</label>
+        <input type="file" id="fileInput" accept=".json" />
+        <button id="saveButton" disabled>Save as New File</button>
+    </div>
+
+    <div id="editorContainer">
+        <p>Please load a JSON file to begin editing.</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
