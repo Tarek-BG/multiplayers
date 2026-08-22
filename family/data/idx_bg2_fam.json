@@ -68,5 +68,54 @@
         "birthDate": "1969-11-22",
         "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
 	"mother": "B03Xzarrouk_Z02"
+},
+{"id": "A04XbengadhaZ02", 
+        "name": "eya",
+        "surname": "ben gadha",
+        "birthDate": "1996-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/eya_bg.png",
+	"mother": "A03Xdaly____Z05"
+},
+{"id": "A04XbengadhaZ02", 
+        "name": "nour",
+        "surname": "ben gadha",
+        "birthDate": "2002-03-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/nour_bg.png",
+	"mother": "A03Xdaly____Z05"
+},
+{"id": "A04YbengadhaZ02", 
+        "name": "aziz",
+        "surname": "ben gadha",
+        "birthDate": "2010-08-30",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/aziz_bg.png",
+	"mother": "A03Xdaly____Z05"
+},
+{"id": "A03Ydaly____Z05", 
+        "name": "sondes",
+        "surname": "daly",
+        "birthDate": "1972-07-25",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/sondes_dy.png",
+	"mother": "A01Xamara___Z01"
+},
+{"id": "A02Xdaly____Z05", 
+        "name": "taoufik",
+        "surname": "daly",
+        "birthDate": "1970-12-31",
+        "photoUrl": "",
+	"mother": "A01Xamara___Z01"
+},
+{"id": "A01Xamara___Z01", 
+        "name": "hayette",
+        "surname": "amara",
+        "birthDate": "1946-08-30",
+        "photoUrl": "",
+	"mother": "A01Xjidane___Z01"
+},
+{"id": "Z05Xdaly____Y03", 
+        "name": "faouzi",
+        "surname": "daly",
+        "birthDate": "1936-08-30",
+        "photoUrl": "",
+	"mother": "A01Xamara___Z01"
 }
 ]
