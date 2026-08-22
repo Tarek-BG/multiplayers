@@ -1,5 +1,5 @@
 // ============================================================
-// JSON QUERY BUILDER - Clean field names, no duplicates, collapsible sections
+// JSON QUERY BUILDER - Clean field names & auto-output all fields
 // ============================================================
 
 class JsonQueryBuilder {
@@ -32,31 +32,6 @@ class JsonQueryBuilder {
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
             });
-        });
-
-        // Make clause sections collapsible
-        document.querySelectorAll('.clause-header').forEach(header => {
-            header.style.cursor = 'pointer';
-            header.addEventListener('click', (e) => {
-                // Don't toggle if clicked on a button inside header
-                if (e.target.closest('button')) return;
-                const body = header.nextElementSibling;
-                if (body) {
-                    body.style.display = body.style.display === 'none' ? 'block' : 'none';
-                    header.querySelector('.clause-toggle')?.remove();
-                    const toggle = document.createElement('span');
-                    toggle.className = 'clause-toggle';
-                    toggle.style.marginLeft = '8px';
-                    toggle.textContent = body.style.display === 'none' ? '▶' : '▼';
-                    header.appendChild(toggle);
-                }
-            });
-            // Add initial toggle indicator
-            const toggle = document.createElement('span');
-            toggle.className = 'clause-toggle';
-            toggle.style.marginLeft = '8px';
-            toggle.textContent = '▼';
-            header.appendChild(toggle);
         });
 
         document.getElementById('fetchBtn').addEventListener('click', () => this.fetchJson());
@@ -105,7 +80,7 @@ class JsonQueryBuilder {
             });
         });
 
-        // Add "Add All" button to Output section
+        // Add a button to add all fields as output
         const outputHeader = document.querySelector('#outputContainer').closest('.clause-section').querySelector('.clause-actions');
         const addAllBtn = document.createElement('button');
         addAllBtn.className = 'btn-sm btn-secondary';
@@ -216,7 +191,7 @@ class JsonQueryBuilder {
 
     // ============================================================
     // DEFAULT QUERY: GROUP BY name, WHERE surname = 'ben gadha'
-    // and automatically add UNIQUE fields to output
+    // and automatically add ALL fields to output
     // ============================================================
     setupDefaultQuery() {
         if (!this.jsonData) return;
@@ -236,45 +211,30 @@ class JsonQueryBuilder {
             this.addWhereCondition(surnamePath, '==', 'ben gadha');
         }
 
-        // Automatically add UNIQUE leaf nodes as output fields
+        // Automatically add ALL leaf nodes as output fields
         this.addAllOutputFields();
 
         // Select all nodes for display
         this.selectAllTreeNodes();
 
         this.updateQueryPreview();
-        this.showNotification('Default query: GROUP BY name, WHERE surname = "ben gadha". Unique fields added to output.', 'info');
+        this.showNotification('Default query: GROUP BY name, WHERE surname = "ben gadha". All fields added to output.', 'info');
     }
 
     // ============================================================
-    // ADD UNIQUE LEAF NODES AS OUTPUT FIELDS (no duplicates)
+    // ADD ALL LEAF NODES AS OUTPUT FIELDS
     // ============================================================
     addAllOutputFields() {
         // Clear existing output
         this.clearOutput();
-
-        // Get all leaf paths
         const leafPaths = Object.keys(this.nodeCache).filter(path => {
             const node = this.nodeCache[path];
+            // Leaf nodes are those that are not arrays or objects
             return node && node.type !== 'array' && node.type !== 'object';
         });
-
-        // Extract unique property names (last part after dot, ignoring array indices)
-        const uniqueFields = new Map();
         leafPaths.forEach(path => {
-            // Extract the property name (last part after dot or bracket)
-            let propName = path.split('.').pop() || path;
-            // Remove any trailing array index like [0]
-            propName = propName.replace(/\[\d+\]$/, '');
-            // Use the first occurrence of this property name
-            if (!uniqueFields.has(propName)) {
-                uniqueFields.set(propName, path);
-            }
-        });
-
-        // Add each unique field as output with its property name as alias
-        uniqueFields.forEach((path, propName) => {
-            this.addOutputField(path, propName);
+            const alias = path.split('.').pop() || path;
+            this.addOutputField(path, alias);
         });
     }
 
@@ -307,6 +267,7 @@ class JsonQueryBuilder {
             const displayValue = typeof data === 'string' ? `"${data}"` : String(data);
             const type = typeof data;
             const icon = this.getTypeIcon(type);
+            // For display, show the property name (the last part) without index
             const displayName = name.startsWith('[') ? name : name;
             html += `<div class="tree-node" data-path="${path}">`;
             html += `<div class="node-content">`;
@@ -329,12 +290,15 @@ class JsonQueryBuilder {
             html += `</div>`;
             html += `<div class="node-children">`;
             data.forEach((item, idx) => {
+                // For array items, we want to show the properties directly without the index as a separate node
+                // So we skip the index level and go directly to the object's properties
                 if (typeof item === 'object' && !Array.isArray(item)) {
                     Object.keys(item).forEach(key => {
                         const childPath = `${path}[${idx}].${key}`;
                         html += this.buildTreeNodes(item[key], childPath, key);
                     });
                 } else {
+                    // If item is primitive or array, show with index
                     html += this.buildTreeNodes(item, `${path}[${idx}]`, `[${idx}]`);
                 }
             });
@@ -868,21 +832,15 @@ class JsonQueryBuilder {
         if (leafPaths.length === 0) {
             return options;
         }
-        // Deduplicate by property name
-        const uniqueFields = new Map();
+        leafPaths.sort((a, b) => a.length - b.length);
         leafPaths.forEach(path => {
-            let propName = path.split('.').pop() || path;
-            propName = propName.replace(/\[\d+\]$/, '');
-            if (!uniqueFields.has(propName)) {
-                uniqueFields.set(propName, path);
-            }
-        });
-        // Sort alphabetically
-        const sorted = Array.from(uniqueFields.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-        sorted.forEach(([propName, path]) => {
             const node = this.nodeCache[path];
+            // Extract the property name (last part after dot or bracket)
+            let displayName = path.split('.').pop() || path;
+            // Remove any trailing index
+            displayName = displayName.replace(/\[\d+\]$/, '');
             const type = node ? node.type : 'unknown';
-            options += `<option value="${path}">${propName} (${type})</option>`;
+            options += `<option value="${path}">${displayName} (${type})</option>`;
         });
         return options;
     }

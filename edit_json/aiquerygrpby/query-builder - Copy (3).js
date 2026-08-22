@@ -1,5 +1,5 @@
 // ============================================================
-// JSON QUERY BUILDER - Clean field names, no duplicates, collapsible sections
+// JSON QUERY BUILDER - Fixed array handling & path resolution
 // ============================================================
 
 class JsonQueryBuilder {
@@ -32,31 +32,6 @@ class JsonQueryBuilder {
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
             });
-        });
-
-        // Make clause sections collapsible
-        document.querySelectorAll('.clause-header').forEach(header => {
-            header.style.cursor = 'pointer';
-            header.addEventListener('click', (e) => {
-                // Don't toggle if clicked on a button inside header
-                if (e.target.closest('button')) return;
-                const body = header.nextElementSibling;
-                if (body) {
-                    body.style.display = body.style.display === 'none' ? 'block' : 'none';
-                    header.querySelector('.clause-toggle')?.remove();
-                    const toggle = document.createElement('span');
-                    toggle.className = 'clause-toggle';
-                    toggle.style.marginLeft = '8px';
-                    toggle.textContent = body.style.display === 'none' ? '▶' : '▼';
-                    header.appendChild(toggle);
-                }
-            });
-            // Add initial toggle indicator
-            const toggle = document.createElement('span');
-            toggle.className = 'clause-toggle';
-            toggle.style.marginLeft = '8px';
-            toggle.textContent = '▼';
-            header.appendChild(toggle);
         });
 
         document.getElementById('fetchBtn').addEventListener('click', () => this.fetchJson());
@@ -104,14 +79,6 @@ class JsonQueryBuilder {
                 if (e.key === 'Enter') this.fetchJson();
             });
         });
-
-        // Add "Add All" button to Output section
-        const outputHeader = document.querySelector('#outputContainer').closest('.clause-section').querySelector('.clause-actions');
-        const addAllBtn = document.createElement('button');
-        addAllBtn.className = 'btn-sm btn-secondary';
-        addAllBtn.textContent = 'Add All';
-        addAllBtn.addEventListener('click', () => this.addAllOutputFields());
-        outputHeader.appendChild(addAllBtn);
 
         this.loadDefaults();
         this.setStatus('Ready. Enter GitHub details and click "Fetch JSON".');
@@ -169,6 +136,7 @@ class JsonQueryBuilder {
             this.fileSha = data.sha;
             this.fileSize = data.size || decoded.length;
 
+            // Check if root is an array
             this.dataIsArray = Array.isArray(this.jsonData);
 
             document.getElementById('shaDisplay').textContent = `SHA: ${this.fileSha.substring(0, 7)}…`;
@@ -216,70 +184,43 @@ class JsonQueryBuilder {
 
     // ============================================================
     // DEFAULT QUERY: GROUP BY name, WHERE surname = 'ben gadha'
-    // and automatically add UNIQUE fields to output
     // ============================================================
     setupDefaultQuery() {
         if (!this.jsonData) return;
 
         // Find paths for "name" and "surname"
+        // Look for patterns like $[0].name or $.items[0].name
         const namePath = Object.keys(this.nodeCache).find(p => 
-            p.endsWith('.name') || p.includes('[0].name')
+            p.endsWith('.name') || p.match(/\.name$/) || p.includes('[0].name')
         );
         const surnamePath = Object.keys(this.nodeCache).find(p => 
-            p.endsWith('.surname') || p.includes('[0].surname')
+            p.endsWith('.surname') || p.match(/\.surname$/) || p.includes('[0].surname')
         );
 
         if (namePath) {
             this.addGroupBy(namePath);
+            this.addOutputField(namePath, 'name');
         }
         if (surnamePath) {
             this.addWhereCondition(surnamePath, '==', 'ben gadha');
+            this.addOutputField(surnamePath, 'surname');
         }
 
-        // Automatically add UNIQUE leaf nodes as output fields
-        this.addAllOutputFields();
+        // Also add id and birthDate as output fields if they exist
+        const idPath = Object.keys(this.nodeCache).find(p => p.endsWith('.id') || p.includes('[0].id'));
+        const birthPath = Object.keys(this.nodeCache).find(p => p.endsWith('.birthDate') || p.includes('[0].birthDate'));
+        if (idPath) this.addOutputField(idPath, 'id');
+        if (birthPath) this.addOutputField(birthPath, 'birthDate');
 
         // Select all nodes for display
         this.selectAllTreeNodes();
 
         this.updateQueryPreview();
-        this.showNotification('Default query: GROUP BY name, WHERE surname = "ben gadha". Unique fields added to output.', 'info');
+        this.showNotification('Default query: GROUP BY name, WHERE surname = "ben gadha"', 'info');
     }
 
     // ============================================================
-    // ADD UNIQUE LEAF NODES AS OUTPUT FIELDS (no duplicates)
-    // ============================================================
-    addAllOutputFields() {
-        // Clear existing output
-        this.clearOutput();
-
-        // Get all leaf paths
-        const leafPaths = Object.keys(this.nodeCache).filter(path => {
-            const node = this.nodeCache[path];
-            return node && node.type !== 'array' && node.type !== 'object';
-        });
-
-        // Extract unique property names (last part after dot, ignoring array indices)
-        const uniqueFields = new Map();
-        leafPaths.forEach(path => {
-            // Extract the property name (last part after dot or bracket)
-            let propName = path.split('.').pop() || path;
-            // Remove any trailing array index like [0]
-            propName = propName.replace(/\[\d+\]$/, '');
-            // Use the first occurrence of this property name
-            if (!uniqueFields.has(propName)) {
-                uniqueFields.set(propName, path);
-            }
-        });
-
-        // Add each unique field as output with its property name as alias
-        uniqueFields.forEach((path, propName) => {
-            this.addOutputField(path, propName);
-        });
-    }
-
-    // ============================================================
-    // TREE BUILDING - SHOW PROPERTY NAMES, NOT INDICES
+    // TREE BUILDING
     // ============================================================
     buildTree(data, path = '$', name = 'root') {
         const container = document.getElementById('jsonTree');
@@ -307,16 +248,15 @@ class JsonQueryBuilder {
             const displayValue = typeof data === 'string' ? `"${data}"` : String(data);
             const type = typeof data;
             const icon = this.getTypeIcon(type);
-            const displayName = name.startsWith('[') ? name : name;
             html += `<div class="tree-node" data-path="${path}">`;
             html += `<div class="node-content">`;
             html += `<input type="checkbox" class="node-checkbox" data-path="${path}" />`;
             html += `<span class="node-icon">${icon}</span>`;
-            html += `<span class="node-name">${displayName}</span>`;
+            html += `<span class="node-name">${name}</span>`;
             html += `<span class="node-type">${type}</span>`;
             html += `<span class="node-value">${displayValue}</span>`;
             html += `</div></div>`;
-            this.nodeCache[path] = { type, value: data, name: displayName };
+            this.nodeCache[path] = { type, value: data, name };
         } else if (isArray) {
             const icon = '📋';
             html += `<div class="tree-node" data-path="${path}">`;
@@ -329,14 +269,7 @@ class JsonQueryBuilder {
             html += `</div>`;
             html += `<div class="node-children">`;
             data.forEach((item, idx) => {
-                if (typeof item === 'object' && !Array.isArray(item)) {
-                    Object.keys(item).forEach(key => {
-                        const childPath = `${path}[${idx}].${key}`;
-                        html += this.buildTreeNodes(item[key], childPath, key);
-                    });
-                } else {
-                    html += this.buildTreeNodes(item, `${path}[${idx}]`, `[${idx}]`);
-                }
+                html += this.buildTreeNodes(item, `${path}[${idx}]`, `[${idx}]`);
             });
             html += `</div></div>`;
             this.nodeCache[path] = { type: 'array', value: data, name };
@@ -856,33 +789,20 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // FIELD OPTIONS - SHOW ONLY PROPERTY NAMES (last part)
+    // FIELD OPTIONS - SHOWS ALL FIELDS
     // ============================================================
     getFieldOptions() {
         let options = '<option value="">Select field...</option>';
-        // Get all leaf nodes
-        const leafPaths = Object.keys(this.nodeCache).filter(path => {
-            const node = this.nodeCache[path];
-            return node && node.type !== 'array' && node.type !== 'object';
-        });
-        if (leafPaths.length === 0) {
+        const allPaths = Object.keys(this.nodeCache);
+        if (allPaths.length === 0) {
             return options;
         }
-        // Deduplicate by property name
-        const uniqueFields = new Map();
-        leafPaths.forEach(path => {
-            let propName = path.split('.').pop() || path;
-            propName = propName.replace(/\[\d+\]$/, '');
-            if (!uniqueFields.has(propName)) {
-                uniqueFields.set(propName, path);
-            }
-        });
-        // Sort alphabetically
-        const sorted = Array.from(uniqueFields.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-        sorted.forEach(([propName, path]) => {
+        allPaths.sort((a, b) => a.length - b.length);
+        allPaths.forEach(path => {
             const node = this.nodeCache[path];
+            const display = path.length > 40 ? '…' + path.substring(path.length - 37) : path;
             const type = node ? node.type : 'unknown';
-            options += `<option value="${path}">${propName} (${type})</option>`;
+            options += `<option value="${path}">${display} (${type})</option>`;
         });
         return options;
     }
@@ -1080,17 +1000,26 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // QUERY GENERATION
+    // QUERY GENERATION - FIXED for array data
     // ============================================================
     generateJsonPath() {
+        // For array data at root, we want to operate on the array items
+        // The base path should be '$' which represents the entire array
+        // But for filtering, we need to use the filter notation
+        
         let whereClause = '';
         if (this.whereConditions.length > 0) {
             const conditions = this.whereConditions.filter(w => w.field && w.value);
             if (conditions.length > 0) {
                 const condStr = conditions.map(w => {
+                    // Remove the array index from the field path for filtering
+                    // e.g., $[0].name -> @.name
                     let fieldPath = w.field;
+                    // Remove array indexing for filter
                     fieldPath = fieldPath.replace(/\[\d+\]/g, '');
+                    // Remove leading $.
                     fieldPath = fieldPath.replace(/^\$\./, '');
+                    // Remove trailing dots
                     fieldPath = fieldPath.replace(/^\./, '');
                     
                     let val = w.value;
@@ -1119,11 +1048,16 @@ class JsonQueryBuilder {
             }
         }
 
+        // For the base path, if data is an array, we want to select all items
+        // If there's a group by, we'll handle grouping in the execution step
         let basePath = '$';
+        
+        // If we have output fields, use the first one to determine the base
         if (this.outputFields.length > 0) {
             const firstField = this.outputFields[0].field;
+            // Extract base path without array index
             let base = firstField.replace(/\[\d+\]/g, '');
-            base = base.replace(/\.[^.]+$/, '');
+            base = base.replace(/\.[^.]+$/, ''); // Remove last property
             if (base && base !== '$') {
                 basePath = base;
             }
@@ -1159,7 +1093,7 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // EXECUTION
+    // EXECUTION - COMPLETELY REWRITTEN
     // ============================================================
     executeQuery() {
         if (!this.jsonData) {
@@ -1172,12 +1106,15 @@ class JsonQueryBuilder {
         const startTime = performance.now();
 
         try {
+            // Step 1: Get the base data
             let data = this.jsonData;
+            
+            // If data is not an array, wrap it
             if (!Array.isArray(data)) {
                 data = [data];
             }
 
-            // Apply WHERE filters
+            // Step 2: Apply WHERE filters
             let filteredData = data;
             if (this.whereConditions.length > 0) {
                 filteredData = data.filter(item => {
@@ -1185,6 +1122,7 @@ class JsonQueryBuilder {
                 });
             }
 
+            // Step 3: If no data after filter, show empty
             if (filteredData.length === 0) {
                 this.currentResults = [];
                 this.displayResults([], (performance.now() - startTime).toFixed(0));
@@ -1193,34 +1131,36 @@ class JsonQueryBuilder {
                 return;
             }
 
-            // Group By
+            // Step 4: Apply GROUP BY
             let groupedData = filteredData;
             if (this.groupByFields.length > 0) {
                 groupedData = this.applyGroupByOnData(filteredData);
             }
 
-            // Aggregations
+            // Step 5: Apply AGGREGATIONS
             let finalData = groupedData;
             if (this.aggregations.length > 0) {
                 finalData = this.applyAggregationsOnData(groupedData);
             }
 
-            // Order By
+            // Step 6: Apply ORDER BY
             if (this.orderBy.length > 0) {
                 finalData = this.applyOrderingOnData(finalData);
             }
 
-            // Limit
+            // Step 7: Apply LIMIT
             if (this.limit > 0 && finalData.length > this.limit) {
                 finalData = finalData.slice(0, this.limit);
             }
 
-            // Format output fields
+            // Step 8: Format output fields
             if (this.outputFields.length > 0) {
                 finalData = finalData.map(row => {
                     const newRow = {};
                     this.outputFields.forEach(out => {
+                        // Extract field name from path
                         const fieldName = out.alias || out.field.split('.').pop() || out.field;
+                        // Get value from the row
                         const value = this.getFieldValueFromRow(row, out.field);
                         newRow[fieldName] = value !== undefined ? value : '';
                     });
@@ -1240,14 +1180,19 @@ class JsonQueryBuilder {
         }
     }
 
+    // Evaluate a single item against all WHERE conditions
     evaluateFilterOnItem(item) {
         if (this.whereConditions.length === 0) return true;
         
         return this.whereConditions.every(condition => {
             if (!condition.field) return true;
             
-            let path = condition.field.replace(/\[\d+\]/g, '');
+            // Get the value from the item
+            const fieldPath = condition.field;
+            // Remove array indexing
+            let path = fieldPath.replace(/\[\d+\]/g, '');
             path = path.replace(/^\$\./, '');
+            // Get value using path
             const value = this.getValueFromObject(item, path);
             
             if (value === undefined) return false;
@@ -1255,6 +1200,7 @@ class JsonQueryBuilder {
             const compareValue = condition.value;
             const operator = condition.operator;
             
+            // Convert to string for string operations
             const strValue = String(value);
             const strCompare = String(compareValue);
             
@@ -1274,6 +1220,7 @@ class JsonQueryBuilder {
         });
     }
 
+    // Get value from object using dot notation path
     getValueFromObject(obj, path) {
         if (!path || path === '') return obj;
         const parts = path.split('.');
@@ -1289,17 +1236,20 @@ class JsonQueryBuilder {
         return current;
     }
 
+    // Get field value from a row (which might be a grouped row with _items)
     getFieldValueFromRow(row, fieldPath) {
+        // If row has _items, try to get the value from the first item
         if (row._items && Array.isArray(row._items) && row._items.length > 0) {
             const path = fieldPath.replace(/\[\d+\]/g, '').replace(/^\$\./, '');
             return this.getValueFromObject(row._items[0], path);
         }
+        // Otherwise get from the row itself
         const path = fieldPath.replace(/\[\d+\]/g, '').replace(/^\$\./, '');
         return this.getValueFromObject(row, path);
     }
 
     // ============================================================
-    // GROUP BY
+    // GROUP BY IMPLEMENTATION
     // ============================================================
     applyGroupByOnData(data) {
         if (this.groupByFields.length === 0) return data;
@@ -1323,12 +1273,14 @@ class JsonQueryBuilder {
         const result = [];
         groups.forEach((group) => {
             const row = {};
+            // Add group fields
             groupKeys.forEach((k) => {
                 const path = k.replace(/\[\d+\]/g, '').replace(/^\$\./, '');
                 const val = this.getValueFromObject(group.items[0], path);
                 const fieldName = k.split('.').pop() || k;
                 row[fieldName] = val;
             });
+            // Store items for aggregation
             row._items = group.items;
             result.push(row);
         });
@@ -1337,14 +1289,16 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // AGGREGATIONS
+    // AGGREGATIONS IMPLEMENTATION
     // ============================================================
     applyAggregationsOnData(data) {
         if (this.aggregations.length === 0 || data.length === 0) return data;
 
+        // If no groups, aggregate across all data
         const hasGroups = data.some(row => row._items);
         
         if (!hasGroups) {
+            // Single aggregation row
             const allItems = data;
             const row = {};
             this.aggregations.forEach(agg => {
@@ -1360,6 +1314,7 @@ class JsonQueryBuilder {
             return [row];
         }
 
+        // Grouped data
         const result = data.map(row => {
             const items = row._items || [];
             const newRow = { ...row };
@@ -1396,7 +1351,7 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // ORDER BY
+    // ORDER BY IMPLEMENTATION
     // ============================================================
     applyOrderingOnData(data) {
         if (this.orderBy.length === 0) return data;
@@ -1421,7 +1376,7 @@ class JsonQueryBuilder {
     }
 
     // ============================================================
-    // JSONPATH EXECUTION
+    // JSONPATH EXECUTION (kept for compatibility)
     // ============================================================
     executeJsonpath() {
         if (!this.jsonData) {
@@ -1440,9 +1395,11 @@ class JsonQueryBuilder {
         const startTime = performance.now();
 
         try {
+            // Simple path execution
             let data = this.jsonData;
             if (!Array.isArray(data)) data = [data];
             
+            // Try to get value by path
             const cleanPath = path.replace(/^\$\./, '');
             if (cleanPath) {
                 const results = [];
@@ -1487,6 +1444,7 @@ class JsonQueryBuilder {
             }
         });
 
+        // If columns is empty, treat as primitive values
         if (columns.size === 0) {
             const colArray = ['Value'];
             let html = '<table class="results-grid"><thead><tr><th>Value</th></tr></thead><tbody>';
@@ -1548,6 +1506,7 @@ class JsonQueryBuilder {
         });
 
         if (columns.size === 0) {
+            // Handle primitive values
             let csv = 'Value\n';
             this.currentResults.forEach(val => {
                 csv += `${val}\n`;
