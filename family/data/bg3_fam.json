@@ -1,0 +1,85 @@
+{
+    "familyName": "ben gadha",
+    "person": {
+        "id": "A03YbengadhaZ02", 
+	"name": "tarek",
+        "surname": "ben gadha",
+        "birthDate": "1964-05-12",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+	"mother": "B03Xzarrouk_Z02",
+        "father": {
+            	"id": "Z02YbengadhaY01", 
+        	"name": "ezzedine",
+       	 	"surname": "ben gadha",
+        	"birthDate": "1924-03-27",
+        	"photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+		"mother": "B03X___kissyZ02",
+            "father": {
+		"id": "Y01YbengadhaX03", 
+        	"name": "abdelkader",
+        	"surname": "ben gadha",
+        	"birthDate": "1900-10-30",
+        	"photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png",
+		"mother": "B03X_____mamiZ02",
+                "father": {
+                    	"id": "Q06YbengadhaP02", 
+        		"name": "hamida",
+        		"surname": "ben gadha",
+        		"birthDate": "1870-10-30",
+        		"photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+			"mother": "B03X____aaaaZ02"                
+                },
+                "mother": {
+                    	"id": "W03Xmemi____V02", 
+        		"name": "",
+        		"surname": "mami",
+        		"birthDate": "1880-01-20",
+        		"photoUrl": "",
+			"mother": "B03X_____mamiZ02"
+                }
+                },
+            "mother": {
+   		"id": "K03Xkissy____J02", 
+        	"name": "",
+        	"surname": "kissy",
+        	"birthDate": "1930-01-20",
+        	"photoUrl": "",
+		"mother": "B03X___kissyZ02"
+            }
+        },
+        "mother": {
+		"id": "B03Xzarrouk_Z02", 
+        	"name": "wassila",
+        	"surname": "zarrouk",
+        	"birthDate": "1936-01-18",
+        	"photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/wassila_zk.png",
+		"mother": "B03Xamar____Z02"
+        },
+        "children": [
+            {
+		"id": "A04XbengadhaZ02", 
+        "name": "eya",
+        "surname": "ben gadha",
+        "birthDate": "1996-11-22",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/eya_bg.png",
+	    "mother": "A03Xdaly____Z05"
+            },
+                        {
+		"id": "A04XbengadhaZ02", 
+		"name": "nour",
+		"surname": "ben gadha",
+		"birthDate": "2002-03-22",
+		"photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/nour_bg.png",
+		"mother": "A03Xdaly____Z05"
+            },
+                        {
+		"id": "A04YbengadhaZ02", 
+        "name": "aziz",
+        "surname": "ben gadha",
+        "birthDate": "2010-08-30",
+        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/aziz_bg.png",
+		"mother": "A03Xdaly____Z05"
+            }
+        ]
+    }
+}
