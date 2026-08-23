@@ -1,0 +1,22 @@
+from url idx_bg2_fam.json
+ for a chosen person 		"id": "A03YbengadhaZ02"
+
+we should get 
+	great father 		"id": "X03YbengadhaW02"
+	  great mother 			"id": "W03Xmemi____V02"
+
+	grand father 		"id": "Y01YbengadhaX03"
+	  grand mother 			"id": "K03Xkissy___J02"
+
+	father 			"id": "Z02YbengadhaY01"
+	  mother 			"id": "B03Xzarrouk_Z02"
+
+	sibling 		"id": "A01XbengadhaZ02"
+	sibling 		"id": "A02XbengadhaZ02"
+	sibling 		"id": "A04XbengadhaZ02"
+
+	person 			"id": "A03YbengadhaZ02"
+	  wife				"id": "A03Ydaly____Z05"
+	child			"id": "A04XbengadhaZ02"
+	child			"id": "A04XbengadhaZ02"
+	child			"id": "A04YbengadhaZ02"
