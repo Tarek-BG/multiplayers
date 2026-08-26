@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!-- https://www.youtube.com/watch?v=kRlA3KkmvLM -->
+<!-- https://www.youtube.com/watch?v=ofTfWrxu6gQ -->
+
+<head>
+    <meta charset="UTF-8">
+    <title>Suivi des consommations, ENERGY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="M3css/w3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ─── CSS Variables ─── */
+        :root {
+            --primary: #0b2b40;
+            --primary-light: #1a4a6b;
+            --accent: #e8b84b;
+            --accent-light: #f5d98a;
+            --gold-gradient: linear-gradient(135deg, #e8b84b 0%, #d4a02e 100%);
+            --bg-gradient: linear-gradient(145deg, #f8f6f0 0%, #ede9e0 100%);
+            --card-shadow: 0 12px 40px rgba(11, 43, 64, 0.12);
+            --card-hover-shadow: 0 20px 60px rgba(11, 43, 64, 0.20);
+            --radius: 18px;
+            --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: #1e2a3a;
+            overflow-x: hidden;
+        }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e8e4db;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 12px;
+        }
+
+        /* ─── Header ─── */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 43, 64, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 2px solid rgba(232, 184, 75, 0.25);
+            padding: 0 24px;
+            transition: all var(--transition);
+        }
+
+        .app-header .w3-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 10px 0;
+        }
+
+        .app-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .app-header .brand img {
+            height: 44px;
+            width: 44px;
+            object-fit: contain;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            padding: 3px;
+            background: #fff;
+            transition: transform var(--transition);
+        }
+
+        .app-header .brand img:hover {
+            transform: rotate(8deg) scale(1.05);
+        }
+
+        .app-header .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .app-header .brand h1 small {
+            font-weight: 300;
+            font-size: 0.75rem;
+            color: var(--accent-light);
+            display: block;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .app-header .hit-badge {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .app-header .hit-badge img {
+            height: 20px;
+            border-radius: 20px;
+        }
+
+        /* ─── Top Nav ─── */
+        .top-nav {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .top-nav a {
+            color: #cbd5e1;
+            text-decoration: none;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .top-nav a:hover {
+            background: rgba(232, 184, 75, 0.15);
+            color: #fff;
+        }
+
+        .top-nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: all var(--transition);
+            transform: translateX(-50%);
+            border-radius: 4px;
+        }
+
+        .top-nav a:hover::after {
+            width: 40%;
+        }
+
+        .top-nav a.active {
+            color: #fff;
+            background: rgba(232, 184, 75, 0.12);
+        }
+
+        .top-nav a.active::after {
+            width: 40%;
+        }
+
+        /* ─── Sidebar Toggle Buttons ─── */
+        .sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.05);
+        }
+
+        /* ─── Sidebar ─── */
+        .w3-sidebar {
+            background: rgba(11, 43, 64, 0.96) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 4px 0 40px rgba(0, 0, 0, 0.3);
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            z-index: 200;
+        }
+
+        .w3-sidebar .w3-bar-item {
+            color: #e8edf5 !important;
+            font-weight: 500;
+            padding: 12px 16px !important;
+            border-radius: 10px;
+            margin: 2px 8px;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .w3-sidebar .w3-bar-item:hover {
+            background: rgba(232, 184, 75, 0.15) !important;
+            color: #fff !important;
+            transform: translateX(4px);
+        }
+
+        .w3-sidebar .w3-bar-item svg {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .w3-sidebar .w3-bar-item .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+            display: block;
+        }
+
+        /* ─── Right Menu ─── */
+        #rightMenu {
+            background: rgba(11, 43, 64, 0.97) !important;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: -4px 0 40px rgba(0, 0, 0, 0.3);
+            padding: 20px 0;
+            width: 320px !important;
+            z-index: 300;
+        }
+
+        #rightMenu .w3-bar-item {
+            color: #e8edf5 !important;
+            padding: 12px 24px !important;
+            border-radius: 10px;
+            margin: 2px 12px;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        #rightMenu .w3-bar-item:hover {
+            background: rgba(232, 184, 75, 0.12) !important;
+            color: #fff !important;
+        }
+
+        #rightMenu .w3-button {
+            color: #e8edf5 !important;
+            border-radius: 10px;
+            margin: 2px 12px;
+            transition: all var(--transition);
+        }
+
+        #rightMenu .w3-button:hover {
+            background: rgba(232, 184, 75, 0.12) !important;
+        }
+
+        #rightMenu .menu-logo {
+            display: flex;
+            justify-content: center;
+            padding: 12px 0 20px;
+        }
+
+        #rightMenu .menu-logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--accent);
+            padding: 4px;
+            background: #fff;
+            cursor: pointer;
+            transition: transform var(--transition);
+        }
+
+        #rightMenu .menu-logo img:hover {
+            transform: scale(1.05) rotate(4deg);
+        }
+
+        #rightMenu .close-btn {
+            color: #94a3b8 !important;
+            font-size: 1.1rem;
+            padding: 8px 20px !important;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 0 12px 12px;
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        #rightMenu .close-btn:hover {
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: #f87171 !important;
+        }
+
+        /* ─── Dropdown / Accordion in right menu ─── */
+        #rightMenu .w3-dropdown-content {
+            background: rgba(255, 255, 255, 0.04) !important;
+            border-radius: 10px !important;
+            margin: 0 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }
+
+        #rightMenu .w3-dropdown-content a {
+            color: #cbd5e1 !important;
+            padding: 10px 18px !important;
+            border-radius: 6px;
+            transition: all var(--transition);
+        }
+
+        #rightMenu .w3-dropdown-content a:hover {
+            background: rgba(232, 184, 75, 0.10) !important;
+            color: #fff !important;
+        }
+
+        #demoAcc {
+            background: rgba(255, 255, 255, 0.04) !important;
+            border-radius: 10px !important;
+            margin: 0 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }
+
+        #demoAcc a {
+            color: #cbd5e1 !important;
+            padding: 10px 18px !important;
+            border-radius: 6px;
+            transition: all var(--transition);
+        }
+
+        #demoAcc a:hover {
+            background: rgba(232, 184, 75, 0.10) !important;
+            color: #fff !important;
+        }
+
+        /* ─── Hero Header ─── */
+        .hero-header {
+            position: relative;
+            padding: 40px 24px 60px;
+            text-align: center;
+            background: linear-gradient(145deg, var(--primary) 0%, #0a1f2e 100%);
+            border-bottom: 3px solid var(--accent);
+            overflow: hidden;
+        }
+
+        .hero-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('img/pek000.jpg') center/cover no-repeat;
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+        }
+
+        .hero-header .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-header .hero-logo {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            transition: transform var(--transition);
+            cursor: pointer;
+            object-fit: contain;
+        }
+
+        .hero-header .hero-logo:hover {
+            transform: scale(1.04) rotate(3deg);
+        }
+
+        .hero-header h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-header h1 span {
+            color: var(--accent);
+        }
+
+        .hero-header .subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .hero-header .gold-line {
+            width: 80px;
+            height: 3px;
+            background: var(--gold-gradient);
+            margin: 14px auto 0;
+            border-radius: 4px;
+        }
+
+        /* ─── Book Animation ─── */
+        .book-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px 60px;
+            background: linear-gradient(180deg, #ede9e0 0%, #f8f6f0 100%);
+        }
+
+        .container {
+            perspective: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .book {
+            width: 200px;
+            height: 260px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .book:hover {
+            transform: rotateY(-6deg) scale(1.02);
+        }
+
+        .book .gap {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 8px;
+            height: 100%;
+            background: linear-gradient(to right, #c9b896, #f5e8d0, #c9b896);
+            transform: translateX(-50%);
+            border-radius: 4px;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.12);
+            z-index: 2;
+        }
+
+        .book .pages {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 1;
+        }
+
+        .book .pages .page {
+            flex: 1;
+            background: linear-gradient(135deg, #fcf9f2, #f5efe4);
+            border: 1px solid rgba(200, 180, 150, 0.3);
+            border-radius: 2px;
+            box-shadow: inset 0 0 20px rgba(180, 150, 110, 0.06);
+            transition: all 0.3s;
+        }
+
+        .book .pages .page:nth-child(odd) {
+            background: linear-gradient(135deg, #f8f3e8, #f0e8da);
+        }
+
+        .book .flips {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .book .flips .flip {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: left center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #fcf9f2, #f5efe4);
+            border: 1px solid rgba(200, 180, 150, 0.2);
+            border-radius: 2px;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .book .flips .flip1 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip2 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip3 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip4 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip5 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip6 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+        .book .flips .flip7 {
+            transform: perspective(800px) rotateY(0deg);
+        }
+
+        .book:hover .flips .flip1 {
+            transform: perspective(800px) rotateY(-12deg);
+            transition-delay: 0.05s;
+        }
+        .book:hover .flips .flip2 {
+            transform: perspective(800px) rotateY(-22deg);
+            transition-delay: 0.10s;
+        }
+        .book:hover .flips .flip3 {
+            transform: perspective(800px) rotateY(-32deg);
+            transition-delay: 0.15s;
+        }
+        .book:hover .flips .flip4 {
+            transform: perspective(800px) rotateY(-40deg);
+            transition-delay: 0.20s;
+        }
+        .book:hover .flips .flip5 {
+            transform: perspective(800px) rotateY(-46deg);
+            transition-delay: 0.25s;
+        }
+        .book:hover .flips .flip6 {
+            transform: perspective(800px) rotateY(-50deg);
+            transition-delay: 0.30s;
+        }
+        .book:hover .flips .flip7 {
+            transform: perspective(800px) rotateY(-52deg);
+            transition-delay: 0.35s;
+        }
+
+        .book .overlay {
+            position: absolute;
+            bottom: -48px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 24px;
+            border-radius: 40px;
+            border: 1px solid rgba(200, 180, 150, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            z-index: 5;
+        }
+
+        /* ─── Footer / extra ─── */
+        .app-footer {
+            text-align: center;
+            padding: 24px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .app-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .app-footer a:hover {
+            color: var(--accent);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .app-header .brand h1 {
+                font-size: 1rem;
+            }
+            .app-header .brand h1 small {
+                font-size: 0.6rem;
+            }
+            .app-header .brand img {
+                height: 34px;
+                width: 34px;
+            }
+            .hero-header h1 {
+                font-size: 1.8rem;
+            }
+            .hero-header .hero-logo {
+                width: 80px;
+                height: 80px;
+            }
+            .top-nav a {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+            #rightMenu {
+                width: 280px !important;
+            }
+            .book {
+                width: 150px;
+                height: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-header .hit-badge {
+                font-size: 0.65rem;
+                padding: 4px 12px;
+            }
+            .hero-header h1 {
+                font-size: 1.4rem;
+            }
+            .hero-header .subtitle {
+                font-size: 0.75rem;
+            }
+            .top-nav {
+                gap: 2px;
+                padding: 0 12px;
+            }
+            .top-nav a {
+                font-size: 0.65rem;
+                padding: 6px 10px;
+            }
+            .app-header {
+                padding: 0 12px;
+            }
+            .app-header .brand h1 {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* ─── Utility ─── */
+        .hidden {
+            display: none !important;
+        }
+
+        .img-loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .img-loader .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(232, 184, 75, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* smooth fade-in for images */
+        .fade-img {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .fade-img.loaded {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── APP HEADER ─── -->
+    <header class="app-header" id="appHeader">
+        <div class="w3-container">
+            <div class="brand">
+                <img id="headerLogo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Hasdrubal" class="fade-img" loading="lazy">
+                <h1>
+                    HASDRUBAL
+                    <small>Energy Data</small>
+                </h1>
+            </div>
+            <div class="hit-badge">
+                <span>✨</span>
+                <span>Thank you for using <strong>my apps:</strong></span>
+                <a href="https://hits.sh/github.com/Tarek-BG/testweb/blob/gh-pages/">
+                    <img id="hitBadgeImg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Hits" loading="lazy">
+                </a>
+            </div>
+        </div>
+
+        <!-- Top Nav -->
+        <div class="top-nav" id="TopMenu">
+            <a href="saisiemodal_1.html">🏠 Home modal</a>
+            <a href="saisie.html">📅 Date..?</a>
+            <a href="https://docs.google.com/viewer?url=https://docs.google.com/spreadsheets/d/1Rniu3Ve65fn1qJburf7lUVoMZciA7wnvAixPZiA1TNQ/export?format=pdf#size=7&fitw=true&gid=1716336778" target="_blank">📄 Edition.?</a>
+            <a href="https://www.w3.org/Graphics/SVG/">@</a>
+            <span style="flex:1"></span>
+            <button class="sidebar-toggle" onclick="openRightMenu()" aria-label="Open menu">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ─── LEFT SIDEBAR (narrow) ─── -->
+    <div class="w3-sidebar w3-bar-block w3-large" style="width:1px; overflow:hidden;" id="leftxBar">
+        <a href="https://tarek-bg.github.io/web/hotel/video/hammamet_plageRbbq2024F.webm" target="_blank" class="w3-bar-item w3-button" title="BBQ Hammamet">
+            <svg xmlns="http://www.w3.org/2000/svg" width="31" height="31" fill="currentColor" class="bi bi-battery-charging" viewBox="0 0 16 16">
+                <path d="M9.585 2.568a.5.5 0 0 1 .226.58L8.677 6.832h1.99a.5.5 0 0 1 .364.843l-5.334 5.667a.5.5 0 0 1-.842-.49L5.99 9.167H4a.5.5 0 0 1-.364-.843l5.333-5.667a.5.5 0 0 1 .616-.09z" fill="#f60909"/>
+                <path d="M2 4h4.332l-.94 1H2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.38l-.308 1H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f60909"/>
+                <path d="M2 6h2.45L2.908 7.639A1.5 1.5 0 0 0 3.313 10H2V6zm8.595-2-.308 1H12a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9.276l-.942 1H12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.405z" fill="#f60909"/>
+                <path d="M12 10h-1.783l1.542-1.639c.097-.103.178-.218.241-.34V10zm0-3.354V6h-.646a1.5 1.5 0 0 1 .646.646zM16 8a1.5 1.5 0 0 1-1.5 1.5v-3A1.5 1.5 0 0 1 16 8z" fill="#f60909"/>
+            </svg>
+        </a>
+        <a href="#" class="w3-bar-item w3-button" title="Battery">
+            <svg xmlns="http://www.w3.org/2000/svg" width="31" height="31" fill="currentColor" class="bi bi-battery-charging" viewBox="0 0 16 16">
+                <path d="M9.585 2.568a.5.5 0 0 1 .226.58L8.677 6.832h1.99a.5.5 0 0 1 .364.843l-5.334 5.667a.5.5 0 0 1-.842-.49L5.99 9.167H4a.5.5 0 0 1-.364-.843l5.333-5.667a.5.5 0 0 1 .616-.09z" fill="#f60909"/>
+                <path d="M2 4h4.332l-.94 1H2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.38l-.308 1H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f60909"/>
+                <path d="M2 6h2.45L2.908 7.639A1.5 1.5 0 0 0 3.313 10H2V6zm8.595-2-.308 1H12a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9.276l-.942 1H12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.405z" fill="#f60909"/>
+                <path d="M12 10h-1.783l1.542-1.639c.097-.103.178-.218.241-.34V10zm0-3.354V6h-.646a1.5 1.5 0 0 1 .646.646zM16 8a1.5 1.5 0 0 1-1.5 1.5v-3A1.5 1.5 0 0 1 16 8z" fill="#f60909"/>
+            </svg>
+            <span class="label">batt</span>
+        </a>
+        <a href="#" class="w3-bar-item w3-button"><i class="fa fa-envelope"></i></a>
+        <a href="#" class="w3-bar-item w3-button"><i class="fa fa-globe"></i></a>
+        <a href="#" class="w3-bar-item w3-button"><i class="fa fa-trash"></i></a>
+    </div>
+
+    <!-- ─── RIGHT MENU ─── -->
+    <div class="w3-sidebar w3-bar-block w3-card w3-animate-right" style="display:none; right:0; width:320px;" id="rightMenu">
+        <div class="menu-logo">
+            <img id="rightMenuLogo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Hasdrubal" class="fade-img" onclick="closeRightMenu()" loading="lazy">
+        </div>
+        <button onclick="closeRightMenu()" class="w3-bar-item w3-button close-btn">
+            <i class="fa fa-times"></i> Close
+        </button>
+
+        <a href="#" class="w3-bar-item w3-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-battery-charging" viewBox="0 0 16 16">
+                <path d="M9.585 2.568a.5.5 0 0 1 .226.58L8.677 6.832h1.99a.5.5 0 0 1 .364.843l-5.334 5.667a.5.5 0 0 1-.842-.49L5.99 9.167H4a.5.5 0 0 1-.364-.843l5.333-5.667a.5.5 0 0 1 .616-.09z" fill="#f60909"/>
+                <path d="M2 4h4.332l-.94 1H2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.38l-.308 1H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f60909"/>
+                <path d="M2 6h2.45L2.908 7.639A1.5 1.5 0 0 0 3.313 10H2V6zm8.595-2-.308 1H12a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9.276l-.942 1H12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.405z" fill="#f60909"/>
+                <path d="M12 10h-1.783l1.542-1.639c.097-.103.178-.218.241-.34V10zm0-3.354V6h-.646a1.5 1.5 0 0 1 .646.646zM16 8a1.5 1.5 0 0 1-1.5 1.5v-3A1.5 1.5 0 0 1 16 8z" fill="#f60909"/>
+            </svg>
+            Link 1
+        </a>
+
+        <button class="w3-button w3-block w3-left-align" onclick="myAccFunc_01()" style="margin:2px 12px;border-radius:10px;">
+            Input &amp; Edition <i class="fa fa-caret-up"></i>
+        </button>
+        <div id="demoAcc" class="w3-hide w3-card">
+            <button class="w3-button w3-block w3-left-align" onclick="myAccFunc()" style="border-radius:6px;">
+                Accordion <i class="fa fa-caret-up"></i>
+            </button>
+            <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQwvBf7cUyNjlaQtfQSqJSdsk4JdipRVRBN-YT7aulgJTjlKUU6fEAgFb0MjcWvqJsRf6QXwl0uV-Fs/pubhtml?gid=394233348&single=true" class="w3-bar-item w3-button">Recap Kantaoui</a>
+            <a class="w3-bar-item w3-button" onclick="openWinsaisie()">Saisie</a>
+            <a href="saisiemodal.html" class="w3-bar-item w3-button">Saisie Modal</a>
+        </div>
+
+        <div class="w3-dropdown-click" style="margin:2px 12px;">
+            <button class="w3-button w3-block w3-left-align" onclick="myDropFunc()" style="border-radius:10px;">
+                Kantaoui <i class="fa fa-caret-square-o-up"></i>
+            </button>
+            <div id="demoDrop" class="w3-dropdown-content w3-bar-block w3-card" style="position:relative;">
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=114372898&single=true" class="w3-bar-item w3-button">Last 9 years: Kantaoui evolution</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQwvBf7cUyNjlaQtfQSqJSdsk4JdipRVRBN-YT7aulgJTjlKUU6fEAgFb0MjcWvqJsRf6QXwl0uV-Fs/pubchart?oid=2064146415&format=interactive" class="w3-bar-item w3-button">Nuitee Last 9 years: Kantaoui evolution</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=114372898&single=true" class="w3-bar-item w3-button">Kantaoui Last 9 years evolution</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=1198545521&single=true" class="w3-bar-item w3-button">Tableau Realisation du mois</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=176883046&single=true" class="w3-bar-item w3-button">Tableau Realisation à la nuitée du mois</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=733493039&amp;single=true&amp;widget=true&amp;headers=false" class="w3-bar-item w3-button">Daily: Kantaoui This Month evolution</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4ThGblVMJ2OBqopmzeDaRaiNl1YtNtgXZfyT7Bo1swF1mTtXnf1LuriIplZRpzFHAPbI3PEbBOSD1/pubhtml?gid=2008576297&amp;single=true&amp;widget=true&amp;headers=false" class="w3-bar-item w3-button">Per Guest: Kantaoui This Month evolution</a>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTWrjVkNAghl_YFfRGHbIF1I5SKja-tqdgaviM3mwHEA8mi88Sp8oNMWubqr_WPCFZ0GzmOIog-tTe_/pubhtml?gid=114372898&single=true" class="w3-bar-item w3-button">Graphe</a>
+                <a href="#" class="w3-bar-item w3-button">Link 3</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── HERO HEADER ─── -->
+    <div class="hero-header" id="heroHeader">
+        <div class="hero-content">
+            <img id="heroLogo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Hasdrubal" class="hero-logo fade-img" onclick="openRightMenu()" loading="lazy">
+            <h1>HASDRUBAL <span>·</span> Energy</h1>
+            <div class="subtitle">Suivi des consommations</div>
+            <div class="gold-line"></div>
+        </div>
+    </div>
+
+    <!-- ─── BOOK ANIMATION ─── -->
+    <div class="book-wrapper">
+        <div class="container">
+            <div class="book">
+                <div class="gap"></div>
+                <div class="pages">
+                    <div class="page"></div>
+                    <div class="page"></div>
+                    <div class="page"></div>
+                    <div class="page"></div>
+                    <div class="page"></div>
+                    <div class="page"></div>
+                </div>
+                <div class="flips">
+                    <div class="flip flip1"><div class="flip flip2"><div class="flip flip3"><div class="flip flip4"><div class="flip flip5"><div class="flip flip6"><div class="flip flip7"></div></div></div></div></div></div></div>
+                </div>
+                <div class="overlay">📖 Make your choice</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── FOOTER ─── -->
+    <div class="app-footer">
+        <p>
+            <a href="https://tarek-bg.github.io/web/hotel/video/hammamet_plageRbbq2024F.webm" target="_blank">🌴 BBQ Hammamet</a>
+            &nbsp;·&nbsp; Built with <span style="color:#e8b84b;">♥</span> &nbsp;·&nbsp; Energy Data &copy; 2026
+        </p>
+    </div>
+
+    <!-- ─── SCRIPTS ─── -->
+    <script>
+        // ─── IMAGE LOADER FROM JSON ───
+        (function loadImages() {
+            const imgConfigUrl = '../img/images.json'; // separate JSON file trk
+
+            // map of element ids to image keys
+            const imageMap = {
+                headerLogo: 'logo',
+                hitBadgeImg: 'hitBadge',
+                rightMenuLogo: 'logoLarge',
+                heroLogo: 'logoLarge'
+            };
+
+            // also set favicon
+            const setFavicon = (url) => {
+                const link = document.querySelector('link[rel="icon"]');
+                if (link) {
+                    link.href = url;
+                } else {
+                    const newLink = document.createElement('link');
+                    newLink.rel = 'icon';
+                    newLink.href = url;
+                    document.head.appendChild(newLink);
+                }
+            };
+
+            // set background image on hero
+            const setHeroBg = (url) => {
+                const hero = document.getElementById('heroHeader');
+                if (hero) {
+                    hero.style.setProperty('--bg-img', `url('${url}')`);
+                    hero.style.backgroundImage = `linear-gradient(145deg, #0b2b40 0%, #0a1f2e 100%), var(--bg-img)`;
+                    hero.style.backgroundSize = 'cover';
+                    hero.style.backgroundPosition = 'center';
+                }
+            };
+
+            const applyImage = (id, url) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.tagName === 'IMG') {
+                    el.src = url;
+                    el.onload = () => el.classList.add('loaded');
+                    // if already cached
+                    if (el.complete) el.classList.add('loaded');
+                } else if (el.tagName === 'DIV' && id === 'heroHeader') {
+                    // handled separately
+                }
+            };
+
+            fetch(imgConfigUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error('JSON not found, using fallback');
+                    return res.json();
+                })
+                .then(data => {
+                    const images = data.images || data;
+                    // apply each mapped image
+                    for (const [elId, key] of Object.entries(imageMap)) {
+                        const url = images[key];
+                        if (url) {
+                            if (elId === 'heroHeader') {
+                                setHeroBg(url);
+                            } else {
+                                applyImage(elId, url);
+                            }
+                        }
+                    }
+                    // favicon
+                    if (images.favicon) {
+                        setFavicon(images.favicon);
+                    }
+                    // special: hero background uses 'background' key
+                    if (images.background) {
+                        setHeroBg(images.background);
+                    }
+                })
+                .catch(() => {
+                    // fallback: use hardcoded paths
+                    console.warn('📸 Using fallback image paths');
+                    const fallbacks = {
+                        logo: 'img/iconHasdrubalV2.gif',
+                        hitBadge: 'https://hits.sh/github.com/Tarek-BG/testweb/blob/gh-pages.svg',
+                        logoLarge: 'img/iconHasdrubalV2.gif',
+                        favicon: 'img/iconHasdrubalV2_15p.gif',
+                        background: 'img/pek000.jpg'
+                    };
+                    for (const [elId, key] of Object.entries(imageMap)) {
+                        const url = fallbacks[key];
+                        if (url) {
+                            if (elId === 'heroHeader') {
+                                setHeroBg(fallbacks.background);
+                            } else {
+                                applyImage(elId, url);
+                            }
+                        }
+                    }
+                    if (fallbacks.favicon) setFavicon(fallbacks.favicon);
+                    if (fallbacks.background) setHeroBg(fallbacks.background);
+                });
+        })();
+
+        // ─── SIDEBAR / MENU FUNCTIONS ───
+        function openLeftMenu() {
+            document.getElementById('leftxBar').style.width = '70px';
+        }
+
+        function closeLeftMenu() {
+            document.getElementById('leftxBar').style.width = '1px';
+        }
+
+        function openRightMenu() {
+            document.getElementById('leftxBar').style.width = '1px';
+            document.getElementById('rightMenu').style.display = 'block';
+            document.getElementById('TopMenu').style.display = 'flex';
+        }
+
+        function closeRightMenu() {
+            document.getElementById('rightMenu').style.display = 'none';
+            document.getElementById('TopMenu').style.display = 'flex';
+            document.getElementById('leftxBar').style.width = '1px';
+        }
+
+        function myAccFunc_01() {
+            const x = document.getElementById('demoAcc');
+            if (x.className.indexOf('w3-show') === -1) {
+                x.className += ' w3-show';
+            } else {
+                x.className = x.className.replace(' w3-show', '');
+            }
+        }
+
+        function myAccFunc() {
+            const x = document.getElementById('demoAcc');
+            if (x.className.indexOf('w3-show') === -1) {
+                x.className += ' w3-show';
+            } else {
+                x.className = x.className.replace(' w3-show', '');
+            }
+        }
+
+        function myDropFunc() {
+            const x = document.getElementById('demoDrop');
+            if (x.className.indexOf('w3-show') === -1) {
+                x.className += ' w3-show';
+            } else {
+                x.className = x.className.replace(' w3-show', '');
+            }
+        }
+
+        // ─── WINDOW OPEN (Saisie) ───
+        let myWindowSS;
+
+        function openWinsaisie() {
+            myWindowSS = window.open(
+                'saisie.html',
+                'popupwindow',
+                'toolbar=0,location=0,directories=0,status=0,menubar=0,scrollbars=0,resizable=0,width=300,height=400'
+            );
+        }
+
+        // ─── SCROLL HEADER EFFECT ───
+        window.onscroll = function() {
+            const header = document.getElementById('appHeader');
+            if (document.body.scrollTop > 40 || document.documentElement.scrollTop > 40) {
+                header.style.boxShadow = '0 4px 30px rgba(0,0,0,0.3)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        };
+
+        // ─── SIDEBAR TOGGLE ON LEFT ICON CLICK ───
+        document.addEventListener('DOMContentLoaded', function() {
+            // left sidebar opens on hover? we keep it manual via the burger in top nav
+            // but we also have the left sidebar toggle from the old code.
+            // We'll expose openLeftMenu via a click on the left bars if needed.
+            // Already have the button in top-nav.
+        });
+
+        // click on leftxBar items to close? we keep as is.
+        // Also auto-close right menu on outside click
+        document.addEventListener('click', function(e) {
+            const right = document.getElementById('rightMenu');
+            if (right.style.display === 'block') {
+                const isClickInside = right.contains(e.target);
+                const isToggle = e.target.closest('.sidebar-toggle');
+                if (!isClickInside && !isToggle) {
+                    closeRightMenu();
+                }
+            }
+        });
+
+        // ─── KEYBOARD SHORTCUT: ESC to close menus ───
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRightMenu();
+                closeLeftMenu();
+            }
+        });
+
+        console.log('✨ Hasdrubal Energy Dashboard — loaded with JSON image config');
+    </script>
+
+</body>
+</html>
