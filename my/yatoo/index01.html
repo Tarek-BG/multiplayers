@@ -400,49 +400,6 @@
             opacity: 1;
         }
 
-        /* ----- FALLBACK INPUT (when linkjson missing) ----- */
-        .fallback-input-area {
-            padding: 20px;
-            background: #1a2533;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .fallback-input-area label {
-            font-size: 0.9rem;
-            color: #b0c8dd;
-            display: block;
-            margin-bottom: 8px;
-        }
-        .fallback-input-area input {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #2a3a4a;
-            background: #0f1722;
-            color: #eee;
-            font-size: 0.85rem;
-            margin-bottom: 10px;
-        }
-        .fallback-input-area button {
-            background: #4a7a9c;
-            border: none;
-            color: #fff;
-            padding: 8px 24px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        .fallback-input-area button:hover {
-            background: #5a8aaa;
-        }
-        .fallback-input-area .hint {
-            font-size: 0.7rem;
-            color: #6a8aa8;
-            margin-top: 6px;
-        }
-
         /* ----- LOADING / ERROR ----- */
         .loading-state {
             display: flex;
@@ -653,7 +610,6 @@
         let playerStates = {};
         let isAnyPlaying = false;
         let commentsCollapsed = false;
-        let driveFileId = null; // will be set from linkjson
 
         const headerEl = document.getElementById('header');
         const commentsEl = document.getElementById('comments');
@@ -693,41 +649,41 @@
                 }
                 userData = users[0];
 
-                // display email
+                // 4.2 display user email in top-right
                 if (userData.email) {
                     document.getElementById('userEmail').textContent = userData.email;
                 } else {
                     document.getElementById('userEmail').textContent = '—';
                 }
 
-                // 4.2 get linkjson
-                let driveUrl = userData.linkjson;
+                // 4.3 get linkjson
+                const driveUrl = userData.linkjson;
                 if (!driveUrl) {
-                    // fallback: maybe the user wants to enter it manually
-                    console.warn('linkjson missing in users.json');
-                    // We'll show a manual input later
-                    return false; // signal that we need manual input
+                    throw new Error('linkjson missing in users.json');
                 }
 
-                // 4.3 extract file ID
+                // 4.4 extract file ID from Google Drive URL
                 const fileId = extractDriveFileId(driveUrl);
                 if (!fileId) {
                     throw new Error('Could not extract file ID from linkjson: ' + driveUrl);
                 }
-                driveFileId = fileId;
 
-                // 4.4 fetch videos from Google Drive
+                // 4.5 fetch videos from Google Drive
                 const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 console.log('Fetching videos from:', downloadUrl);
 
                 const videoRes = await fetch(downloadUrl);
                 if (!videoRes.ok) throw new Error(`HTTP ${videoRes.status} · Google Drive`);
 
-                const text = await videoRes.text();
+                const contentType = videoRes.headers.get('content-type') || '';
                 let jsonData;
+                const text = await videoRes.text();
+
+                // Try to parse as JSON (Google Drive may return HTML on error)
                 try {
                     jsonData = JSON.parse(text);
                 } catch (e) {
+                    // If it's HTML, maybe it's a permission page
                     if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
                         throw new Error('Google Drive returned HTML. Make sure the file is publicly shared.');
                     }
@@ -738,6 +694,7 @@
                     throw new Error('myvideos.json must contain an array of videos.');
                 }
                 videoData = jsonData;
+
                 return true;
 
             } catch (err) {
@@ -750,6 +707,7 @@
         // 5.  EXTRACT GOOGLE DRIVE FILE ID
         // --------------------------------------------------------------
         function extractDriveFileId(url) {
+            // Patterns: /d/XXXXX, /file/d/XXXXX, id=XXXXX
             let match = url.match(/\/d\/([^\/\?]+)/);
             if (match) return match[1];
             match = url.match(/id=([^&\?]+)/);
@@ -770,6 +728,7 @@
             const avatar = document.getElementById('userAvatar');
             avatar.src = userData.photo || 'https://ui-avatars.com/api/?name=User&background=2a4a6a&color=fff&size=128';
             avatar.alt = userData.name || 'User';
+            // email already set in loadData
         }
 
         // --------------------------------------------------------------
@@ -783,12 +742,13 @@
 
             let html = '';
             videoData.forEach((v, index) => {
-                let src = v.src || '';
+                const src = v.src || '';
                 const title = v.title || `Video ${index + 1}`;
                 const safeId = `player-${index}`;
                 // ensure src is a proper YouTube embed URL
                 let embedSrc = src;
                 if (src && src.includes('youtube.com/watch')) {
+                    // convert to embed
                     const videoId = new URL(src).searchParams.get('v');
                     if (videoId) {
                         embedSrc = `https://www.youtube.com/embed/${videoId}`;
@@ -799,6 +759,7 @@
                         embedSrc = `https://www.youtube.com/embed/${videoId}`;
                     }
                 }
+                // if it's already an embed, keep it
                 html += `
                     <div class="video-item" data-index="${index}">
                         <div class="video-wrapper">
@@ -834,6 +795,7 @@
             videoData.forEach((v, index) => {
                 const title = v.title || `Video ${index + 1}`;
                 const comment = v.comment || '—';
+                // if comment is empty, skip?
                 html += `
                     <div class="comment-item" data-index="${index}">
                         <span class="play-icon">▶</span>
@@ -846,6 +808,7 @@
             commentList.innerHTML = html;
             commentCountEl.textContent = videoData.length;
 
+            // attach click listeners to comments
             document.querySelectorAll('.comment-item').forEach(el => {
                 el.addEventListener('click', function() {
                     const idx = parseInt(this.dataset.index, 10);
@@ -860,26 +823,38 @@
         // 9.  PLAY VIDEO BY INDEX
         // --------------------------------------------------------------
         function playVideoByIndex(index) {
+            // Find the video item
             const items = document.querySelectorAll('.video-item');
             if (index >= items.length) return;
+
+            // Scroll to video
             items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+            // Try to play via YouTube API
             if (players[index] && typeof players[index].playVideo === 'function') {
                 players[index].playVideo();
+                // Hide UI (header + comments + top-right) when playing
                 isAnyPlaying = true;
                 updateUIForPlayState(true);
                 return;
             }
 
-            // fallback: try to init players again
-            initYouTubePlayers();
-            setTimeout(() => {
-                if (players[index] && typeof players[index].playVideo === 'function') {
-                    players[index].playVideo();
-                    isAnyPlaying = true;
-                    updateUIForPlayState(true);
-                }
-            }, 500);
+            // Fallback: click the iframe to trigger play (but this may not work due to cross-origin)
+            const iframe = items[index].querySelector('iframe');
+            if (iframe) {
+                // We can't programmatically click the iframe, but we can try to reload with autoplay
+                // Actually, we'll just show a message or try to use the player API again later
+                console.warn('Player not ready for index', index);
+                // Try to re-init players
+                initYouTubePlayers();
+                setTimeout(() => {
+                    if (players[index] && typeof players[index].playVideo === 'function') {
+                        players[index].playVideo();
+                        isAnyPlaying = true;
+                        updateUIForPlayState(true);
+                    }
+                }, 500);
+            }
         }
 
         // --------------------------------------------------------------
@@ -888,9 +863,13 @@
         function initYouTubePlayers() {
             const iframes = document.querySelectorAll('.video-wrapper iframe');
             if (!iframes.length) return;
+
             iframes.forEach((iframe, index) => {
                 const id = iframe.id;
-                if (!id || players[index]) return;
+                if (!id) return;
+                // Skip if already initialized
+                if (players[index]) return;
+
                 try {
                     players[index] = new YT.Player(id, {
                         events: {
@@ -899,12 +878,15 @@
                             }
                         }
                     });
-                } catch (e) { /* ignore */ }
+                } catch (e) {
+                    // ignore
+                }
             });
         }
 
         function handleStateChange(index, state) {
             playerStates[index] = state;
+            // YT states: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
             const playing = Object.values(playerStates).some(s => s === 1);
             if (playing !== isAnyPlaying) {
                 isAnyPlaying = playing;
@@ -929,6 +911,7 @@
         // --------------------------------------------------------------
         function setupCommentsToggle() {
             commentsBar.addEventListener('click', function(e) {
+                // Toggle comments content
                 commentsCollapsed = !commentsCollapsed;
                 if (commentsCollapsed) {
                     commentsContent.classList.add('collapsed');
@@ -936,6 +919,11 @@
                 } else {
                     commentsContent.classList.remove('collapsed');
                     commentsToggle.innerHTML = '<span class="arrow" id="arrowIcon">▼</span> HIDE';
+                }
+                // update arrow reference
+                const newArrow = commentsToggle.querySelector('.arrow');
+                if (newArrow) {
+                    // arrow is already inline
                 }
             });
         }
@@ -946,7 +934,9 @@
         let ytReady = false;
         window.onYouTubeIframeAPIReady = function() {
             ytReady = true;
-            if (videoData.length) setTimeout(initYouTubePlayers, 300);
+            if (videoData.length) {
+                setTimeout(initYouTubePlayers, 300);
+            }
         };
 
         function tryInitPlayers() {
@@ -965,10 +955,12 @@
         function attachFallbackHandlers() {
             if (fallbackActive) return;
             fallbackActive = true;
+
             document.addEventListener('click', function(e) {
                 const videoItem = e.target.closest('.video-item');
                 if (!videoItem) return;
                 if (Object.keys(players).length > 0) return;
+
                 const currentlyPlaying = isAnyPlaying;
                 if (!currentlyPlaying) {
                     isAnyPlaying = true;
@@ -978,6 +970,8 @@
                     updateUIForPlayState(false);
                 }
             });
+
+            // Click outside to restore (when in fallback mode)
             document.addEventListener('click', function(e) {
                 if (Object.keys(players).length > 0) return;
                 if (!isAnyPlaying) return;
@@ -993,101 +987,18 @@
         }
 
         // --------------------------------------------------------------
-        // 14. SHOW FALLBACK INPUT (when linkjson missing)
-        // --------------------------------------------------------------
-        function showFallbackInput() {
-            const grid = document.getElementById('videoGrid');
-            grid.innerHTML = `
-                <div class="fallback-input-area">
-                    <label>🔗 Enter your Google Drive file URL or File ID</label>
-                    <input type="text" id="driveUrlInput" placeholder="https://drive.google.com/file/d/... or file ID" value="1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO" />
-                    <button id="loadDriveBtn">Load Videos</button>
-                    <div class="hint">Paste the shareable link to your <strong>myvideos.json</strong> file.<br>
-                    Make sure the file is publicly shared.</div>
-                </div>
-            `;
-            document.getElementById('loadDriveBtn').addEventListener('click', function() {
-                const input = document.getElementById('driveUrlInput').value.trim();
-                if (!input) return;
-                let fileId = input;
-                // if it's a URL, extract ID
-                if (input.includes('drive.google.com')) {
-                    const extracted = extractDriveFileId(input);
-                    if (extracted) fileId = extracted;
-                }
-                driveFileId = fileId;
-                // re-fetch videos with this fileId
-                fetchVideosFromDrive(fileId);
-            });
-            // auto-fetch if we have a default value
-            setTimeout(() => {
-                const btn = document.getElementById('loadDriveBtn');
-                if (btn) btn.click();
-            }, 500);
-        }
-
-        async function fetchVideosFromDrive(fileId) {
-            const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-            try {
-                const res = await fetch(downloadUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const text = await res.text();
-                let jsonData;
-                try {
-                    jsonData = JSON.parse(text);
-                } catch (e) {
-                    if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-                        throw new Error('Google Drive returned HTML. Make sure the file is publicly shared.');
-                    }
-                    throw new Error('Invalid JSON: ' + e.message);
-                }
-                if (!Array.isArray(jsonData)) throw new Error('Not an array');
-                videoData = jsonData;
-                // re-render everything
-                renderVideos();
-                renderComments();
-                if (ytReady) setTimeout(initYouTubePlayers, 300);
-                else {
-                    if (typeof YT !== 'undefined' && YT.Player) {
-                        ytReady = true;
-                        setTimeout(initYouTubePlayers, 300);
-                    }
-                }
-                attachFallbackHandlers();
-                // clear error state
-            } catch (err) {
-                videoGrid.innerHTML = `
-                    <div class="error-state">
-                        ⚠️ ${err.message}
-                        <div class="hint">Check your file ID and sharing permissions.</div>
-                    </div>
-                `;
-                commentList.innerHTML = '';
-                commentCountEl.textContent = '0';
-            }
-        }
-
-        // --------------------------------------------------------------
-        // 15. MAIN INIT
+        // 14. MAIN INIT
         // --------------------------------------------------------------
         async function init() {
             try {
-                const dataLoaded = await loadData();
-                if (!dataLoaded) {
-                    // linkjson missing, show fallback input
-                    renderUser(); // show user info anyway
-                    showFallbackInput();
-                    setupCommentsToggle();
-                    attachFallbackHandlers();
-                    return;
-                }
+                await loadData();
 
-                // normal flow
                 renderUser();
                 renderVideos();
                 renderComments();
                 setupCommentsToggle();
 
+                // Try to init YouTube players
                 if (ytReady) {
                     setTimeout(initYouTubePlayers, 300);
                 } else {
@@ -1099,6 +1010,7 @@
 
                 setTimeout(() => {
                     if (!ytReady) {
+                        // API might still load
                         attachFallbackHandlers();
                     } else {
                         if (Object.keys(players).length === 0 && videoData.length) {
@@ -1124,7 +1036,7 @@
         }
 
         // --------------------------------------------------------------
-        // 16. START
+        // 15. START
         // --------------------------------------------------------------
         document.addEventListener('DOMContentLoaded', init);
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
