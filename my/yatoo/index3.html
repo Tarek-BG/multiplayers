@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Gallery · Drive JSON</title>
+    <!-- YouTube IFrame Player API -->
+    <script src="https://www.youtube.com/iframe_api">
+    </script>
+    <style>
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0b0e14;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ----- APP SHELL ----- */
+        .app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 820px;
+            height: 100vh;
+            max-height: 100vh;
+            background: #131a24;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ----- TOP RIGHT: device id + email ----- */
+        .top-right {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            background: rgba(11, 14, 20, 0.75);
+            backdrop-filter: blur(6px);
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1px solid #2a3a4a;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .top-right.hidden {
+            opacity: 0;
+            transform: translateY(-60px);
+            pointer-events: none;
+        }
+        .top-right .device-label {
+            color: #7a9bb8;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .top-right .device-id {
+            color: #b8d8f0;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        .top-right .email-label {
+            color: #7a9bb8;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+        }
+        .top-right .user-email {
+            color: #b8d8f0;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        .top-right .divider {
+            width: 100%;
+            height: 1px;
+            background: #1f3140;
+            margin: 4px 0;
+        }
+
+        /* ----- HEADER (user) ----- */
+        #header {
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #1a2533, #0f1722);
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #2a3a4a;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.45s ease,
+                margin 0.45s ease;
+            z-index: 20;
+            position: relative;
+            padding-right: 160px;
+            /* make room for top-right */;
+        }
+        #header.hidden {
+            transform: translateY(-120%);
+            opacity: 0;
+            pointer-events: none;
+            padding: 0;
+            height: 0;
+            border: none;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .user-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4a7a9c;
+            flex-shrink: 0;
+            background: #1e2d3d;
+        }
+        .user-info {
+            flex: 1;
+            min-width: 120px;
+        }
+        .user-id-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7a9bb8;
+            background: #1a2a3a;
+            padding: 2px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+        .user-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+        .user-presentation {
+            font-size: 0.82rem;
+            color: #b0c8dd;
+            margin-top: 2px;
+            line-height: 1.3;
+            opacity: 0.9;
+        }
+
+        /* ----- VIDEOS (middle) ----- */
+        #videos {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px 12px;
+            scroll-behavior: smooth;
+            background: #0b1119;
+            transition: padding 0.3s ease;
+        }
+        #videos::-webkit-scrollbar {
+            width: 5px;
+        }
+        #videos::-webkit-scrollbar-track {
+            background: #0b1119;
+        }
+        #videos::-webkit-scrollbar-thumb {
+            background: #3a5a7a;
+            border-radius: 10px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            max-width: 100%;
+        }
+
+        .video-item {
+            background: #16212b;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #243544;
+            cursor: pointer;
+        }
+        .video-item:hover {
+            transform: scale(1.005);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+            border-color: #3a6a8a;
+        }
+        .video-item .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 177.78%;
+            /* 560/315 ≈ 1.7778 */
+            background: #000;
+        }
+        .video-item .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .video-item .video-title {
+            padding: 10px 14px 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #d6e4f0;
+            line-height: 1.3;
+            background: #0f1a24;
+            border-top: 1px solid #1f3140;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ----- COMMENTS (footer) max 1/4 ----- */
+        #comments {
+            flex-shrink: 0;
+            background: #0f1a24;
+            border-top: 1px solid #1f3140;
+            max-height: 25vh;
+            /* max 1/4 of viewport */
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.45s ease,
+                max-height 0.45s ease;
+            z-index: 20;
+            position: relative;
+            overflow: hidden;
+        }
+        #comments.hidden {
+            transform: translateY(120%);
+            opacity: 0;
+            pointer-events: none;
+            max-height: 0;
+            border: none;
+            overflow: hidden;
+        }
+
+        /* Comments BAR (toggle) */
+        .comments-bar {
+            flex-shrink: 0;
+            background: #16232e;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid #1f3140;
+            transition: background 0.2s ease;
+        }
+        .comments-bar:hover {
+            background: #1c2d3c;
+        }
+        .comments-bar .bar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6a8aa8;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .comments-bar .bar-title .badge-count {
+            background: #1a2a3a;
+            padding: 0 10px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            color: #8ab0d0;
+            font-weight: 600;
+        }
+        .comments-bar .bar-toggle {
+            color: #6a8aa8;
+            font-size: 0.7rem;
+            background: #1a2a3a;
+            padding: 2px 12px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid #2a3a4a;
+        }
+        .comments-bar .bar-toggle:hover {
+            background: #2a3a4a;
+            color: #b0d0e8;
+        }
+        .comments-bar .bar-toggle .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .comments-bar .bar-toggle .arrow.open {
+            transform: rotate(180deg);
+        }
+
+        /* Comments CONTENT (scrollable) */
+        .comments-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px 12px;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        .comments-content.collapsed {
+            max-height: 0 !important;
+            padding: 0 16px;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .comments-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .comments-content::-webkit-scrollbar-thumb {
+            background: #3a5a7a;
+            border-radius: 10px;
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+            font-size: 0.78rem;
+            padding: 5px 0;
+            border-bottom: 1px solid #1a2a3a;
+            cursor: pointer;
+            transition: background 0.15s ease, padding-left 0.15s ease;
+            border-radius: 6px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        .comment-item:hover {
+            background: #1a2a3a;
+            padding-left: 12px;
+        }
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        .comment-item .comment-video-title {
+            color: #8ab0d0;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+            flex-shrink: 0;
+        }
+        .comment-item .comment-text {
+            color: #c8dce8;
+            flex: 1;
+            word-break: break-word;
+        }
+        .comment-item .comment-badge {
+            color: #4a7a9c;
+            font-size: 0.6rem;
+            background: #1a2a3a;
+            padding: 0 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .comment-item .play-icon {
+            color: #4a8aaa;
+            font-size: 0.7rem;
+            opacity: 0.6;
+            flex-shrink: 0;
+            transition: opacity 0.2s ease;
+        }
+        .comment-item:hover .play-icon {
+            opacity: 1;
+        }
+
+        /* ----- FALLBACK INPUT (when linkjson missing) ----- */
+        .fallback-input-area {
+            padding: 20px;
+            background: #1a2533;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .fallback-input-area label {
+            font-size: 0.9rem;
+            color: #b0c8dd;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .fallback-input-area input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a3a4a;
+            background: #0f1722;
+            color: #eee;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        .fallback-input-area button {
+            background: #4a7a9c;
+            border: none;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .fallback-input-area button:hover {
+            background: #5a8aaa;
+        }
+        .fallback-input-area .hint {
+            font-size: 0.7rem;
+            color: #6a8aa8;
+            margin-top: 6px;
+        }
+
+        /* ----- LOADING / ERROR ----- */
+        .loading-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #6a8aa8;
+            font-size: 1rem;
+            flex-direction: column;
+            gap: 12px;
+            padding: 30px 20px;
+        }
+        .loading-state .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #1a2a3a;
+            border-top-color: #4a8aaa;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .error-state {
+            color: #d47a7a;
+            text-align: center;
+            padding: 30px 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .error-state .hint {
+            color: #7a9bb8;
+            font-size: 0.75rem;
+            margin-top: 8px;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (min-width: 540px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            #header {
+                padding: 20px 28px 16px;
+                padding-right: 180px;
+            }
+            .user-avatar {
+                width: 68px;
+                height: 68px;
+            }
+            .user-name {
+                font-size: 1.25rem;
+            }
+            .comment-item .comment-video-title {
+                max-width: 200px;
+            }
+            .top-right {
+                font-size: 0.75rem;
+                padding: 10px 18px;
+                top: 14px;
+                right: 20px;
+            }
+        }
+
+        @media (min-width: 820px) {
+            .app {
+                max-width: 960px;
+                border-radius: 20px;
+                height: 94vh;
+                box-shadow: 0 10px 60px rgba(0, 0, 0, 0.9);
+            }
+            .video-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 22px;
+            }
+            .user-avatar {
+                width: 76px;
+                height: 76px;
+            }
+            .comment-item .comment-video-title {
+                max-width: 280px;
+            }
+            #header {
+                padding-right: 210px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .user-card {
+                gap: 10px;
+            }
+            .user-avatar {
+                width: 44px;
+                height: 44px;
+            }
+            .user-name {
+                font-size: 0.95rem;
+            }
+            .user-presentation {
+                font-size: 0.7rem;
+            }
+            .video-item .video-title {
+                font-size: 0.7rem;
+                padding: 6px 10px 4px;
+            }
+            #videos {
+                padding: 8px 10px 8px;
+            }
+            .comment-item {
+                font-size: 0.7rem;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .comment-item .comment-video-title {
+                max-width: 80px;
+            }
+            .top-right {
+                font-size: 0.6rem;
+                padding: 5px 10px;
+                top: 8px;
+                right: 10px;
+            }
+            #header {
+                padding-right: 120px;
+                padding: 12px 14px 10px;
+            }
+            .comments-bar .bar-title {
+                font-size: 0.65rem;
+            }
+            .comments-bar {
+                padding: 5px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+
+        <!-- ===== TOP RIGHT ===== -->
+        <div class="top-right" id="topRight">
+            <span class="device-label">📱 DEVICE</span>
+            <span class="device-id" id="deviceId">—</span>
+            <div class="divider"></div>
+            <span class="email-label">✉️ EMAIL</span>
+            <span class="user-email" id="userEmail">—</span>
+        </div>
+
+        <!-- ===== HEADER ===== -->
+        <header id="header">
+            <div class="user-card" id="userCard">
+                <img class="user-avatar" id="userAvatar" src="" alt="Avatar" />
+                <div class="user-info">
+                    <span class="user-id-badge" id="userIdBadge">—</span>
+                    <span class="user-name" id="userName">—</span>
+                    <p class="user-presentation" id="userPresentation">—</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== VIDEOS ===== -->
+        <main id="videos">
+            <div id="videoGrid" class="video-grid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <span>Loading videos…</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- ===== COMMENTS (max 1/4) ===== -->
+        <footer id="comments">
+            <!-- BAR -->
+            <div class="comments-bar" id="commentsBar">
+                <span class="bar-title">
+                    💬 Video Comments
+                    <span class="badge-count" id="commentCount">0</span>
+                </span>
+                <span class="bar-toggle" id="commentsToggle">
+                    <span class="arrow" id="arrowIcon">▼</span> HIDE
+                </span>
+            </div>
+            <!-- CONTENT -->
+            <div class="comments-content" id="commentsContent">
+                <div id="commentList" class="comment-list">
+                    <div class="loading-state" style="height:50px;font-size:0.8rem;">
+                        <span>Loading comments…</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --------------------------------------------------------------
+        // 1.  CONFIG
+        // --------------------------------------------------------------
+        const USERS_JSON = 'users.json';
+
+        // --------------------------------------------------------------
+        // 2.  STATE
+        // --------------------------------------------------------------
+        let videoData = [];
+        let userData = null;
+        let players = {};
+        let playerStates = {};
+        let isAnyPlaying = false;
+        let commentsCollapsed = false;
+        let driveFileId = null; // will be set from linkjson
+
+        const headerEl = document.getElementById('header');
+        const commentsEl = document.getElementById('comments');
+        const topRightEl = document.getElementById('topRight');
+        const videoGrid = document.getElementById('videoGrid');
+        const commentList = document.getElementById('commentList');
+        const commentsBar = document.getElementById('commentsBar');
+        const commentsContent = document.getElementById('commentsContent');
+        const commentsToggle = document.getElementById('commentsToggle');
+        const arrowIcon = document.getElementById('arrowIcon');
+        const commentCountEl = document.getElementById('commentCount');
+
+        // --------------------------------------------------------------
+        // 3.  DEVICE ID (localStorage)
+        // --------------------------------------------------------------
+        function getDeviceId() {
+            let id = localStorage.getItem('deviceUserId');
+            if (!id) {
+                id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+                localStorage.setItem('deviceUserId', id);
+            }
+            return id;
+        }
+        document.getElementById('deviceId').textContent = getDeviceId();
+
+        // --------------------------------------------------------------
+        // 4.  FETCH DATA
+        // --------------------------------------------------------------
+        async function loadData() {
+            try {
+                // 4.1 fetch users.json
+                const usersRes = await fetch(USERS_JSON);
+                if (!usersRes.ok) throw new Error(`HTTP ${usersRes.status} · users.json`);
+                const users = await usersRes.json();
+                if (!Array.isArray(users) || users.length === 0) {
+                    throw new Error('users.json must contain at least one user.');
+                }
+                userData = users[0];
+
+                // display email
+                if (userData.email) {
+                    document.getElementById('userEmail').textContent = userData.email;
+                } else {
+                    document.getElementById('userEmail').textContent = '—';
+                }
+
+                // 4.2 get linkjson
+                let driveUrl = userData.linkjson;
+                if (!driveUrl) {
+                    // fallback: maybe the user wants to enter it manually
+                    console.warn('linkjson missing in users.json');
+                    // We'll show a manual input later
+                    return false; // signal that we need manual input
+                }
+
+                // 4.3 extract file ID
+                const fileId = extractDriveFileId(driveUrl);
+                if (!fileId) {
+                    throw new Error('Could not extract file ID from linkjson: ' + driveUrl);
+                }
+                driveFileId = fileId;
+
+                // 4.4 fetch videos from Google Drive
+                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                console.log('Fetching videos from:', downloadUrl);
+
+                const videoRes = await fetch(downloadUrl);
+                if (!videoRes.ok) throw new Error(`HTTP ${videoRes.status} · Google Drive`);
+
+                const text = await videoRes.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(text);
+                } catch (e) {
+                    if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+                        throw new Error('Google Drive returned HTML. Make sure the file is publicly shared.');
+                    }
+                    throw new Error('Invalid JSON from Google Drive: ' + e.message);
+                }
+
+                if (!Array.isArray(jsonData)) {
+                    throw new Error('myvideos.json must contain an array of videos.');
+                }
+                videoData = jsonData;
+                return true;
+
+            } catch (err) {
+                console.error('Load error:', err);
+                throw err;
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 5.  EXTRACT GOOGLE DRIVE FILE ID
+        // --------------------------------------------------------------
+        function extractDriveFileId(url) {
+            let match = url.match(/\/d\/([^\/\?]+)/);
+            if (match) return match[1];
+            match = url.match(/id=([^&\?]+)/);
+            if (match) return match[1];
+            match = url.match(/\/file\/d\/([^\/\?]+)/);
+            if (match) return match[1];
+            return null;
+        }
+
+        // --------------------------------------------------------------
+        // 6.  RENDER USER
+        // --------------------------------------------------------------
+        function renderUser() {
+            if (!userData) return;
+            document.getElementById('userIdBadge').textContent = '🆔 ' + (userData.id || 'user_001');
+            document.getElementById('userName').textContent = userData.name || 'Anonymous';
+            document.getElementById('userPresentation').textContent = userData.presentation || '';
+            const avatar = document.getElementById('userAvatar');
+            avatar.src = userData.photo || 'https://ui-avatars.com/api/?name=User&background=2a4a6a&color=fff&size=128';
+            avatar.alt = userData.name || 'User';
+        }
+
+        // --------------------------------------------------------------
+        // 7.  RENDER VIDEOS
+        // --------------------------------------------------------------
+        function renderVideos() {
+            if (!videoData.length) {
+                videoGrid.innerHTML = `<div class="error-state">⚠️ No videos found in myvideos.json</div>`;
+                return;
+            }
+
+            let html = '';
+            videoData.forEach((v, index) => {
+                let src = v.src || '';
+                const title = v.title || `Video ${index + 1}`;
+                const safeId = `player-${index}`;
+                // ensure src is a proper YouTube embed URL
+                let embedSrc = src;
+                if (src && src.includes('youtube.com/watch')) {
+                    const videoId = new URL(src).searchParams.get('v');
+                    if (videoId) {
+                        embedSrc = `https://www.youtube.com/embed/${videoId}`;
+                    }
+                } else if (src && src.includes('youtu.be/')) {
+                    const videoId = src.split('youtu.be/')[1]?.split('?')[0];
+                    if (videoId) {
+                        embedSrc = `https://www.youtube.com/embed/${videoId}`;
+                    }
+                }
+                html += `
+                    <div class="video-item" data-index="${index}">
+                        <div class="video-wrapper">
+                            <iframe id="${safeId}"
+                                    width="315" height="560"
+                                    src="${embedSrc}"
+                                    title="${title.replace(/"/g, '&quot;')}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div class="video-title">${title}</div>
+                    </div>
+                `;
+            });
+            videoGrid.innerHTML = html;
+        }
+
+        // --------------------------------------------------------------
+        // 8.  RENDER COMMENTS
+        // --------------------------------------------------------------
+        function renderComments() {
+            if (!videoData.length) {
+                commentList.innerHTML =
+                    `<div class="error-state" style="padding:10px 0;font-size:0.8rem;">No comments available.</div>`;
+                commentCountEl.textContent = '0';
+                return;
+            }
+
+            let html = '';
+            videoData.forEach((v, index) => {
+                const title = v.title || `Video ${index + 1}`;
+                const comment = v.comment || '—';
+                html += `
+                    <div class="comment-item" data-index="${index}">
+                        <span class="play-icon">▶</span>
+                        <span class="comment-video-title">${title}</span>
+                        <span class="comment-text">${comment}</span>
+                        <span class="comment-badge">#${index + 1}</span>
+                    </div>
+                `;
+            });
+            commentList.innerHTML = html;
+            commentCountEl.textContent = videoData.length;
+
+            document.querySelectorAll('.comment-item').forEach(el => {
+                el.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.index, 10);
+                    if (!isNaN(idx)) {
+                        playVideoByIndex(idx);
+                    }
+                });
+            });
+        }
+
+        // --------------------------------------------------------------
+        // 9.  PLAY VIDEO BY INDEX
+        // --------------------------------------------------------------
+        function playVideoByIndex(index) {
+            const items = document.querySelectorAll('.video-item');
+            if (index >= items.length) return;
+            items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            if (players[index] && typeof players[index].playVideo === 'function') {
+                players[index].playVideo();
+                isAnyPlaying = true;
+                updateUIForPlayState(true);
+                return;
+            }
+
+            // fallback: try to init players again
+            initYouTubePlayers();
+            setTimeout(() => {
+                if (players[index] && typeof players[index].playVideo === 'function') {
+                    players[index].playVideo();
+                    isAnyPlaying = true;
+                    updateUIForPlayState(true);
+                }
+            }, 500);
+        }
+
+        // --------------------------------------------------------------
+        // 10. YOUTUBE PLAYER API
+        // --------------------------------------------------------------
+        function initYouTubePlayers() {
+            const iframes = document.querySelectorAll('.video-wrapper iframe');
+            if (!iframes.length) return;
+            iframes.forEach((iframe, index) => {
+                const id = iframe.id;
+                if (!id || players[index]) return;
+                try {
+                    players[index] = new YT.Player(id, {
+                        events: {
+                            'onStateChange': function(event) {
+                                handleStateChange(index, event.data);
+                            }
+                        }
+                    });
+                } catch (e) { /* ignore */ }
+            });
+        }
+
+        function handleStateChange(index, state) {
+            playerStates[index] = state;
+            const playing = Object.values(playerStates).some(s => s === 1);
+            if (playing !== isAnyPlaying) {
+                isAnyPlaying = playing;
+                updateUIForPlayState(playing);
+            }
+        }
+
+        function updateUIForPlayState(playing) {
+            if (playing) {
+                headerEl.classList.add('hidden');
+                commentsEl.classList.add('hidden');
+                topRightEl.classList.add('hidden');
+            } else {
+                headerEl.classList.remove('hidden');
+                commentsEl.classList.remove('hidden');
+                topRightEl.classList.remove('hidden');
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 11. COMMENTS TOGGLE (bar)
+        // --------------------------------------------------------------
+        function setupCommentsToggle() {
+            commentsBar.addEventListener('click', function(e) {
+                commentsCollapsed = !commentsCollapsed;
+                if (commentsCollapsed) {
+                    commentsContent.classList.add('collapsed');
+                    commentsToggle.innerHTML = '<span class="arrow" id="arrowIcon">▶</span> SHOW';
+                } else {
+                    commentsContent.classList.remove('collapsed');
+                    commentsToggle.innerHTML = '<span class="arrow" id="arrowIcon">▼</span> HIDE';
+                }
+            });
+        }
+
+        // --------------------------------------------------------------
+        // 12. YOUTUBE API READY CALLBACK
+        // --------------------------------------------------------------
+        let ytReady = false;
+        window.onYouTubeIframeAPIReady = function() {
+            ytReady = true;
+            if (videoData.length) setTimeout(initYouTubePlayers, 300);
+        };
+
+        function tryInitPlayers() {
+            if (ytReady && videoData.length) {
+                initYouTubePlayers();
+                return true;
+            }
+            return false;
+        }
+
+        // --------------------------------------------------------------
+        // 13. FALLBACK: click on video item to toggle UI (if API fails)
+        // --------------------------------------------------------------
+        let fallbackActive = false;
+
+        function attachFallbackHandlers() {
+            if (fallbackActive) return;
+            fallbackActive = true;
+            document.addEventListener('click', function(e) {
+                const videoItem = e.target.closest('.video-item');
+                if (!videoItem) return;
+                if (Object.keys(players).length > 0) return;
+                const currentlyPlaying = isAnyPlaying;
+                if (!currentlyPlaying) {
+                    isAnyPlaying = true;
+                    updateUIForPlayState(true);
+                } else {
+                    isAnyPlaying = false;
+                    updateUIForPlayState(false);
+                }
+            });
+            document.addEventListener('click', function(e) {
+                if (Object.keys(players).length > 0) return;
+                if (!isAnyPlaying) return;
+                const isVideo = e.target.closest('.video-item');
+                const isHeader = e.target.closest('#header');
+                const isComments = e.target.closest('#comments');
+                const isTopRight = e.target.closest('.top-right');
+                if (!isVideo && !isHeader && !isComments && !isTopRight) {
+                    isAnyPlaying = false;
+                    updateUIForPlayState(false);
+                }
+            });
+        }
+
+        // --------------------------------------------------------------
+        // 14. SHOW FALLBACK INPUT (when linkjson missing)
+        // --------------------------------------------------------------
+        function showFallbackInput() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = `
+                <div class="fallback-input-area">
+                    <label>🔗 Enter your Google Drive file URL or File ID</label>
+                    <input type="text" id="driveUrlInput" placeholder="https://drive.google.com/file/d/... or file ID" value="1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO" />
+                    <button id="loadDriveBtn">Load Videos</button>
+                    <div class="hint">Paste the shareable link to your <strong>myvideos.json</strong> file.<br>
+                    Make sure the file is publicly shared.</div>
+                </div>
+            `;
+            document.getElementById('loadDriveBtn').addEventListener('click', function() {
+                const input = document.getElementById('driveUrlInput').value.trim();
+                if (!input) return;
+                let fileId = input;
+                // if it's a URL, extract ID
+                if (input.includes('drive.google.com')) {
+                    const extracted = extractDriveFileId(input);
+                    if (extracted) fileId = extracted;
+                }
+                driveFileId = fileId;
+                // re-fetch videos with this fileId
+                fetchVideosFromDrive(fileId);
+            });
+            // auto-fetch if we have a default value
+            setTimeout(() => {
+                const btn = document.getElementById('loadDriveBtn');
+                if (btn) btn.click();
+            }, 500);
+        }
+
+        async function fetchVideosFromDrive(fileId) {
+            const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            try {
+                const res = await fetch(downloadUrl);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const text = await res.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(text);
+                } catch (e) {
+                    if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+                        throw new Error('Google Drive returned HTML. Make sure the file is publicly shared.');
+                    }
+                    throw new Error('Invalid JSON: ' + e.message);
+                }
+                if (!Array.isArray(jsonData)) throw new Error('Not an array');
+                videoData = jsonData;
+                // re-render everything
+                renderVideos();
+                renderComments();
+                if (ytReady) setTimeout(initYouTubePlayers, 300);
+                else {
+                    if (typeof YT !== 'undefined' && YT.Player) {
+                        ytReady = true;
+                        setTimeout(initYouTubePlayers, 300);
+                    }
+                }
+                attachFallbackHandlers();
+                // clear error state
+            } catch (err) {
+                videoGrid.innerHTML = `
+                    <div class="error-state">
+                        ⚠️ ${err.message}
+                        <div class="hint">Check your file ID and sharing permissions.</div>
+                    </div>
+                `;
+                commentList.innerHTML = '';
+                commentCountEl.textContent = '0';
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 15. MAIN INIT
+        // --------------------------------------------------------------
+        async function init() {
+            try {
+                const dataLoaded = await loadData();
+                if (!dataLoaded) {
+                    // linkjson missing, show fallback input
+                    renderUser(); // show user info anyway
+                    showFallbackInput();
+                    setupCommentsToggle();
+                    attachFallbackHandlers();
+                    return;
+                }
+
+                // normal flow
+                renderUser();
+                renderVideos();
+                renderComments();
+                setupCommentsToggle();
+
+                if (ytReady) {
+                    setTimeout(initYouTubePlayers, 300);
+                } else {
+                    if (typeof YT !== 'undefined' && YT.Player) {
+                        ytReady = true;
+                        setTimeout(initYouTubePlayers, 300);
+                    }
+                }
+
+                setTimeout(() => {
+                    if (!ytReady) {
+                        attachFallbackHandlers();
+                    } else {
+                        if (Object.keys(players).length === 0 && videoData.length) {
+                            initYouTubePlayers();
+                        }
+                    }
+                }, 1200);
+
+                attachFallbackHandlers();
+
+            } catch (err) {
+                videoGrid.innerHTML = `
+                    <div class="error-state">
+                        ⚠️ ${err.message || 'Failed to load data.'}
+                        <div class="hint">Make sure <strong>users.json</strong> is in the same folder,<br>
+                        and that the Google Drive file is publicly shared.</div>
+                    </div>
+                `;
+                commentList.innerHTML = '';
+                commentCountEl.textContent = '0';
+                console.error(err);
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 16. START
+        // --------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', init);
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            if (!window._initStarted) {
+                window._initStarted = true;
+                init();
+            }
+        }
+    </script>
+
+</body>
+</html>
