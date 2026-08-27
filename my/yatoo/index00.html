@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Gallery</title>
+    <!-- YouTube IFrame Player API -->
+    <script src="https://www.youtube.com/iframe_api">
+    </script>
+    <style>
+        /* ----- RESET & BASE ----- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0b0e14;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ----- APP SHELL ----- */
+        .app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 780px;
+            height: 100vh;
+            max-height: 100vh;
+            background: #131a24;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ----- HEADER (user) ----- */
+        #header {
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #1a2533, #0f1722);
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #2a3a4a;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.45s ease;
+            z-index: 20;
+            position: relative;
+        }
+        #header.hidden {
+            transform: translateY(-120%);
+            opacity: 0;
+            pointer-events: none;
+            padding: 0;
+            height: 0;
+            border: none;
+            overflow: hidden;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .user-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4a7a9c;
+            flex-shrink: 0;
+            background: #1e2d3d;
+        }
+        .user-info {
+            flex: 1;
+            min-width: 140px;
+        }
+        .user-id {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7a9bb8;
+            background: #1a2a3a;
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+        .user-presentation {
+            font-size: 0.85rem;
+            color: #b0c8dd;
+            margin-top: 2px;
+            line-height: 1.3;
+            opacity: 0.9;
+        }
+
+        /* ----- VIDEOS (middle) ----- */
+        #videos {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px 16px;
+            scroll-behavior: smooth;
+            background: #0b1119;
+            transition: padding 0.3s ease;
+        }
+        #videos::-webkit-scrollbar {
+            width: 5px;
+        }
+        #videos::-webkit-scrollbar-track {
+            background: #0b1119;
+        }
+        #videos::-webkit-scrollbar-thumb {
+            background: #3a5a7a;
+            border-radius: 10px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            max-width: 100%;
+        }
+
+        .video-item {
+            background: #16212b;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #243544;
+        }
+        .video-item:hover {
+            transform: scale(1.005);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+            border-color: #3a6a8a;
+        }
+        .video-item .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 177.78%;
+            /* 560/315 ≈ 1.7778 */
+            background: #000;
+        }
+        .video-item .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .video-item .video-title {
+            padding: 10px 14px 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d6e4f0;
+            line-height: 1.3;
+            background: #0f1a24;
+            border-top: 1px solid #1f3140;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ----- COMMENTS (footer) ----- */
+        #comments {
+            flex-shrink: 0;
+            background: #0f1a24;
+            border-top: 1px solid #1f3140;
+            padding: 12px 16px 14px;
+            max-height: 40vh;
+            overflow-y: auto;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.45s ease,
+                max-height 0.45s ease,
+                padding 0.45s ease;
+            z-index: 20;
+            position: relative;
+        }
+        #comments.hidden {
+            transform: translateY(120%);
+            opacity: 0;
+            pointer-events: none;
+            max-height: 0;
+            padding: 0 16px;
+            border: none;
+            overflow: hidden;
+        }
+        #comments::-webkit-scrollbar {
+            width: 4px;
+        }
+        #comments::-webkit-scrollbar-thumb {
+            background: #3a5a7a;
+            border-radius: 10px;
+        }
+
+        .comments-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6a8aa8;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+            font-size: 0.82rem;
+            padding: 4px 0;
+            border-bottom: 1px solid #1a2a3a;
+        }
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        .comment-video-title {
+            color: #8ab0d0;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+            flex-shrink: 0;
+        }
+        .comment-text {
+            color: #c8dce8;
+            flex: 1;
+            word-break: break-word;
+        }
+        .comment-badge {
+            color: #4a7a9c;
+            font-size: 0.65rem;
+            background: #1a2a3a;
+            padding: 0 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        /* ----- PLAYING OVERLAY (full‑screen indicator) ----- */
+        .playing-indicator {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 5;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+            transition: opacity 0.4s ease;
+        }
+        .playing-indicator.active {
+            display: block;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (min-width: 540px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            #header {
+                padding: 20px 28px 16px;
+            }
+            .user-avatar {
+                width: 72px;
+                height: 72px;
+            }
+            .user-name {
+                font-size: 1.3rem;
+            }
+            .comment-video-title {
+                max-width: 200px;
+            }
+        }
+
+        @media (min-width: 820px) {
+            .app {
+                max-width: 920px;
+                border-radius: 20px;
+                height: 95vh;
+                box-shadow: 0 10px 60px rgba(0, 0, 0, 0.9);
+            }
+            .video-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 22px;
+            }
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            .comment-video-title {
+                max-width: 280px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .user-card {
+                gap: 10px;
+            }
+            .user-avatar {
+                width: 48px;
+                height: 48px;
+            }
+            .user-name {
+                font-size: 1rem;
+            }
+            .user-presentation {
+                font-size: 0.75rem;
+            }
+            .video-item .video-title {
+                font-size: 0.75rem;
+                padding: 6px 10px 4px;
+            }
+            #videos {
+                padding: 8px 10px 12px;
+            }
+            .comment-item {
+                font-size: 0.75rem;
+                flex-wrap: wrap;
+            }
+            .comment-video-title {
+                max-width: 100px;
+            }
+        }
+
+        /* ----- LOADING / ERROR ----- */
+        .loading-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #6a8aa8;
+            font-size: 1.1rem;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .loading-state .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #1a2a3a;
+            border-top-color: #4a8aaa;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .error-state {
+            color: #d47a7a;
+            text-align: center;
+            padding: 30px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+        <!-- ===== HEADER ===== -->
+        <header id="header">
+            <div class="user-card" id="userCard">
+                <img class="user-avatar" id="userAvatar" src="" alt="User avatar" />
+                <div class="user-info">
+                    <span class="user-id" id="userId">—</span>
+                    <span class="user-name" id="userName">—</span>
+                    <p class="user-presentation" id="userPresentation">—</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== VIDEOS ===== -->
+        <main id="videos">
+            <div id="videoGrid" class="video-grid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <span>Loading videos…</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- ===== COMMENTS ===== -->
+        <footer id="comments">
+            <div class="comments-title">📌 Video Comments</div>
+            <div id="commentList" class="comment-list">
+                <div class="loading-state" style="height:60px;font-size:0.85rem;">
+                    <span>Loading comments…</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --------------------------------------------------------------
+        // 1.  CONFIG
+        // --------------------------------------------------------------
+        const USERS_JSON = 'users.json';
+        const VIDEOS_JSON = 'myvideos.json';
+
+        // --------------------------------------------------------------
+        // 2.  STATE
+        // --------------------------------------------------------------
+        let videoData = [];
+        let userData = null;
+        let players = {};
+        let playerStates = {};
+        let isAnyPlaying = false;
+        let headerEl = document.getElementById('header');
+        let commentsEl = document.getElementById('comments');
+        let videoGrid = document.getElementById('videoGrid');
+        let commentList = document.getElementById('commentList');
+
+        // --------------------------------------------------------------
+        // 3.  FETCH DATA
+        // --------------------------------------------------------------
+        async function loadData() {
+            try {
+                const [usersRes, videosRes] = await Promise.all([
+                    fetch(USERS_JSON),
+                    fetch(VIDEOS_JSON)
+                ]);
+
+                if (!usersRes.ok || !videosRes.ok) {
+                    throw new Error('Failed to load JSON files.');
+                }
+
+                const users = await usersRes.json();
+                videoData = await videosRes.json();
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    throw new Error('users.json must contain at least one user.');
+                }
+                userData = users[0]; // use first user
+
+                return true;
+            } catch (err) {
+                console.error('Load error:', err);
+                return false;
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 4.  RENDER USER
+        // --------------------------------------------------------------
+        function renderUser() {
+            if (!userData) return;
+            document.getElementById('userId').textContent = '🆔 ' + (userData.id || 'user_001');
+            document.getElementById('userName').textContent = userData.name || 'Anonymous';
+            document.getElementById('userPresentation').textContent = userData.presentation || '';
+            const avatar = document.getElementById('userAvatar');
+            avatar.src = userData.photo || 'https://ui-avatars.com/api/?name=User&background=2a4a6a&color=fff&size=128';
+            avatar.alt = userData.name || 'User';
+        }
+
+        // --------------------------------------------------------------
+        // 5.  RENDER VIDEOS
+        // --------------------------------------------------------------
+        function renderVideos() {
+            if (!videoData.length) {
+                videoGrid.innerHTML = `<div class="error-state">⚠️ No videos found in myvideos.json</div>`;
+                return;
+            }
+
+            let html = '';
+            videoData.forEach((v, index) => {
+                const src = v.src || '';
+                const title = v.title || `Video ${index + 1}`;
+                const safeId = `player-${index}`;
+                html += `
+                    <div class="video-item" data-index="${index}">
+                        <div class="video-wrapper">
+                            <iframe id="${safeId}"
+                                    width="315" height="560"
+                                    src="${src}"
+                                    title="${title.replace(/"/g, '&quot;')}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div class="video-title">${title}</div>
+                    </div>
+                `;
+            });
+            videoGrid.innerHTML = html;
+        }
+
+        // --------------------------------------------------------------
+        // 6.  RENDER COMMENTS
+        // --------------------------------------------------------------
+        function renderComments() {
+            if (!videoData.length) {
+                commentList.innerHTML =
+                `<div class="error-state" style="padding:10px 0;">No comments available.</div>`;
+                return;
+            }
+
+            let html = '';
+            videoData.forEach((v, index) => {
+                const title = v.title || `Video ${index + 1}`;
+                const comment = v.comment || '—';
+                html += `
+                    <div class="comment-item" data-index="${index}">
+                        <span class="comment-video-title">${title}</span>
+                        <span class="comment-text">${comment}</span>
+                        <span class="comment-badge">#${index + 1}</span>
+                    </div>
+                `;
+            });
+            commentList.innerHTML = html;
+        }
+
+        // --------------------------------------------------------------
+        // 7.  YOUTUBE PLAYER API
+        // --------------------------------------------------------------
+        function initYouTubePlayers() {
+            const iframes = document.querySelectorAll('.video-wrapper iframe');
+            if (!iframes.length) return;
+
+            iframes.forEach((iframe, index) => {
+                const id = iframe.id;
+                if (!id) return;
+
+                try {
+                    players[index] = new YT.Player(id, {
+                        events: {
+                            'onStateChange': function(event) {
+                                handleStateChange(index, event.data);
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Failed to init player', index, e);
+                }
+            });
+        }
+
+        function handleStateChange(index, state) {
+            playerStates[index] = state;
+            // YT states: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+            const playing = Object.values(playerStates).some(s => s === 1);
+            if (playing !== isAnyPlaying) {
+                isAnyPlaying = playing;
+                updateUIForPlayState(playing);
+            }
+        }
+
+        function updateUIForPlayState(playing) {
+            if (playing) {
+                headerEl.classList.add('hidden');
+                commentsEl.classList.add('hidden');
+            } else {
+                headerEl.classList.remove('hidden');
+                commentsEl.classList.remove('hidden');
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 8.  YOUTUBE API READY CALLBACK
+        // --------------------------------------------------------------
+        let ytReady = false;
+
+        window.onYouTubeIframeAPIReady = function() {
+            ytReady = true;
+            // If videos are already rendered, init players.
+            if (videoData.length) {
+                // small delay to ensure iframes are in DOM
+                setTimeout(initYouTubePlayers, 200);
+            }
+        };
+
+        // fallback: if API loads after data, we check periodically
+        function tryInitPlayers() {
+            if (ytReady && videoData.length) {
+                initYouTubePlayers();
+                return true;
+            }
+            return false;
+        }
+
+        // --------------------------------------------------------------
+        // 9.  MAIN INIT
+        // --------------------------------------------------------------
+        async function init() {
+            const ok = await loadData();
+            if (!ok) {
+                videoGrid.innerHTML = `
+                    <div class="error-state">
+                        ⚠️ Could not load data.<br>
+                        Make sure <strong>users.json</strong> and <strong>myvideos.json</strong>
+                        are in the same folder as this page.
+                    </div>
+                `;
+                commentList.innerHTML = '';
+                return;
+            }
+
+            renderUser();
+            renderVideos();
+            renderComments();
+
+            // Try to init YouTube players if API already loaded
+            if (ytReady) {
+                setTimeout(initYouTubePlayers, 300);
+            } else {
+                // The API will call onYouTubeIframeAPIReady when loaded.
+                // But if it's already loaded before we set the callback,
+                // we need to manually init.
+                if (typeof YT !== 'undefined' && YT.Player) {
+                    ytReady = true;
+                    setTimeout(initYouTubePlayers, 300);
+                }
+            }
+
+            // Also re-check after a second in case the API loads late
+            setTimeout(() => {
+                if (!ytReady) {
+                    // API might still load, but we can try to use the iframe's native
+                    // click events as a fallback for hiding UI.
+                    // We'll attach click listeners to video items.
+                    attachFallbackHandlers();
+                } else {
+                    // ensure players are initialized
+                    if (Object.keys(players).length === 0 && videoData.length) {
+                        initYouTubePlayers();
+                    }
+                }
+            }, 1200);
+
+            // Fallback: if YouTube API never loads, use click detection
+            attachFallbackHandlers();
+        }
+
+        // --------------------------------------------------------------
+        // 10. FALLBACK: click-based toggle (if API fails)
+        // --------------------------------------------------------------
+        let fallbackActive = false;
+
+        function attachFallbackHandlers() {
+            if (fallbackActive) return;
+            fallbackActive = true;
+
+            document.addEventListener('click', function(e) {
+                const videoItem = e.target.closest('.video-item');
+                if (!videoItem) return;
+
+                // If API players are working, we don't want to interfere.
+                // Only use fallback if no players are initialized.
+                if (Object.keys(players).length > 0) return;
+
+                // Toggle playing state
+                const currentlyPlaying = isAnyPlaying;
+                if (!currentlyPlaying) {
+                    // start playing: hide header & comments
+                    isAnyPlaying = true;
+                    updateUIForPlayState(true);
+                } else {
+                    // stop playing: show header & comments
+                    isAnyPlaying = false;
+                    updateUIForPlayState(false);
+                }
+            });
+
+            // Also allow clicking outside to restore UI when in fallback mode
+            document.addEventListener('click', function(e) {
+                if (Object.keys(players).length > 0) return;
+                if (!isAnyPlaying) return;
+                const isVideo = e.target.closest('.video-item');
+                const isHeader = e.target.closest('#header');
+                const isComments = e.target.closest('#comments');
+                // If clicking outside video, header, comments — restore
+                if (!isVideo && !isHeader && !isComments) {
+                    isAnyPlaying = false;
+                    updateUIForPlayState(false);
+                }
+            });
+        }
+
+        // --------------------------------------------------------------
+        // 11. START
+        // --------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Also, if the document is already loaded, init directly.
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            // but we want to avoid double init
+            if (!window._initStarted) {
+                window._initStarted = true;
+                init();
+            }
+        }
+    </script>
+
+</body>
+</html>
