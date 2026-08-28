@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Finger Counter - MediaPipe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        .video-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        #videoElement {
+            display: none;
+        }
+        #canvasElement {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+            background: #000;
+        }
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .info-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 16px;
+        }
+        .info-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+        #fingerCount {
+            font-size: 72px;
+        }
+        #status {
+            text-align: center;
+            color: #666;
+            margin: 10px 0;
+            font-size: 14px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .status-loading {
+            color: #ff9800 !important;
+            background: #fff3e0 !important;
+        }
+        .status-ready {
+            color: #4caf50 !important;
+            background: #e8f5e9 !important;
+        }
+        .status-error {
+            color: #f44336 !important;
+            background: #ffebee !important;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .hand-indicator {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>✋ Hand Finger Counter</h1>
+    
+    <div class="container">
+        <div id="status" class="status-loading">Loading MediaPipe...</div>
+        
+        <div class="video-container">
+            <video id="videoElement" width="640" height="480" autoplay playsinline></video>
+            <canvas id="canvasElement" width="640" height="480"></canvas>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>👆 Fingers Count</h3>
+                <div id="fingerCount" class="value">--</div>
+                <div id="handType" class="hand-indicator">--</div>
+            </div>
+            <div class="info-card">
+                <h3>🖐️ Hands Detected</h3>
+                <div id="handsCount" class="value">0</div>
+            </div>
+            <div class="info-card">
+                <h3>⚡ FPS</h3>
+                <div id="fps" class="value">--</div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="startBtn">Start Camera</button>
+            <button id="stopBtn" disabled>Stop Camera</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <script>
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasElement');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        let hands;
+        let camera;
+        let lastTime = Date.now();
+        let frameCount = 0;
+        
+        // Finger tip and base landmark indices
+        const FINGER_TIPS = [4, 8, 12, 16, 20];  // Thumb, Index, Middle, Ring, Pinky
+        const FINGER_BASES = [2, 5, 9, 13, 17];
+        const FINGER_PIPS = [3, 6, 10, 14, 18];
+        
+        function countFingers(landmarks, handedness) {
+            let count = 0;
+            const isRightHand = handedness === 'Right';
+            
+            // Thumb detection (different logic based on hand)
+            const thumbTip = landmarks[FINGER_TIPS[0]];
+            const thumbIP = landmarks[FINGER_PIPS[0]];
+            
+            if (isRightHand) {
+                if (thumbTip.x < thumbIP.x) count++;
+            } else {
+                if (thumbTip.x > thumbIP.x) count++;
+            }
+            
+            // Other four fingers (check if tip is above PIP joint)
+            for (let i = 1; i < 5; i++) {
+                const tip = landmarks[FINGER_TIPS[i]];
+                const pip = landmarks[FINGER_PIPS[i]];
+                
+                if (tip.y < pip.y) {
+                    count++;
+                }
+            }
+            
+            return count;
+        }
+        
+        function updateFPS() {
+            frameCount++;
+            const currentTime = Date.now();
+            const elapsed = currentTime - lastTime;
+            
+            if (elapsed >= 1000) {
+                const fps = Math.round((frameCount * 1000) / elapsed);
+                document.getElementById('fps').textContent = fps;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+        
+        function onResults(results) {
+            // Clear canvas
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // Draw video frame
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Update hands count
+            const handsDetected = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
+            document.getElementById('handsCount').textContent = handsDetected;
+            
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                // Process first hand detected
+                const landmarks = results.multiHandLandmarks[0];
+                const handedness = results.multiHandedness[0].label;
+                
+                // Draw hand landmarks
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                    color: '#00FF00',
+                    lineWidth: 3
+                });
+                drawLandmarks(canvasCtx, landmarks, {
+                    color: '#FF0000',
+                    lineWidth: 1,
+                    radius: 5
+                });
+                
+                // Count fingers
+                const fingerCount = countFingers(landmarks, handedness);
+                document.getElementById('fingerCount').textContent = fingerCount;
+                document.getElementById('handType').textContent = `${handedness} Hand`;
+                
+                // If multiple hands, show total
+                if (handsDetected > 1) {
+                    let totalFingers = fingerCount;
+                    for (let i = 1; i < results.multiHandLandmarks.length; i++) {
+                        const otherLandmarks = results.multiHandLandmarks[i];
+                        const otherHandedness = results.multiHandedness[i].label;
+                        
+                        // Draw other hands
+                        drawConnectors(canvasCtx, otherLandmarks, HAND_CONNECTIONS, {
+                            color: '#00FFFF',
+                            lineWidth: 3
+                        });
+                        drawLandmarks(canvasCtx, otherLandmarks, {
+                            color: '#FF00FF',
+                            lineWidth: 1,
+                            radius: 5
+                        });
+                        
+                        totalFingers += countFingers(otherLandmarks, otherHandedness);
+                    }
+                    document.getElementById('fingerCount').textContent = totalFingers;
+                    document.getElementById('handType').textContent = 'Both Hands';
+                }
+            } else {
+                document.getElementById('fingerCount').textContent = '--';
+                document.getElementById('handType').textContent = 'No hand detected';
+            }
+            
+            canvasCtx.restore();
+            updateFPS();
+        }
+        
+        async function initializeMediaPipe() {
+            try {
+                // Initialize MediaPipe Hands
+                hands = new Hands({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                    }
+                });
+                
+                hands.setOptions({
+                    maxNumHands: 2,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+                
+                hands.onResults(onResults);
+                
+                statusDiv.textContent = 'MediaPipe loaded! Click Start Camera';
+                statusDiv.className = 'status-ready';
+                startBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error initializing MediaPipe:', error);
+                statusDiv.textContent = 'Error loading MediaPipe: ' + error.message;
+                statusDiv.className = 'status-error';
+            }
+        }
+        
+        async function startCamera() {
+            try {
+                statusDiv.textContent = 'Starting camera...';
+                statusDiv.className = 'status-loading';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' },
+                    audio: false
+                });
+                
+                videoElement.srcObject = stream;
+                
+                camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({ image: videoElement });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                
+                await camera.start();
+                
+                statusDiv.textContent = 'Camera active - Show your hand!';
+                statusDiv.className = 'status-ready';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                statusDiv.textContent = 'Error: ' + error.message;
+                statusDiv.className = 'status-error';
+            }
+        }
+        
+        function stopCamera() {
+            if (camera) {
+                camera.stop();
+            }
+            
+            if (videoElement.srcObject) {
+                videoElement.srcObject.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+            }
+            
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            document.getElementById('fingerCount').textContent = '--';
+            document.getElementById('handType').textContent = '--';
+            document.getElementById('handsCount').textContent = '0';
+            document.getElementById('fps').textContent = '--';
+            
+            statusDiv.textContent = 'Camera stopped';
+            statusDiv.className = '';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startCamera);
+        stopBtn.addEventListener('click', stopCamera);
+        
+        // Initialize on page load
+        window.addEventListener('load', initializeMediaPipe);
+    </script>
+</body>
+</html>
