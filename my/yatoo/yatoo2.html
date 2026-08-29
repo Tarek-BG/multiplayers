@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yatoo · Video Gallery</title>
+    <title>Tatoo · Video Gallery</title>
     <!-- YouTube IFrame Player API -->
     <script src="https://www.youtube.com/iframe_api">
     </script>
@@ -657,11 +657,12 @@
         const PHOTO_URL =
             'https://drive.google.com/uc?export=view&id=1eea2WSFEmVUvxU6besBr_dTWnFsFKFY8';
 
+        // Google Drive download URLs
         const USER_JSON_URL = `https://drive.google.com/uc?export=download&id=${DRIVE_USER_FILE_ID}`;
         const VIDEO_JSON_URL = `https://drive.google.com/uc?export=download&id=${DRIVE_VIDEO_FILE_ID}`;
 
-        // Proxy endpoint (simpler, returns raw text)
-        const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+        // AllOrigins proxy base
+        const PROXY_BASE = 'https://api.allorigins.win/get?url=';
 
         // ==============================================================
         // STATE
@@ -684,7 +685,7 @@
         const commentCountEl = document.getElementById('commentCount');
 
         // ==============================================================
-        // DEVICE ID (generated locally)
+        // DEVICE ID
         // ==============================================================
         function getDeviceId() {
             let id = localStorage.getItem('deviceUserId');
@@ -697,65 +698,45 @@
         document.getElementById('deviceId').textContent = getDeviceId();
 
         // ==============================================================
-        // FETCH VIA PROXY WITH TIMEOUT
+        // FETCH VIA ALLORIGINS PROXY
         // ==============================================================
-        function fetchWithTimeout(url, timeout = 10000) {
-            return Promise.race([
-                fetch(url),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error(`Request timed out after ${timeout}ms`)), timeout)
-                )
-            ]);
-        }
-
-        async function fetchViaProxy(driveUrl) {
-            const proxyUrl = PROXY_URL + encodeURIComponent(driveUrl);
-            console.log(`🔄 Trying proxy: ${proxyUrl}`);
-            const response = await fetchWithTimeout(proxyUrl, 10000);
-            if (!response.ok) {
-                throw new Error(`Proxy HTTP ${response.status}`);
-            }
-            const text = await response.text();
-
-            // Check for HTML error page
-            if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-                throw new Error('Proxy returned HTML – file may not be publicly shared.');
-            }
-
-            // Try to parse as JSON
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                // Maybe it's raw JSON without quotes? Try cleaning.
-                const cleaned = text.trim();
-                if (cleaned.startsWith('[') || cleaned.startsWith('{')) {
-                    return JSON.parse(cleaned);
-                }
-                throw new Error('Response is not valid JSON: ' + text.substring(0, 100));
-            }
+        async function fetchViaProxy(url) {
+            const proxyUrl = PROXY_BASE + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`Proxy HTTP ${response.status}`);
+            const data = await response.json();
+            // AllOrigins returns the raw text inside the 'contents' property
+            if (!data.contents) throw new Error('Proxy returned empty contents');
+            return data.contents;
         }
 
         // ==============================================================
         // LOAD DATA
         // ==============================================================
         async function loadData() {
-            console.log('🔄 Loading users.json from Google Drive via proxy...');
-            const users = await fetchViaProxy(USER_JSON_URL);
-            if (!Array.isArray(users) || users.length === 0) {
-                throw new Error('users.json must be an array with at least one user.');
-            }
-            userData = users[0];
-            document.getElementById('userEmail').textContent = userData.email || '—';
+            try {
+                // Fetch users.json via proxy
+                const userText = await fetchViaProxy(USER_JSON_URL);
+                const users = JSON.parse(userText);
+                if (!Array.isArray(users) || users.length === 0) {
+                    throw new Error('users.json must be an array with at least one user.');
+                }
+                userData = users[0];
+                document.getElementById('userEmail').textContent = userData.email || '—';
 
-            console.log('🔄 Loading myvideos.json from Google Drive via proxy...');
-            const videos = await fetchViaProxy(VIDEO_JSON_URL);
-            if (!Array.isArray(videos)) {
-                throw new Error('myvideos.json must be an array of videos.');
-            }
-            videoData = videos;
+                // Fetch myvideos.json via proxy
+                const videoText = await fetchViaProxy(VIDEO_JSON_URL);
+                const videos = JSON.parse(videoText);
+                if (!Array.isArray(videos)) {
+                    throw new Error('myvideos.json must be an array of videos.');
+                }
+                videoData = videos;
 
-            console.log('✅ Data loaded successfully!');
-            return true;
+                return true;
+            } catch (err) {
+                console.error('Load error:', err);
+                throw err;
+            }
         }
 
         // ==============================================================
@@ -791,6 +772,7 @@
                 const title = v.title || `Video ${index + 1}`;
                 const safeId = `player-${index}`;
 
+                // Convert to embed URL if needed
                 let embedSrc = src;
                 if (src && src.includes('youtube.com/watch')) {
                     try {
@@ -849,6 +831,7 @@
             commentList.innerHTML = html;
             commentCountEl.textContent = videoData.length;
 
+            // Click on comment → play video
             document.querySelectorAll('.comment-item').forEach(el => {
                 el.addEventListener('click', function() {
                     const idx = parseInt(this.dataset.index, 10);
@@ -987,50 +970,20 @@
         }
 
         // ==============================================================
-        // SHOW FALLBACK INPUT (with pre-filled data)
+        // SHOW FALLBACK INPUT (when fetch fails)
         // ==============================================================
         function showFallbackInput(errorMsg) {
-            // Pre-fill with known JSON content (so user can just click Load)
-            const defaultUserJson = `[
-  {
-    "id": "user_001",
-    "name": "Ben gadha Tarek",
-    "photo": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
-    "presentation": "History enthusiast and content creator",
-    "email": "tarek@example.com",
-    "linkjson": "https://drive.google.com/file/d/1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO/view?usp=drive_link"
-  }
-]`;
-
-            const defaultVideoJson = `[
-  {
-    "src": "https://www.youtube.com/embed/N5JgdiPmMcQ",
-    "title": "La dynastie des Habsbourg commence avec le roi Philippe I (1506)",
-    "comment": "Start of the Habsburg dynasty"
-  },
-  {
-    "src": "https://www.youtube.com/embed/lL_-Vtm9A5c",
-    "title": "Carthage: The City Rome Couldn’t Allow to Survive",
-    "comment": "Ancient Carthage history"
-  },
-  {
-    "src": "https://www.youtube.com/embed/YYW8gmXmQyE",
-    "title": "Why Is The US So BIG?",
-    "comment": "US territorial expansion"
-  }
-]`;
-
             const grid = document.getElementById('videoGrid');
             grid.innerHTML = `
                 <div class="fallback-area">
                     <div class="error-msg">⚠️ ${errorMsg || 'Failed to load data via proxy.'}</div>
                     <label>📄 Paste your <strong>users.json</strong> content below</label>
-                    <textarea id="userJsonInput">${defaultUserJson}</textarea>
+                    <textarea id="userJsonInput" placeholder='[{"id":"user_001","name":"Your Name","photo":"https://...","presentation":"Hi","email":"user@example.com"}]'></textarea>
                     <label>📄 Paste your <strong>myvideos.json</strong> content below</label>
-                    <textarea id="videoJsonInput">${defaultVideoJson}</textarea>
+                    <textarea id="videoJsonInput" placeholder='[{"src":"https://youtube.com/embed/...","title":"Video 1","comment":"Great video!"}]'></textarea>
                     <button id="loadManualBtn">Load Videos</button>
-                    <div class="hint">The JSON is pre‑filled – just click the button above.<br>
-                    Or paste your own content if needed.</div>
+                    <div class="hint">Or make sure your Google Drive files are publicly shared.<br>
+                    You can also paste the raw JSON content directly.</div>
                 </div>
             `;
 
