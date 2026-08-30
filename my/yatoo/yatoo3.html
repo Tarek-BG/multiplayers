@@ -393,71 +393,66 @@
             opacity: 1;
         }
 
-        /* ----- JSON CONTROLS & VIEWER ----- */
-        .json-controls {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            padding: 8px 16px;
-            background: #0f1a24;
-            border-bottom: 1px solid #1f3140;
-            flex-shrink: 0;
-            flex-wrap: wrap;
-            align-items: center;
+        /* ----- FALLBACK INPUT (when fetch fails) ----- */
+        .fallback-area {
+            padding: 20px;
+            background: #1a2533;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
         }
-        .json-controls button {
-            background: #2a3a4a;
-            border: none;
+        .fallback-area label {
+            font-size: 0.9rem;
             color: #b0c8dd;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .fallback-area textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a3a4a;
+            background: #0f1722;
+            color: #eee;
+            font-size: 0.8rem;
+            font-family: 'Segoe UI', monospace;
+            margin-bottom: 10px;
+            resize: vertical;
+            min-height: 120px;
+        }
+        .fallback-area input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a3a4a;
+            background: #0f1722;
+            color: #eee;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        .fallback-area button {
+            background: #4a7a9c;
+            border: none;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 30px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease;
+            transition: background 0.2s ease;
+            margin: 4px;
         }
-        .json-controls button:hover {
-            background: #3a5a7a;
-            color: #fff;
-        }
-        .json-controls button.primary {
-            background: #4a7a9c;
-            color: #fff;
-        }
-        .json-controls button.primary:hover {
+        .fallback-area button:hover {
             background: #5a8aaa;
         }
-        .json-controls .status {
+        .fallback-area .hint {
+            font-size: 0.7rem;
             color: #6a8aa8;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            margin-top: 6px;
         }
-
-        .json-viewer {
-            display: none;
-            background: #0b1119;
-            padding: 12px 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            border-top: 1px solid #1f3140;
-            flex-shrink: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: #b0c8dd;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .json-viewer.open {
-            display: block;
-        }
-        .json-viewer::-webkit-scrollbar {
-            width: 4px;
-        }
-        .json-viewer::-webkit-scrollbar-thumb {
-            background: #3a5a7a;
-            border-radius: 10px;
+        .fallback-area .error-msg {
+            color: #d47a7a;
+            font-size: 0.85rem;
+            margin: 6px 0;
         }
 
         /* ----- LOADING / ERROR ----- */
@@ -594,14 +589,6 @@
             .comments-bar {
                 padding: 5px 12px;
             }
-            .json-controls {
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-            .json-controls button {
-                font-size: 0.65rem;
-                padding: 4px 12px;
-            }
         }
     </style>
 </head>
@@ -635,18 +622,10 @@
             <div id="videoGrid" class="video-grid">
                 <div class="loading-state">
                     <div class="spinner"></div>
-                    <span>Loading videos from Google Sites…</span>
+                    <span>Loading videos via proxy…</span>
                 </div>
             </div>
         </main>
-
-        <!-- JSON CONTROLS + VIEWER (placed above comments) -->
-        <div class="json-controls" id="jsonControls">
-            <button class="primary" id="fetchJsonBtn">🔄 Fetch from Google Sites</button>
-            <button id="toggleJsonBtn">📄 Show JSON</button>
-            <span class="status" id="jsonStatus">⏳ Ready</span>
-        </div>
-        <div class="json-viewer" id="jsonViewer"></div>
 
         <!-- COMMENTS -->
         <footer id="comments">
@@ -671,45 +650,18 @@
 
     <script>
         // ==============================================================
-        // CONFIG
+        // CONFIG – Google Drive file IDs (publicly shared)
         // ==============================================================
-        const SITES_URL = 'https://sites.google.com/view/metbg';
+        const DRIVE_USER_FILE_ID = '1hOrrL-ydfLEae-lbqxA9cUhUdC6cucEA';
+        const DRIVE_VIDEO_FILE_ID = '1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO';
+        const PHOTO_URL =
+            'https://drive.google.com/uc?export=view&id=1eea2WSFEmVUvxU6besBr_dTWnFsFKFY8';
+
+        const USER_JSON_URL = `https://drive.google.com/uc?export=download&id=${DRIVE_USER_FILE_ID}`;
+        const VIDEO_JSON_URL = `https://drive.google.com/uc?export=download&id=${DRIVE_VIDEO_FILE_ID}`;
+
+        // Proxy endpoint (simpler, returns raw text)
         const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-
-        // Fallback data (used if fetch fails)
-        const FALLBACK_USER_JSON = `[
-  {
-    "id": "user_001",
-    "name": "Ben gadha Tarek",
-    "photo": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
-    "presentation": "History enthusiast and content creator",
-    "email": "tarek@example.com",
-    "linkjson": "https://drive.google.com/file/d/1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO/view?usp=drive_link"
-  }
-]`;
-
-        const FALLBACK_VIDEO_JSON = `[
-  {
-    "src": "https://www.youtube.com/embed/N5JgdiPmMcQ",
-    "title": "La dynastie des Habsbourg commence avec le roi Philippe I (1506)",
-    "comment": "Start of the Habsburg dynasty"
-  },
-  {
-    "src": "https://www.youtube.com/embed/lL_-Vtm9A5c",
-    "title": "Carthage: The City Rome Couldn’t Allow to Survive",
-    "comment": "Ancient Carthage history"
-  },
-  {
-    "src": "https://www.youtube.com/embed/YYW8gmXmQyE",
-    "title": "Why Is The US So BIG?",
-    "comment": "US territorial expansion"
-  },
-  {
-    "src": "https://drive.google.com/file/d/1z57IhErbH40dpeJCveQBxY2ElEQKKWkV/view?usp=drive_link",
-    "title": "1500 à 1600. Expansion ibérique et Réforme?",
-    "comment": "An interesting look at ......"
-  }
-]`;
 
         // ==============================================================
         // STATE
@@ -720,9 +672,6 @@
         let playerStates = {};
         let isAnyPlaying = false;
         let commentsCollapsed = false;
-        let jsonViewerOpen = false;
-        let rawUserJson = '';
-        let rawVideoJson = '';
 
         const headerEl = document.getElementById('header');
         const commentsEl = document.getElementById('comments');
@@ -733,10 +682,6 @@
         const commentsContent = document.getElementById('commentsContent');
         const commentsToggle = document.getElementById('commentsToggle');
         const commentCountEl = document.getElementById('commentCount');
-        const jsonViewer = document.getElementById('jsonViewer');
-        const jsonStatus = document.getElementById('jsonStatus');
-        const fetchBtn = document.getElementById('fetchJsonBtn');
-        const toggleBtn = document.getElementById('toggleJsonBtn');
 
         // ==============================================================
         // DEVICE ID (generated locally)
@@ -752,9 +697,9 @@
         document.getElementById('deviceId').textContent = getDeviceId();
 
         // ==============================================================
-        // FETCH HELPER (with timeout)
+        // FETCH VIA PROXY WITH TIMEOUT
         // ==============================================================
-        function fetchWithTimeout(url, timeout = 15000) {
+        function fetchWithTimeout(url, timeout = 10000) {
             return Promise.race([
                 fetch(url),
                 new Promise((_, reject) =>
@@ -763,212 +708,54 @@
             ]);
         }
 
-        async function fetchViaProxy(url) {
-            const proxyUrl = PROXY_URL + encodeURIComponent(url);
-            console.log(`🔄 Fetching via proxy: ${proxyUrl}`);
-            const response = await fetchWithTimeout(proxyUrl, 15000);
+        async function fetchViaProxy(driveUrl) {
+            const proxyUrl = PROXY_URL + encodeURIComponent(driveUrl);
+            console.log(`🔄 Trying proxy: ${proxyUrl}`);
+            const response = await fetchWithTimeout(proxyUrl, 10000);
             if (!response.ok) {
                 throw new Error(`Proxy HTTP ${response.status}`);
             }
-            return await response.text();
-        }
+            const text = await response.text();
 
-        // ==============================================================
-        // EXTRACT DRIVE FILE IDs FROM HTML
-        // ==============================================================
-        function extractDriveFileIds(html) {
-            const fileIds = [];
-            // Look for iframe src containing /file/d/.../preview
-            const iframeRegex = /<iframe[^>]*src="[^"]*\/file\/d\/([^\/\?]+)[^"]*"[^>]*>/gi;
-            let match;
-            while ((match = iframeRegex.exec(html)) !== null) {
-                fileIds.push(match[1]);
+            // Check for HTML error page
+            if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+                throw new Error('Proxy returned HTML – file may not be publicly shared.');
             }
-            // Also look for data-embed-doc-id attribute
-            const dataRegex = /data-embed-doc-id="([^"]+)"/gi;
-            while ((match = dataRegex.exec(html)) !== null) {
-                fileIds.push(match[1]);
-            }
-            // Also look for direct /d/ in URLs (maybe in href or data)
-            const directRegex = /\/d\/([^\/\?]+)/gi;
-            while ((match = directRegex.exec(html)) !== null) {
-                fileIds.push(match[1]);
-            }
-            // Deduplicate
-            return [...new Set(fileIds)];
-        }
 
-        // ==============================================================
-        // FETCH JSON FROM DRIVE BY FILE ID (via proxy)
-        // ==============================================================
-        async function fetchDriveJson(fileId) {
-            const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-            const text = await fetchViaProxy(downloadUrl);
             // Try to parse as JSON
             try {
                 return JSON.parse(text);
             } catch (e) {
-                // Maybe it's wrapped in some HTML? Try to clean.
+                // Maybe it's raw JSON without quotes? Try cleaning.
                 const cleaned = text.trim();
                 if (cleaned.startsWith('[') || cleaned.startsWith('{')) {
                     return JSON.parse(cleaned);
                 }
-                throw new Error(`File ${fileId} is not valid JSON.`);
+                throw new Error('Response is not valid JSON: ' + text.substring(0, 100));
             }
         }
 
         // ==============================================================
-        // LOAD DATA FROM GOOGLE SITES
+        // LOAD DATA
         // ==============================================================
-        async function loadFromSites() {
-            jsonStatus.textContent = '⏳ Fetching page…';
-            jsonStatus.style.color = '#6a8aa8';
-
-            try {
-                // 1. Fetch the Google Sites page HTML
-                const html = await fetchViaProxy(SITES_URL);
-
-                // 2. Extract all Drive file IDs
-                const fileIds = extractDriveFileIds(html);
-                console.log('📁 Found Drive file IDs:', fileIds);
-
-                if (fileIds.length === 0) {
-                    throw new Error('No embedded Google Drive files found on the page.');
-                }
-
-                // 3. Fetch each file and categorize
-                let userJsonData = null;
-                let videoJsonData = null;
-
-                for (const id of fileIds) {
-                    try {
-                        const data = await fetchDriveJson(id);
-                        // Detect type
-                        if (Array.isArray(data) && data.length > 0) {
-                            const first = data[0];
-                            if (first.id && first.name) {
-                                // Likely users.json
-                                userJsonData = JSON.stringify(data, null, 2);
-                                rawUserJson = userJsonData;
-                                console.log('✅ users.json loaded from file ID:', id);
-                            } else if (first.src && first.title) {
-                                // Likely myvideos.json
-                                videoJsonData = JSON.stringify(data, null, 2);
-                                rawVideoJson = videoJsonData;
-                                console.log('✅ myvideos.json loaded from file ID:', id);
-                            } else {
-                                // Could be either; store as video if not already set
-                                if (!videoJsonData) {
-                                    videoJsonData = JSON.stringify(data, null, 2);
-                                    rawVideoJson = videoJsonData;
-                                    console.log('⚠️ Assumed as myvideos.json from file ID:', id);
-                                }
-                            }
-                        }
-                    } catch (err) {
-                        console.warn(`Failed to fetch/parse file ${id}:`, err);
-                    }
-                }
-
-                // If we didn't get both, use fallbacks
-                if (!userJsonData) {
-                    rawUserJson = FALLBACK_USER_JSON;
-                    console.warn('⚠️ Using fallback users.json');
-                }
-                if (!videoJsonData) {
-                    rawVideoJson = FALLBACK_VIDEO_JSON;
-                    console.warn('⚠️ Using fallback myvideos.json');
-                }
-
-                // Parse and store
-                const users = JSON.parse(rawUserJson);
-                if (!Array.isArray(users) || users.length === 0) {
-                    throw new Error('users.json must be an array with at least one user.');
-                }
-                userData = users[0];
-                document.getElementById('userEmail').textContent = userData.email || '—';
-
-                const videos = JSON.parse(rawVideoJson);
-                if (!Array.isArray(videos)) {
-                    throw new Error('myvideos.json must be an array of videos.');
-                }
-                videoData = videos;
-
-                // Update viewer
-                updateJsonViewer();
-
-                // Render
-                renderUser();
-                renderVideos();
-                renderComments();
-                setupCommentsToggle();
-                initYouTubePlayersIfReady();
-
-                jsonStatus.textContent = '✅ Loaded from Google Sites!';
-                jsonStatus.style.color = '#4a8aaa';
-
-                console.log('✅ Data loaded successfully from Google Sites!');
-
-            } catch (err) {
-                console.error('❌ Load error:', err);
-                jsonStatus.textContent = '❌ ' + err.message;
-                jsonStatus.style.color = '#d47a7a';
-
-                // Show fallback option
-                showFallbackMessage(err.message);
+        async function loadData() {
+            console.log('🔄 Loading users.json from Google Drive via proxy...');
+            const users = await fetchViaProxy(USER_JSON_URL);
+            if (!Array.isArray(users) || users.length === 0) {
+                throw new Error('users.json must be an array with at least one user.');
             }
-        }
+            userData = users[0];
+            document.getElementById('userEmail').textContent = userData.email || '—';
 
-        // ==============================================================
-        // SHOW FALLBACK MESSAGE
-        // ==============================================================
-        function showFallbackMessage(errorMsg) {
-            const grid = document.getElementById('videoGrid');
-            grid.innerHTML = `
-                <div class="error-state">
-                    ⚠️ ${errorMsg || 'Failed to load from Google Sites.'}
-                    <div class="hint">
-                        Try clicking <strong>"Fetch from Google Sites"</strong> again.<br>
-                        Or use the pre‑filled JSON data below — click <strong>"Load Videos"</strong>.
-                    </div>
-                </div>
-            `;
-            // Show the JSON viewer with fallback data if not already set
-            if (!rawUserJson) rawUserJson = FALLBACK_USER_JSON;
-            if (!rawVideoJson) rawVideoJson = FALLBACK_VIDEO_JSON;
-            updateJsonViewer();
-            jsonViewer.classList.add('open');
-            jsonViewerOpen = true;
-            toggleBtn.textContent = '📄 Hide JSON';
-            // Also provide a "Load Videos" button in the viewer controls? We'll add a button to load from the displayed JSON.
-            // For simplicity, we'll just keep the existing logic: the user can click "Fetch" again, or we can add a "Load" button.
-            // We'll add a hidden "Load from JSON" button in the controls.
-        }
-
-        // ==============================================================
-        // UPDATE JSON VIEWER
-        // ==============================================================
-        function updateJsonViewer() {
-            if (rawUserJson && rawVideoJson) {
-                jsonViewer.textContent =
-                    '// users.json\n' + rawUserJson + '\n\n// myvideos.json\n' + rawVideoJson;
-            } else {
-                jsonViewer.textContent = 'No JSON data loaded yet.';
+            console.log('🔄 Loading myvideos.json from Google Drive via proxy...');
+            const videos = await fetchViaProxy(VIDEO_JSON_URL);
+            if (!Array.isArray(videos)) {
+                throw new Error('myvideos.json must be an array of videos.');
             }
-        }
+            videoData = videos;
 
-        // ==============================================================
-        // TOGGLE JSON VIEWER
-        // ==============================================================
-        function toggleJsonViewer() {
-            jsonViewerOpen = !jsonViewerOpen;
-            if (jsonViewerOpen) {
-                jsonViewer.classList.add('open');
-                toggleBtn.textContent = '📄 Hide JSON';
-            } else {
-                jsonViewer.classList.remove('open');
-                toggleBtn.textContent = '📄 Show JSON';
-            }
+            console.log('✅ Data loaded successfully!');
+            return true;
         }
 
         // ==============================================================
@@ -981,46 +768,12 @@
             document.getElementById('userPresentation').textContent = userData.presentation || '';
 
             const avatar = document.getElementById('userAvatar');
-            const photoUrl = userData.photo || 'https://ui-avatars.com/api/?name=' +
-                encodeURIComponent(userData.name || 'User') + '&background=2a4a6a&color=fff&size=128';
-            avatar.src = photoUrl;
+            avatar.src = PHOTO_URL;
             avatar.alt = userData.name || 'User';
             avatar.onerror = function() {
                 this.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name || 'User') +
                     '&background=2a4a6a&color=fff&size=128';
             };
-        }
-
-        // ==============================================================
-        // CONVERT SOURCE URL TO EMBEDDABLE URL
-        // ==============================================================
-        function getEmbedUrl(src) {
-            if (!src) return '';
-
-            // YouTube watch -> embed
-            if (src.includes('youtube.com/watch')) {
-                try {
-                    const videoId = new URL(src).searchParams.get('v');
-                    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-                } catch (e) { /* ignore */ }
-            }
-
-            // youtu.be -> embed
-            if (src.includes('youtu.be/')) {
-                const videoId = src.split('youtu.be/')[1]?.split('?')[0];
-                if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-            }
-
-            // Google Drive view -> preview (EMBED!)
-            if (src.includes('drive.google.com/file/d/')) {
-                const match = src.match(/\/d\/([^\/\?]+)/);
-                if (match) {
-                    return `https://drive.google.com/file/d/${match[1]}/preview`;
-                }
-            }
-
-            // Already an embed – keep as is
-            return src;
         }
 
         // ==============================================================
@@ -1034,10 +787,20 @@
 
             let html = '';
             videoData.forEach((v, index) => {
-                const src = v.src || '';
+                let src = v.src || '';
                 const title = v.title || `Video ${index + 1}`;
                 const safeId = `player-${index}`;
-                const embedSrc = getEmbedUrl(src);
+
+                let embedSrc = src;
+                if (src && src.includes('youtube.com/watch')) {
+                    try {
+                        const videoId = new URL(src).searchParams.get('v');
+                        if (videoId) embedSrc = `https://www.youtube.com/embed/${videoId}`;
+                    } catch (e) { /* ignore */ }
+                } else if (src && src.includes('youtu.be/')) {
+                    const videoId = src.split('youtu.be/')[1]?.split('?')[0];
+                    if (videoId) embedSrc = `https://www.youtube.com/embed/${videoId}`;
+                }
 
                 html += `
                     <div class="video-item" data-index="${index}">
@@ -1140,17 +903,6 @@
             });
         }
 
-        function initYouTubePlayersIfReady() {
-            if (ytReady) {
-                setTimeout(initYouTubePlayers, 300);
-            } else {
-                if (typeof YT !== 'undefined' && YT.Player) {
-                    ytReady = true;
-                    setTimeout(initYouTubePlayers, 300);
-                }
-            }
-        }
-
         function handleStateChange(index, state) {
             playerStates[index] = state;
             const playing = Object.values(playerStates).some(s => s === 1);
@@ -1235,22 +987,132 @@
         }
 
         // ==============================================================
-        // INIT
+        // SHOW FALLBACK INPUT (with pre-filled data)
+        // ==============================================================
+        function showFallbackInput(errorMsg) {
+            // Pre-fill with known JSON content (so user can just click Load)
+            const defaultUserJson = `[
+  {
+    "id": "user_001",
+    "name": "Ben gadha Tarek",
+    "photo": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
+    "presentation": "History enthusiast and content creator",
+    "email": "tarek@example.com",
+    "linkjson": "https://drive.google.com/file/d/1yYWNab9wSGGY0gpBuwlcRdLm4HVkb1VO/view?usp=drive_link"
+  }
+]`;
+
+            const defaultVideoJson = `[
+  {
+    "src": "https://www.youtube.com/embed/N5JgdiPmMcQ",
+    "title": "La dynastie des Habsbourg commence avec le roi Philippe I (1506)",
+    "comment": "Start of the Habsburg dynasty"
+  },
+  {
+    "src": "https://www.youtube.com/embed/lL_-Vtm9A5c",
+    "title": "Carthage: The City Rome Couldn’t Allow to Survive",
+    "comment": "Ancient Carthage history"
+  },
+  {
+    "src": "https://www.youtube.com/embed/YYW8gmXmQyE",
+    "title": "Why Is The US So BIG?",
+    "comment": "US territorial expansion"
+  }
+]`;
+
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = `
+                <div class="fallback-area">
+                    <div class="error-msg">⚠️ ${errorMsg || 'Failed to load data via proxy.'}</div>
+                    <label>📄 Paste your <strong>users.json</strong> content below</label>
+                    <textarea id="userJsonInput">${defaultUserJson}</textarea>
+                    <label>📄 Paste your <strong>myvideos.json</strong> content below</label>
+                    <textarea id="videoJsonInput">${defaultVideoJson}</textarea>
+                    <button id="loadManualBtn">Load Videos</button>
+                    <div class="hint">The JSON is pre‑filled – just click the button above.<br>
+                    Or paste your own content if needed.</div>
+                </div>
+            `;
+
+            document.getElementById('loadManualBtn').addEventListener('click', function() {
+                const userText = document.getElementById('userJsonInput').value.trim();
+                const videoText = document.getElementById('videoJsonInput').value.trim();
+
+                if (!userText || !videoText) {
+                    alert('Please paste both users.json and myvideos.json content.');
+                    return;
+                }
+
+                try {
+                    const users = JSON.parse(userText);
+                    if (!Array.isArray(users) || users.length === 0) {
+                        throw new Error('users.json must be an array with at least one user.');
+                    }
+                    userData = users[0];
+                    document.getElementById('userEmail').textContent = userData.email || '—';
+
+                    const videos = JSON.parse(videoText);
+                    if (!Array.isArray(videos)) {
+                        throw new Error('myvideos.json must be an array.');
+                    }
+                    videoData = videos;
+
+                    renderUser();
+                    renderVideos();
+                    renderComments();
+                    setupCommentsToggle();
+
+                    if (ytReady) setTimeout(initYouTubePlayers, 300);
+                    else {
+                        if (typeof YT !== 'undefined' && YT.Player) {
+                            ytReady = true;
+                            setTimeout(initYouTubePlayers, 300);
+                        }
+                    }
+                    attachFallbackHandlers();
+
+                } catch (err) {
+                    alert('Error parsing JSON: ' + err.message);
+                }
+            });
+        }
+
+        // ==============================================================
+        // MAIN INIT
         // ==============================================================
         async function init() {
-            // Set up buttons
-            fetchBtn.addEventListener('click', loadFromSites);
-            toggleBtn.addEventListener('click', toggleJsonViewer);
+            try {
+                await loadData();
 
-            // Auto-load on start
-            await loadFromSites();
+                renderUser();
+                renderVideos();
+                renderComments();
+                setupCommentsToggle();
 
-            // Attach fallback handlers
-            attachFallbackHandlers();
+                if (ytReady) {
+                    setTimeout(initYouTubePlayers, 300);
+                } else {
+                    if (typeof YT !== 'undefined' && YT.Player) {
+                        ytReady = true;
+                        setTimeout(initYouTubePlayers, 300);
+                    }
+                }
 
-            // If YouTube API is already loaded, init players
-            if (ytReady && videoData.length) {
-                setTimeout(initYouTubePlayers, 300);
+                setTimeout(() => {
+                    if (!ytReady) {
+                        attachFallbackHandlers();
+                    } else {
+                        if (Object.keys(players).length === 0 && videoData.length) {
+                            initYouTubePlayers();
+                        }
+                    }
+                }, 1200);
+
+                attachFallbackHandlers();
+
+            } catch (err) {
+                console.error('Init error:', err);
+                showFallbackInput(err.message || 'Failed to fetch via proxy.');
             }
         }
 
