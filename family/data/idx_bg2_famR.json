@@ -9,8 +9,8 @@
 {"id": "Z02YbengadhaY01", 
         "name": "ezzedine",
         "surname": "ben gadha",
-        "birth2death": {"1924-03-27","2012-03-19"},
-	"marri2divors": {"1957-03-27",""},
+        "birth2death": {"1924-03-27";"2012-03-19"},
+	"marri2divors": {"1957-03-27";""},
         "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
 	"mother": "B03X___kissyZ02"
 },
