@@ -6,14 +6,17 @@
         "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png",
 	"mother": "B03Xzarrouk_Z02"
 },
-{"id": "Z02YbengadhaY01", 
-        "name": "ezzedine",
-        "surname": "ben gadha",
-        "birth2death": ["1924-03-27","2012-03-19"],
-	"marri2divors": ["1957-03-27",""],
-        "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
-	"mother": "B03X___kissyZ02"
-},
+  {
+    "id": "Z02YbengadhaY01",
+    "name": "ezzedine",
+    "surname": "ben gadha",
+    "birthDate": "1924-03-27",
+    "deathDate": "2012-03-19",
+    "marriageDate": "1957-03-27",
+    "divorceDate": null,
+    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png",
+    "mother": "B03X___kissyZ02"
+  },
 {"id": "Y01YbengadhaX03", 
         "name": "abdelkader",
         "surname": "ben gadha",
