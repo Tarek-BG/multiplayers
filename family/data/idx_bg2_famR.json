@@ -17,6 +17,18 @@
     "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
     "mother": "B03X___kissyZ02",
     "linkjson": "https://drive.google.com/file......."
+},
+  {
+    "id": "Z01Xkenani__Y01",
+    "name": "zinouba",
+    "surname": "kenani",
+    "birthDate": "1938",
+    "deathDate": "2004",
+    "marriageDate": "1956",
+    "divorceDate": null,
+    "photoUrl": "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png",
+    "mother": "Z01XbengadhaY01",
+    "linkjson": "https://drive.google.com/file......."
 }, 
   {
     "id": "Z02YbengadhaY01",
