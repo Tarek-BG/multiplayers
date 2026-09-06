@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family Tree – Debug & Corrected</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #f0f0f0; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; padding: 25px; background: rgba(255,255,255,0.05); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        h1 { font-size: 2.5rem; background: linear-gradient(90deg, #4cc9f0, #4361ee, #f72585); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .subtitle { color: #b8b8d1; font-size: 1.05rem; }
+        .controls { background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+        .control-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+        .control-group label { font-size: 0.8rem; font-weight: 600; color: #aaa; text-transform: uppercase; }
+        .control-group input, .control-group select { padding: 12px 16px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 1rem; }
+        .control-group input:focus, .control-group select:focus { outline: none; border-color: #4361ee; }
+        .control-group select option { background: #1a1a2e; }
+        .btn { padding: 12px 28px; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: all 0.3s ease; }
+        .btn-primary { background: linear-gradient(90deg, #4361ee, #3a0ca3); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(67,97,238,0.4); }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: #ddd; border: 1px solid rgba(255,255,255,0.12); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16,185,129,0.4); }
+        .btn-info { background: #4cc9f0; color: #1a1a2e; }
+        .btn-info:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(76,201,240,0.4); }
+        .btn-warning { background: #f59e0b; color: #1a1a2e; }
+        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(245,158,11,0.4); }
+        .status-bar { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; padding: 12px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; font-size: 0.9rem; color: #aaa; }
+        .status-bar .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .dot.green { background: #10b981; }
+        .dot.red { background: #f72585; }
+        .dot.yellow { background: #f8961e; }
+        .dot.blue { background: #4cc9f0; }
+        .tree-container {
+            background: rgba(255,255,255,0.03);
+            padding: 0;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            min-height: 600px;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            position: relative;
+        }
+        .tree-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+        }
+        .tree-wrapper:active { cursor: grabbing; }
+        .tree-svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: 0 0;
+            transition: none;
+        }
+        .tree-svg-container svg {
+            display: block;
+            background: radial-gradient(ellipse at center, rgba(67,97,238,0.04), transparent 70%);
+            width: 100%;
+            height: 100%;
+        }
+        .tree-title { text-align: center; margin-bottom: 15px; font-size: 1.6rem; padding-bottom: 12px; border-bottom: 2px solid rgba(67,97,238,0.25); color: #fff; }
+        .tree-title small { font-size: 1rem; color: #8888aa; font-weight: 400; }
+        .tree-node { cursor: pointer; transition: all 0.3s ease; }
+        .tree-node:hover .node-circle { filter: brightness(1.3); stroke-width: 4; }
+        .node-circle { transition: all 0.3s ease; filter: drop-shadow(0 0 10px rgba(67,97,238,0.2)); }
+        .node-circle.main-person { stroke: #4cc9f0; stroke-width: 4; }
+        .node-circle.father { stroke: #4361ee; stroke-width: 3; }
+        .node-circle.mother { stroke: #f72585; stroke-width: 3; }
+        .node-circle.brother { stroke: #f8961e; stroke-width: 3; }
+        .node-circle.sister { stroke: #d946ef; stroke-width: 3; }
+        .node-circle.grandfather { stroke: #7209b7; stroke-width: 3; }
+        .node-circle.grandmother { stroke: #d946ef; stroke-width: 3; }
+        .node-circle.child { stroke: #10b981; stroke-width: 3; }
+        .node-circle.spouse { stroke: #f59e0b; stroke-width: 3; }
+        .connection-line { transition: all 0.3s ease; }
+        .connection-line:hover { stroke-width: 3; opacity: 0.8; }
+        .connection-line.father-line { stroke: #4361ee; }
+        .connection-line.mother-line { stroke: #f72585; stroke-dasharray: 4,4; }
+        .connection-line.brother-line { stroke: #f8961e; stroke-dasharray: 6,4; }
+        .connection-line.sister-line { stroke: #d946ef; stroke-dasharray: 6,4; }
+        .connection-line.grandparent-line { stroke: #7209b7; stroke-dasharray: 4,4; }
+        .connection-line.child-line { stroke: #10b981; }
+        .connection-line.spouse-line { stroke: #f59e0b; stroke-dasharray: 3,3; }
+        .connection-sphere { cursor: pointer; transition: all 0.3s ease; }
+        .connection-sphere:hover { transform: scale(1.5); filter: brightness(1.6) drop-shadow(0 0 20px currentColor); }
+        .connection-sphere .sphere-tooltip { opacity: 0; transition: opacity 0.3s ease; font-size: 8px; fill: #fff; text-anchor: middle; pointer-events: none; }
+        .connection-sphere:hover .sphere-tooltip { opacity: 1; }
+        .sphere-father { fill: #4361ee; stroke: #4cc9f0; }
+        .sphere-mother { fill: #f72585; stroke: #ff6b9d; }
+        .sphere-brother { fill: #f8961e; stroke: #fbbf24; }
+        .sphere-sister { fill: #d946ef; stroke: #e879f9; }
+        .sphere-grandfather { fill: #7209b7; stroke: #a855f7; }
+        .sphere-grandmother { fill: #d946ef; stroke: #e879f9; }
+        .sphere-child { fill: #10b981; stroke: #34d399; }
+        .sphere-spouse { fill: #f59e0b; stroke: #fbbf24; }
+        .node-label { font-size: 11px; font-weight: 600; fill: #e0e0e0; text-anchor: middle; opacity: 0.95; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,0.9); }
+        .node-sub-label { font-size: 8px; fill: #8888aa; text-anchor: middle; opacity: 0.7; pointer-events: none; }
+        .birth-year { font-size: 9px; fill: #f59e0b; text-anchor: start; opacity: 0.9; pointer-events: none; font-weight: 600; }
+        .stats-panel { display: flex; justify-content: center; gap: 50px; padding: 18px 20px 10px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 20px; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #4cc9f0; }
+        .stat-label { font-size: 0.8rem; color: #8888aa; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(0,0,0,0.92); color: #fff; padding: 14px 28px; border-radius: 12px; font-size: 1rem; z-index: 2000; opacity: 0; transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); display: flex; align-items: center; gap: 12px; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast i { font-size: 1.2rem; }
+        .toast-success i { color: #10b981; }
+        .toast-info i { color: #4cc9f0; }
+        .toast-warning i { color: #f8961e; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: #6c757d; text-align: center; }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; color: rgba(255,255,255,0.06); }
+        .empty-state p { font-size: 1.1rem; max-width: 500px; line-height: 1.6; }
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 15px;
+        }
+        .loading-overlay .spinner { font-size: 3rem; color: #4cc9f0; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loading-overlay .msg { color: #b8b8d1; font-size: 1.2rem; }
+        .loading-overlay .sub-msg { color: #8888aa; font-size: 0.9rem; margin-top: 8px; }
+        .loading-overlay .progress-bar { width: 300px; max-width: 80%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 20px; overflow: hidden; }
+        .loading-overlay .progress-bar .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4361ee, #4cc9f0); border-radius: 4px; transition: width 0.3s; }
+        .loading-overlay .cancel-btn { margin-top: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ddd; padding: 8px 24px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
+        .loading-overlay .cancel-btn:hover { background: rgba(255,255,255,0.2); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error-box { display: none; background: rgba(220,53,69,0.18); color: #f8d7da; padding: 16px 20px; border-radius: 10px; margin-top: 12px; border-left: 4px solid #dc3545; }
+        .footer { text-align: center; padding: 20px; color: #8888aa; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.04); margin-top: 30px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+
+        .legend-wrapper { position: absolute; top: 20px; right: 20px; z-index: 10; }
+        .legend-toggle { background: rgba(0,0,0,0.7); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px); }
+        .legend-toggle:hover { background: rgba(0,0,0,0.85); }
+        .legend-content { background: rgba(0,0,0,0.7); padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(10px); font-size: 11px; margin-top: 6px; min-width: 160px; display: none; max-height: 80vh; overflow-y: auto; }
+        .legend-content.open { display: block; }
+        .legend-content .legend-title { color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-size: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; color: #ccc; }
+        .legend-sphere { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+        .legend-line { width: 18px; height: 2px; flex-shrink: 0; }
+
+        .debug-panel {
+            background: rgba(0,0,0,0.5);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.06);
+            max-height: 400px;
+            overflow: auto;
+            display: none;
+        }
+        .debug-panel.open { display: block; }
+        .debug-panel summary { cursor: pointer; color: #4cc9f0; font-weight: 600; font-size: 1rem; padding: 8px 0; }
+        .debug-panel summary:hover { color: #72d4f7; }
+        .debug-panel pre { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; overflow: auto; max-height: 250px; font-size: 11px; color: #b8b8d1; white-space: pre-wrap; word-break: break-all; border: 1px solid rgba(255,255,255,0.05); margin-top: 8px; }
+        .debug-panel .label { color: #f72585; font-weight: 600; }
+        .debug-panel .value { color: #4cc9f0; }
+        .debug-panel .missing { color: #f59e0b; }
+
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; align-items: stretch; }
+            .control-group { min-width: auto; }
+            .btn { justify-content: center; }
+            .stats-panel { gap: 20px; }
+            h1 { font-size: 1.8rem; }
+            .filter-row { flex-direction: column; }
+            .legend-wrapper { top: 10px; right: 10px; }
+            .loading-overlay .progress-bar { width: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-people-arrows"></i> Family Tree – Debug & Corrected</h1>
+            <p class="subtitle">
+                Load <strong>idx_famRok.json</strong> – Format: <strong>SD02F.dali.BD01</strong><br>
+                <span style="color:#f72585;">View JSON</span> shows all parent-child relations found in your data.
+            </p>
+        </header>
+
+        <section class="controls">
+            <div class="control-group">
+                <label><i class="fas fa-users"></i> Persons JSON (idx_famRok.json)</label>
+                <input type="url" id="personsUrl"
+                placeholder="URL to idx_famRok.json"
+                value="https://tarek-bg.github.io/multiplayers/family/data/idx_famRok.json" />
+            </div>
+            <div class="control-group" style="flex: 0 0 auto;">
+                <label>&nbsp;</label>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="loadBtn"><i class="fas fa-cloud-download-alt"></i> Load</button>
+                    <button class="btn btn-info" id="viewContentBtn"><i class="fas fa-code"></i> View JSON</button>
+                    <button class="btn btn-success" id="downloadStructBtn"><i class="fas fa-download"></i> Download Structure</button>
+                    <button class="btn btn-warning" id="debugBtn"><i class="fas fa-bug"></i> Debug</button>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="control-group" style="flex: 0 0 auto;">
+                    <label><i class="fas fa-filter"></i> Surname</label>
+                    <select id="surnameFilter" style="min-width:150px;">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="control-group" style="flex: 1;">
+                    <label><i class="fas fa-user"></i> Person</label>
+                    <select id="personSelect" style="min-width:200px;">
+                        <option value="">— Select a person —</option>
+                    </select>
+                </div>
+                <div class="control-group" style="flex: 0 0 auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-secondary" id="viewBtn"><i class="fas fa-eye"></i> View Tree</button>
+                </div>
+                <div class="control-group" style="flex: 0 0 auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-secondary" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+                </div>
+            </div>
+        </section>
+
+        <div id="statusBar" class="status-bar">
+            <span><span class="dot yellow"></span> Ready — load data to begin</span>
+            <span id="personCount" style="margin-left:auto;">Persons: 0</span>
+            <span id="relationCount">Relations: 0</span>
+            <span id="debugRelationCount" style="color:#f59e0b; display:none;">Debug: 0</span>
+        </div>
+
+        <div class="error-box" id="errorBox">
+            <i class="fas fa-exclamation-triangle"></i> <span id="errorText"></span>
+        </div>
+
+        <section class="tree-container" id="treeContainer">
+            <h2 class="tree-title" id="treeTitle" style="border-bottom:none; margin-bottom:0; padding-bottom:0;">
+                Family Tree <small id="selectedNameDisplay">— select a person</small>
+            </h2>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"><i class="fas fa-spinner"></i></div>
+                <div class="msg" id="loadingMsg">Loading family data…</div>
+                <div class="sub-msg" id="loadingSubMsg">Fetching idx_famRok.json</div>
+                <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+                <button class="cancel-btn" id="cancelLoadBtn"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+
+            <div class="legend-wrapper">
+                <button class="legend-toggle" id="legendToggle">
+                    <i class="fas fa-info-circle"></i> Legend <i class="fas fa-chevron-down" id="legendArrow"></i>
+                </button>
+                <div class="legend-content" id="legendContent">
+                    <div class="legend-title">Relationships</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#4cc9f0;"></span> Main Person</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#4361ee;"></span> Father</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#f72585;"></span> Mother</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#f8961e;"></span> Brother</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#d946ef;"></span> Sister</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#7209b7;"></span> Grandfather</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#d946ef;"></span> Grandmother</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#10b981;"></span> Child</div>
+                    <div class="legend-item"><span class="legend-sphere" style="background:#f59e0b;"></span> Spouse</div>
+                    <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                        <div class="legend-item"><span class="legend-line" style="background:#4361ee;"></span> Father–Child</div>
+                        <div class="legend-item"><span class="legend-line" style="background:#f72585; border-top:2px dashed #f72585;"></span> Mother–Child</div>
+                        <div class="legend-item"><span class="legend-line" style="background:#f59e0b; border-top:2px dashed #f59e0b;"></span> Spouse</div>
+                        <div class="legend-item"><span class="legend-line" style="background:#f8961e; border-top:2px dashed #f8961e;"></span> Sibling</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tree-wrapper" id="treeWrapper">
+                <div id="treeView" class="tree-svg-container">
+                    <div class="empty-state">
+                        <i class="fas fa-sitemap"></i>
+                        <p>Load the persons JSON – the tree will be built automatically.</p>
+                        <p style="margin-top:10px; font-size:0.9rem; color:#6c757d;">
+                            ID format: <strong>SD02F.dali.BD01</strong> → Father key = <strong>BD01</strong> + family code
+                        </p>
+                        <p style="margin-top:5px; font-size:0.85rem; color:#4c9f70;">
+                            <i class="fas fa-clock"></i> Timeout: 15 seconds • Click "Cancel" to abort
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Panel -->
+            <div class="debug-panel" id="debugPanel">
+                <details open>
+                    <summary><i class="fas fa-code"></i> Generated Relations (View JSON content)</summary>
+                    <pre id="debugRelations">No data loaded yet.</pre>
+                </details>
+                <details>
+                    <summary><i class="fas fa-list"></i> Persons with their IDs</summary>
+                    <pre id="debugPersons">No data loaded yet.</pre>
+                </details>
+                <details>
+                    <summary><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Missing Father Keys</summary>
+                    <pre id="debugMissing">No missing keys.</pre>
+                </details>
+            </div>
+        </section>
+
+        <div class="stats-panel" id="statsPanel" style="display:none;">
+            <div class="stat-item"><div class="stat-value" id="statMembers">0</div><div class="stat-label">Shown Members</div></div>
+            <div class="stat-item"><div class="stat-value" id="statGenerations">0</div><div class="stat-label">Generations</div></div>
+            <div class="stat-item"><div class="stat-value" id="statSpheres">0</div><div class="stat-label">Connections</div></div>
+            <div class="stat-item"><div class="stat-value" id="statSiblings">0</div><div class="stat-label">Siblings</div></div>
+        </div>
+
+        <footer class="footer">
+            Family Tree – Debug & Corrected • Click <span style="color:#f59e0b;">Debug</span> to see the generated relations
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // DOM refs
+            const personsUrlInput = document.getElementById('personsUrl');
+            const loadBtn = document.getElementById('loadBtn');
+            const viewContentBtn = document.getElementById('viewContentBtn');
+            const downloadStructBtn = document.getElementById('downloadStructBtn');
+            const debugBtn = document.getElementById('debugBtn');
+            const personSelect = document.getElementById('personSelect');
+            const surnameFilter = document.getElementById('surnameFilter');
+            const viewBtn = document.getElementById('viewBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const treeView = document.getElementById('treeView');
+            const treeWrapper = document.getElementById('treeWrapper');
+            const selectedNameDisplay = document.getElementById('selectedNameDisplay');
+            const errorBox = document.getElementById('errorBox');
+            const errorText = document.getElementById('errorText');
+            const statusBar = document.getElementById('statusBar');
+            const personCount = document.getElementById('personCount');
+            const relationCount = document.getElementById('relationCount');
+            const debugRelationCount = document.getElementById('debugRelationCount');
+            const statsPanel = document.getElementById('statsPanel');
+            const statMembers = document.getElementById('statMembers');
+            const statGenerations = document.getElementById('statGenerations');
+            const statSpheres = document.getElementById('statSpheres');
+            const statSiblings = document.getElementById('statSiblings');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const legendToggle = document.getElementById('legendToggle');
+            const legendContent = document.getElementById('legendContent');
+            const legendArrow = document.getElementById('legendArrow');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingMsg = document.getElementById('loadingMsg');
+            const loadingSubMsg = document.getElementById('loadingSubMsg');
+            const progressFill = document.getElementById('progressFill');
+            const cancelLoadBtn = document.getElementById('cancelLoadBtn');
+            const debugPanel = document.getElementById('debugPanel');
+            const debugRelations = document.getElementById('debugRelations');
+            const debugPersons = document.getElementById('debugPersons');
+            const debugMissing = document.getElementById('debugMissing');
+
+            let toastTimer = null;
+            let legendOpen = false;
+            let cancelRequested = false;
+            let loadTimeout = null;
+            let fetchAbortController = null;
+            let debugVisible = false;
+            let missingKeys = {};
+
+            // ---- Legend toggle ----
+            legendToggle.addEventListener('click', function() {
+                legendOpen = !legendOpen;
+                legendContent.classList.toggle('open', legendOpen);
+                legendArrow.className = legendOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+            });
+
+            // ---- Pan & Zoom ----
+            let panX = 0,
+                panY = 0,
+                scale = 1;
+            let isDragging = false;
+            let startX = 0,
+                startY = 0;
+
+            function zoomAt(clientX, clientY, delta) {
+                const rect = treeWrapper.getBoundingClientRect();
+                const mouseX = clientX - rect.left;
+                const mouseY = clientY - rect.top;
+                const beforeX = (mouseX - panX) / scale;
+                const beforeY = (mouseY - panY) / scale;
+                const factor = delta > 0 ? 1.1 : 0.9;
+                const newScale = Math.min(Math.max(scale * factor, 0.1), 10);
+                panX = mouseX - beforeX * newScale;
+                panY = mouseY - beforeY * newScale;
+                scale = newScale;
+                updateTransform();
+            }
+
+            function updateTransform() {
+                treeView.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+                treeView.style.transformOrigin = '0 0';
+            }
+
+            treeWrapper.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                treeWrapper.style.cursor = 'grabbing';
+            });
+            window.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                updateTransform();
+            });
+            window.addEventListener('mouseup', function() {
+                isDragging = false;
+                treeWrapper.style.cursor = 'grab';
+            });
+            treeWrapper.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                zoomAt(e.clientX, e.clientY, -e.deltaY);
+            }, { passive: false });
+
+            // Touch support
+            let touchStartX = 0,
+                touchStartY = 0,
+                touchDist = 0;
+            treeWrapper.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX - panX;
+                    touchStartY = e.touches[0].clientY - panY;
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    touchDist = Math.sqrt(dx * dx + dy * dy);
+                }
+            }, { passive: true });
+            treeWrapper.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 1) {
+                    panX = e.touches[0].clientX - touchStartX;
+                    panY = e.touches[0].clientY - touchStartY;
+                    updateTransform();
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const newDist = Math.sqrt(dx * dx + dy * dy);
+                    if (touchDist > 0) {
+                        const factor = newDist / touchDist;
+                        const newScale = Math.min(Math.max(scale * factor, 0.1), 10);
+                        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                        const rect = treeWrapper.getBoundingClientRect();
+                        const mouseX = cx - rect.left;
+                        const mouseY = cy - rect.top;
+                        const beforeX = (mouseX - panX) / scale;
+                        const beforeY = (mouseY - panY) / scale;
+                        panX = mouseX - beforeX * newScale;
+                        panY = mouseY - beforeY * newScale;
+                        scale = newScale;
+                        updateTransform();
+                    }
+                    touchDist = newDist;
+                }
+            }, { passive: true });
+            treeWrapper.addEventListener('touchend', function() { touchDist = 0; }, { passive: true });
+
+            // ---- Data ----
+            let personsMap = {};
+            let personsList = [];
+            let childrenMap = {};
+            let parentMap = {};
+            let currentGeneratedStructure = [];
+            let currentTreeData = null;
+            let currentPersonId = null;
+
+            // ---- Corrected SAMPLE DATA (Dali family) ----
+            const sampleData = [
+                // === GENERATION 4: Great-grandfather ===
+                { "id": "BD01M.dali.HA01", "name": "Bechir", "surname": "Dali", "gender": "M", "mother": null,
+                    "birthDate": "1945-01-01" },
+                // === GENERATION 3: Grandfather ===
+                { "id": "HA01M.dali.BD01", "name": "Hayette", "surname": "Amara", "gender": "M", "mother": null,
+                    "birthDate": "1978-01-01" },
+                // === GENERATION 2: Father ===
+                { "id": "FD01M.dali.HA01", "name": "Faouzi", "surname": "Dali", "gender": "M", "mother": null,
+                    "birthDate": "2000-01-01" },
+                // === GENERATION 1: Main person and siblings ===
+                { "id": "SD02F.dali.FD01", "name": "Sondes", "surname": "Dali", "gender": "F", "mother": null,
+                    "birthDate": "1972-01-01" },
+                { "id": "MD01F.dali.FD01", "name": "Mouna", "surname": "Dali", "gender": "F", "mother": null,
+                    "birthDate": "1974-01-01" },
+                { "id": "TD01M.dali.FD01", "name": "Taoufik", "surname": "Dali", "gender": "M", "mother": null,
+                    "birthDate": "1970-01-01" },
+                { "id": "JD01F.dali.FD01", "name": "Jhen", "surname": "Dali", "gender": "F", "mother": null,
+                    "birthDate": "1977-01-01" },
+                // === CHILDREN (Generation 0: Sondes's children) ===
+                { "id": "AB01F.dali.SD02", "name": "Aziz", "surname": "Ben Gadha", "gender": "F", "mother": null,
+                    "birthDate": "2010-01-01" },
+                { "id": "EB01F.bengadha.SD02", "name": "Eya", "surname": "Ben Gadha", "gender": "F", "mother": null,
+                    "birthDate": "1996-01-01" },
+                { "id": "NB01F.bengadha.SD02", "name": "Nour", "surname": "Ben Gadha", "gender": "F", "mother": null,
+                    "birthDate": "2002-01-01" },
+                // === Spouse of Sondes ===
+                { "id": "SP01M.dali.SD02", "name": "Spouse", "surname": "Dali", "gender": "M", "mother": null,
+                    "birthDate": "1970-01-01" },
+            ];
+
+            // ---- Toast ----
+            function showToast(msg, type = 'info', icon = 'fa-info-circle') {
+                if (toastTimer) clearTimeout(toastTimer);
+                toastMessage.textContent = msg;
+                toast.className = 'toast';
+                toast.classList.add(`toast-${type}`);
+                const i = toast.querySelector('i');
+                i.className = `fas ${icon}`;
+                setTimeout(() => toast.classList.add('show'), 30);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorBox.style.display = 'block';
+                setTimeout(() => { errorBox.style.display = 'none'; }, 8000);
+            }
+
+            function updateStatus(msg, dotColor = 'yellow', pCount = 0, rCount = 0, debugR = 0) {
+                const dot = statusBar.querySelector('.dot');
+                dot.className = `dot ${dotColor}`;
+                statusBar.childNodes[0].textContent = ` ${msg}`;
+                personCount.textContent = `Persons: ${pCount}`;
+                relationCount.textContent = `Relations: ${rCount}`;
+                if (debugR > 0) {
+                    debugRelationCount.style.display = 'inline';
+                    debugRelationCount.textContent = `Debug: ${debugR}`;
+                } else {
+                    debugRelationCount.style.display = 'none';
+                }
+            }
+
+            // ---- ID Parser ----
+            function parseId(id) {
+                if (!id) return null;
+                const parts = id.split('.');
+                if (parts.length !== 3) return null;
+                const firstPart = parts[0];
+                const familyCode = parts[1];
+                const fatherKey = parts[2];
+                const gender = firstPart.charAt(firstPart.length - 1);
+                const rank = firstPart.substring(1, 3);
+                const genLetter = firstPart.charAt(0);
+                return {
+                    gender: gender,
+                    rank: rank,
+                    familyCode: familyCode,
+                    fatherKey: fatherKey,
+                    genLetter: genLetter,
+                    isMale: gender === 'M' || gender === 'Y',
+                    isFemale: gender === 'F' || gender === 'X'
+                };
+            }
+
+            function getGender(id) { const p = parseId(id); return p ? p.gender : null; }
+            function getRank(id) { const p = parseId(id); return p ? p.rank : null; }
+            function getFatherKey(id) { const p = parseId(id); return p ? p.fatherKey : null; }
+            function getFamilyCode(id) { const p = parseId(id); return p ? p.familyCode : null; }
+            function getGenLetter(id) { const p = parseId(id); return p ? p.genLetter : null; }
+
+            // ---- Generate structure with missing keys tracking ----
+            function generateStructure(persons) {
+                const lookup = {};
+                for (const p of persons) lookup[p.id] = p;
+
+                // Build father lookup: (fatherKey + '|' + familyCode) -> full ID
+                const fatherLookup = {};
+                for (const p of persons) {
+                    const parsed = parseId(p.id);
+                    if (parsed && parsed.fatherKey) {
+                        const key = parsed.fatherKey + '|' + parsed.familyCode;
+                        fatherLookup[key] = p.id;
+                    }
+                }
+
+                const relations = [];
+                const missing = {};
+
+                // Father-child
+                for (const p of persons) {
+                    const id = p.id;
+                    const parsed = parseId(id);
+                    if (!parsed) continue;
+                    const fk = parsed.fatherKey;
+                    const fc = parsed.familyCode;
+                    if (!fk || fk === '---' || fk === 'null' || fk === '') continue;
+                    const key = fk + '|' + fc;
+                    const fatherId = fatherLookup[key];
+                    if (fatherId && fatherId !== id) {
+                        relations.push({ parentId: fatherId, childId: id, type: 'father' });
+                    } else {
+                        // Record missing father key
+                        if (!missing[key]) missing[key] = [];
+                        missing[key].push({ childId: id, childName: p.name || '?' });
+                    }
+                }
+
+                // Mother-child
+                for (const p of persons) {
+                    const id = p.id;
+                    let motherId = p.mother;
+                    if (!id || !motherId) continue;
+                    motherId = String(motherId).trim().replace(/^["']|["']$/g, '');
+                    if (motherId === 'null' || motherId === '' || motherId === 'undefined') continue;
+                    if (lookup[motherId]) {
+                        relations.push({ parentId: motherId, childId: id, type: 'mother' });
+                    }
+                }
+
+                return { relations, missing };
+            }
+
+            function buildMaps(relations) {
+                const nc = {};
+                const np = {};
+                for (const rel of relations) {
+                    const p = rel.parentId;
+                    const c = rel.childId;
+                    if (!p || !c) continue;
+                    if (!nc[p]) nc[p] = [];
+                    if (!nc[p].includes(c)) nc[p].push(c);
+                    if (!np[c]) np[c] = [];
+                    if (!np[c].includes(p)) np[c].push(p);
+                }
+                return { childrenMap: nc, parentMap: np };
+            }
+
+            function findSpouse(personId) {
+                const spouseSet = new Set();
+                const children = childrenMap[personId] || [];
+                for (const childId of children) {
+                    const parents = parentMap[childId] || [];
+                    for (const pid of parents) {
+                        if (pid !== personId && personsMap[pid]) spouseSet.add(pid);
+                    }
+                }
+                const arr = Array.from(spouseSet);
+                return arr.length > 0 ? arr[0] : null;
+            }
+
+            function findMotherById(personId) {
+                const p = personsMap[personId];
+                if (!p) return null;
+                let motherId = p.mother;
+                if (!motherId) return null;
+                motherId = String(motherId).trim().replace(/^["']|["']$/g, '');
+                if (motherId === 'null' || motherId === '' || motherId === 'undefined') return null;
+                return personsMap[motherId] || null;
+            }
+
+            // ---- Build tree (3 levels up, 3 levels down) ----
+            function buildTreeForPerson(personId) {
+                if (!personId || !personsMap[personId]) return null;
+
+                const allNodes = [];
+                const nodeIds = new Set();
+
+                function addNode(id, role, depth) {
+                    if (nodeIds.has(id)) return;
+                    const p = personsMap[id];
+                    if (!p) return;
+                    allNodes.push({ id, person: p, role, depth });
+                    nodeIds.add(id);
+                }
+
+                addNode(personId, 'main', 0);
+
+                // ---- Paternal ancestors (3 levels up) ----
+                function getPaternalAncestors(id, depth, maxDepth) {
+                    if (depth >= maxDepth) return;
+                    const parents = parentMap[id] || [];
+                    let fatherId = null;
+                    for (const pid of parents) {
+                        const p = personsMap[pid];
+                        if (p) {
+                            const gender = getGender(p.id);
+                            if (gender === 'M' || gender === 'Y') fatherId = pid;
+                        }
+                    }
+                    if (!fatherId) return;
+
+                    const role = depth === 0 ? 'father' : depth === 1 ? 'grandfather' : depth === 2 ? 'great-grandfather' :
+                        'ancestor';
+                    addNode(fatherId, role, -depth - 1);
+
+                    const mother = findMotherById(fatherId);
+                    if (mother) {
+                        const roleMother = depth === 0 ? 'mother' : depth === 1 ? 'grandmother' : depth === 2 ?
+                            'great-grandmother' : 'ancestor';
+                        addNode(mother.id, roleMother, -depth - 1);
+                    }
+
+                    getPaternalAncestors(fatherId, depth + 1, maxDepth);
+                }
+                getPaternalAncestors(personId, 0, 3);
+
+                // ---- Mother of main person ----
+                const motherOfMain = findMotherById(personId);
+                if (motherOfMain) {
+                    addNode(motherOfMain.id, 'mother', -1);
+                }
+
+                // ---- Siblings (same father and same generation letter) ----
+                const siblings = new Set();
+                const myParents = parentMap[personId] || [];
+                let fatherId = null;
+                for (const pid of myParents) {
+                    const p = personsMap[pid];
+                    if (p) {
+                        const gender = getGender(p.id);
+                        if (gender === 'M' || gender === 'Y') fatherId = pid;
+                    }
+                }
+                if (fatherId) {
+                    const children = childrenMap[fatherId] || [];
+                    const myGen = getGenLetter(personId);
+                    for (const cid of children) {
+                        if (cid !== personId && personsMap[cid]) {
+                            const sibGen = getGenLetter(cid);
+                            if (sibGen === myGen) {
+                                siblings.add(cid);
+                            }
+                        }
+                    }
+                }
+                const sortedSiblings = Array.from(siblings).sort((a, b) => {
+                    const ra = parseInt(getRank(a)) || 0;
+                    const rb = parseInt(getRank(b)) || 0;
+                    return ra - rb;
+                });
+                for (const sid of sortedSiblings) {
+                    const p = personsMap[sid];
+                    const gender = getGender(sid);
+                    const role = (gender === 'F' || gender === 'X') ? 'sister' : 'brother';
+                    addNode(sid, role, 0);
+                }
+
+                // ---- Spouse of main ----
+                const spouseId = findSpouse(personId);
+                if (spouseId) {
+                    addNode(spouseId, 'spouse', 0);
+                }
+
+                // ---- Children (3 levels down) ----
+                function getChildren(id, depth, maxDepth) {
+                    if (depth >= maxDepth) return;
+                    const children = childrenMap[id] || [];
+                    for (const cid of children) {
+                        if (!personsMap[cid]) continue;
+                        const role = depth === 0 ? 'child' : depth === 1 ? 'grandchild' : depth === 2 ? 'great-grandchild' :
+                            'descendant';
+                        addNode(cid, role, depth + 1);
+                        getChildren(cid, depth + 1, maxDepth);
+                    }
+                }
+                getChildren(personId, 0, 3);
+
+                // ---- Build edges ----
+                const edges = [];
+                const allNodeIds = new Set(allNodes.map(n => n.id));
+
+                for (const node of allNodes) {
+                    const id = node.id;
+                    if (childrenMap[id]) {
+                        for (const childId of childrenMap[id]) {
+                            if (allNodeIds.has(childId)) {
+                                const p = personsMap[id];
+                                const gender = p ? getGender(p.id) : '';
+                                const type = (gender === 'F' || gender === 'X') ? 'mother-child' : 'father-child';
+                                const already = edges.some(e => e.from === id && e.to === childId);
+                                if (!already) {
+                                    edges.push({ from: id, to: childId, type: type });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (spouseId) {
+                    const already = edges.some(e =>
+                        (e.from === personId && e.to === spouseId) ||
+                        (e.from === spouseId && e.to === personId)
+                    );
+                    if (!already) {
+                        edges.push({ from: personId, to: spouseId, type: 'spouse' });
+                    }
+                }
+
+                if (fatherId) {
+                    const mother = findMotherById(fatherId);
+                    if (mother && allNodeIds.has(mother.id) && allNodeIds.has(fatherId)) {
+                        const already = edges.some(e =>
+                            (e.from === fatherId && e.to === mother.id) ||
+                            (e.from === mother.id && e.to === fatherId)
+                        );
+                        if (!already) {
+                            edges.push({ from: fatherId, to: mother.id, type: 'spouse' });
+                        }
+                    }
+                }
+
+                if (motherOfMain) {
+                    const already = edges.some(e => e.from === motherOfMain.id && e.to === personId);
+                    if (!already) {
+                        edges.push({ from: motherOfMain.id, to: personId, type: 'mother-child' });
+                    }
+                }
+
+                for (const node of allNodes) {
+                    if (node.role === 'brother' || node.role === 'sister') {
+                        for (const other of allNodes) {
+                            if (other.id !== node.id && (other.role === 'brother' || other.role === 'sister')) {
+                                const f1 = parentMap[node.id] || [];
+                                const f2 = parentMap[other.id] || [];
+                                let common = false;
+                                for (const f of f1) { if (f2.includes(f)) { common = true; break; } }
+                                if (common) {
+                                    const key = [node.id, other.id].sort().join('-');
+                                    const already = edges.some(e => {
+                                        const ek = [e.from, e.to].sort().join('-');
+                                        return ek === key;
+                                    });
+                                    if (!already) {
+                                        edges.push({ from: node.id, to: other.id, type: 'sibling' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const uniqueEdges = [];
+                const edgeSet = new Set();
+                for (const e of edges) {
+                    const key = [e.from, e.to].sort().join('-');
+                    if (!edgeSet.has(key)) {
+                        edgeSet.add(key);
+                        uniqueEdges.push(e);
+                    }
+                }
+
+                const result = { rootId: personId, nodes: allNodes, edges: uniqueEdges, personMap: personsMap };
+                currentTreeData = result;
+                currentPersonId = personId;
+                return result;
+            }
+
+            // ---- Layout with proper vertical hierarchy ----
+            function getYear(birthDate) {
+                if (!birthDate) return '';
+                const m = birthDate.match(/\d{4}/);
+                return m ? m[0] : '';
+            }
+
+            function layoutTree(treeData) {
+                if (!treeData || treeData.nodes.length === 0) return null;
+                const nodes = treeData.nodes;
+
+                // Group by depth
+                const depthMap = {};
+                for (const node of nodes) {
+                    const d = node.depth;
+                    if (!depthMap[d]) depthMap[d] = [];
+                    depthMap[d].push(node);
+                }
+                const depths = Object.keys(depthMap).map(Number).sort((a, b) => a - b);
+                const minDepth = depths[0];
+                const maxDepth = depths[depths.length - 1];
+
+                const spacingY = 160;
+                const spacingX = 190;
+                const positions = {};
+
+                // Process each depth level from top (most negative) to bottom (most positive)
+                for (const d of depths) {
+                    const levelNodes = depthMap[d];
+
+                    // Sort by birth year (oldest first) within the level
+                    levelNodes.sort((a, b) => {
+                        const pA = a.person || personsMap[a.id];
+                        const pB = b.person || personsMap[b.id];
+                        const yA = getYear(pA.birthDate) || '9999';
+                        const yB = getYear(pB.birthDate) || '9999';
+                        return parseInt(yA) - parseInt(yB);
+                    });
+
+                    // Find the main person in this level
+                    const mainIdx = levelNodes.findIndex(n => n.role === 'main');
+                    const total = levelNodes.length;
+
+                    let xPositions = [];
+                    if (mainIdx !== -1) {
+                        // Center the main person, distribute others around
+                        for (let i = 0; i < total; i++) {
+                            const offset = (i - mainIdx) * spacingX;
+                            xPositions.push(offset);
+                        }
+                    } else {
+                        // No main person, distribute evenly
+                        const startX = -(total - 1) * spacingX / 2;
+                        for (let i = 0; i < total; i++) {
+                            xPositions.push(startX + i * spacingX);
+                        }
+                    }
+
+                    // Y position: top = smallest depth (most negative)
+                    const y = (d - minDepth) * spacingY + 80;
+
+                    for (let i = 0; i < total; i++) {
+                        const node = levelNodes[i];
+                        positions[node.id] = { x: xPositions[i], y: y, depth: d };
+                    }
+                }
+
+                // Center the whole tree horizontally
+                let minX = Infinity,
+                    maxX = -Infinity;
+                for (const id in positions) {
+                    if (positions[id].x < minX) minX = positions[id].x;
+                    if (positions[id].x > maxX) maxX = positions[id].x;
+                }
+                const centerOffset = -(minX + maxX) / 2 + 400;
+
+                for (const id in positions) {
+                    positions[id].x += centerOffset;
+                }
+
+                return { positions, nodes, edges: treeData.edges, minDepth, maxDepth, rootId: treeData.rootId };
+            }
+
+            // ---- Render SVG ----
+            function renderTree(layout, personsMap) {
+                if (!layout || layout.nodes.length === 0) {
+                    return '<div class="empty-state"><i class="fas fa-user-slash"></i><p>No family data found for this person.</p></div>';
+                }
+                const { positions, nodes, edges, minDepth, maxDepth } = layout;
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
+                for (const id in positions) {
+                    if (positions[id].x < minX) minX = positions[id].x;
+                    if (positions[id].x > maxX) maxX = positions[id].x;
+                    if (positions[id].y < minY) minY = positions[id].y;
+                    if (positions[id].y > maxY) maxY = positions[id].y;
+                }
+                const padding = 120;
+                const sw = Math.max(1000, maxX - minX + padding * 2 + 200);
+                const sh = Math.max(700, maxY - minY + padding * 2 + 200);
+
+                let svg = `<svg width="${sw}" height="${sh}" viewBox="${minX-padding} ${minY-padding} ${sw} ${sh}" style="background:transparent;">`;
+                svg += `<defs>
+                    <radialGradient id="sphereGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+                        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                    </radialGradient>
+                    <filter id="sphereGlowFilter">
+                        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <clipPath id="mainPhotoClip"><circle cx="0" cy="0" r="38"/></clipPath>
+                    <clipPath id="photoClip"><circle cx="0" cy="0" r="18"/></clipPath>
+                </defs>`;
+
+                // Draw edges
+                const drawnEdges = new Set();
+                for (const edge of edges) {
+                    const fromPos = positions[edge.from];
+                    const toPos = positions[edge.to];
+                    if (!fromPos || !toPos) continue;
+                    const key = [edge.from, edge.to].sort().join('-');
+                    if (drawnEdges.has(key)) continue;
+                    drawnEdges.add(key);
+
+                    let strokeColor = 'rgba(255,255,255,0.15)';
+                    let dashArray = 'none';
+                    let className = '';
+                    const fromNode = nodes.find(n => n.id === edge.from);
+                    const toNode = nodes.find(n => n.id === edge.to);
+                    const fromRole = fromNode ? fromNode.role : '';
+                    const toRole = toNode ? toNode.role : '';
+
+                    if (edge.type === 'spouse') {
+                        strokeColor = '#f59e0b';
+                        dashArray = '3,3';
+                        className = 'spouse-line';
+                    } else if (edge.type === 'father-child') {
+                        strokeColor = '#4361ee';
+                        className = 'father-line';
+                    } else if (edge.type === 'mother-child') {
+                        strokeColor = '#f72585';
+                        dashArray = '4,4';
+                        className = 'mother-line';
+                    } else if (edge.type === 'sibling') {
+                        const p = personsMap[edge.from];
+                        const gender = p ? getGender(p.id) : '';
+                        if (gender === 'F' || gender === 'X') {
+                            strokeColor = '#d946ef';
+                            dashArray = '6,4';
+                            className = 'sister-line';
+                        } else {
+                            strokeColor = '#f8961e';
+                            dashArray = '6,4';
+                            className = 'brother-line';
+                        }
+                    }
+
+                    svg += `<line x1="${fromPos.x}" y1="${fromPos.y}" x2="${toPos.x}" y2="${toPos.y}" 
+                             class="connection-line ${className}" stroke="${strokeColor}" stroke-width="2" 
+                             stroke-dasharray="${dashArray}" opacity="0.55"/>`;
+
+                    const midX = (fromPos.x + toPos.x) / 2;
+                    const midY = (fromPos.y + toPos.y) / 2;
+                    let sphereColor = 'rgba(255,255,255,0.15)';
+                    let sphereClass = 'sphere-default';
+                    let relLabel = '';
+
+                    if (edge.type === 'spouse') { sphereColor = '#f59e0b';
+                        sphereClass = 'sphere-spouse';
+                        relLabel = 'Spouse'; } else if (edge.type === 'father-child') { sphereColor = '#4361ee';
+                        sphereClass = 'sphere-father';
+                        relLabel = 'Father'; } else if (edge.type === 'mother-child') { sphereColor = '#f72585';
+                        sphereClass = 'sphere-mother';
+                        relLabel = 'Mother'; } else if (edge.type === 'sibling') {
+                        const p = personsMap[edge.from];
+                        const gender = p ? getGender(p.id) : '';
+                        if (gender === 'F' || gender === 'X') {
+                            sphereColor = '#d946ef';
+                            sphereClass = 'sphere-sister';
+                            relLabel = 'Sister';
+                        } else {
+                            sphereColor = '#f8961e';
+                            sphereClass = 'sphere-brother';
+                            relLabel = 'Brother';
+                        }
+                    }
+
+                    const fromName = personsMap[edge.from] ? (personsMap[edge.from].name || '?') : '?';
+                    const toName = personsMap[edge.to] ? (personsMap[edge.to].name || '?') : '?';
+
+                    svg += `<g class="connection-sphere ${sphereClass}" data-relationship="${relLabel}" data-from="${fromName}" data-to="${toName}">`;
+                    svg += `<circle cx="${midX}" cy="${midY}" r="12" fill="url(#sphereGlow)" opacity="0.25"/>`;
+                    svg += `<circle cx="${midX}" cy="${midY}" r="6" fill="${sphereColor}" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" filter="url(#sphereGlowFilter)"/>`;
+                    svg += `<circle cx="${midX-1.5}" cy="${midY-1.5}" r="2" fill="rgba(255,255,255,0.25)"/>`;
+                    svg += `<text x="${midX}" y="${midY-12}" class="sphere-tooltip" font-size="7" fill="white" text-anchor="middle" font-weight="500" opacity="0">${fromName} ↔ ${toName}</text>`;
+                    svg += `<text x="${midX}" y="${midY+3}" font-size="5" fill="white" text-anchor="middle" opacity="0.7">${relLabel}</text>`;
+                    svg += `</g>`;
+                }
+
+                // Draw nodes
+                const allNodesWithData = [];
+                for (const node of nodes) {
+                    const pos = positions[node.id];
+                    if (!pos) continue;
+                    const p = node.person || personsMap[node.id];
+                    if (!p) continue;
+                    const year = getYear(p.birthDate);
+                    allNodesWithData.push({ node, pos, p, year });
+                }
+                allNodesWithData.sort((a, b) => a.pos.y - b.pos.y);
+
+                for (const item of allNodesWithData) {
+                    const { node, pos, p, year } = item;
+                    const isMain = node.role === 'main';
+                    const isFather = node.role === 'father';
+                    const isMother = node.role === 'mother';
+                    const isBrother = node.role === 'brother';
+                    const isSister = node.role === 'sister';
+                    const isGrandfather = node.role === 'grandfather';
+                    const isGrandmother = node.role === 'grandmother';
+                    const isChild = node.role === 'child';
+                    const isSpouse = node.role === 'spouse';
+
+                    let color = '#4cc9f0';
+                    let nodeClass = 'main-person';
+                    if (isMain) { color = '#4cc9f0';
+                        nodeClass = 'main-person'; } else if (isFather || isGrandfather) { color = '#4361ee';
+                        nodeClass = 'father'; } else if (isMother || isGrandmother) { color = '#f72585';
+                        nodeClass = 'mother'; } else if (isBrother) { color = '#f8961e';
+                        nodeClass = 'brother'; } else if (isSister) { color = '#d946ef';
+                        nodeClass = 'sister'; } else if (isGrandfather) { color = '#7209b7';
+                        nodeClass = 'grandfather'; } else if (isGrandmother) { color = '#d946ef';
+                        nodeClass = 'grandmother'; } else if (isChild) { color = '#10b981';
+                        nodeClass = 'child'; } else if (isSpouse) { color = '#f59e0b';
+                        nodeClass = 'spouse'; }
+
+                    const radius = isMain ? 36 : 18;
+                    const photoUrl = p.photoUrl || '';
+                    const initials = ((p.name || '?')[0] + (p.surname || '')[0]).toUpperCase() || '?';
+
+                    svg += `<g class="tree-node" data-id="${node.id}">`;
+                    svg += `<circle cx="${pos.x+2}" cy="${pos.y+2}" r="${radius}" fill="rgba(0,0,0,0.3)"/>`;
+                    svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${radius}" class="node-circle ${nodeClass}" fill="rgba(16,16,35,0.85)" stroke="${color}" stroke-width="${isMain?4:2.5}"/>`;
+                    svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${radius*0.45}" fill="none" stroke="${color}" stroke-width="1" opacity="0.15"/>`;
+
+                    if (photoUrl && photoUrl !== 'https' && photoUrl !== 'https://') {
+                        const clip = isMain ? 'url(#mainPhotoClip)' : 'url(#photoClip)';
+                        const size = isMain ? 72 : 32;
+                        svg += `<image href="${photoUrl}" x="${pos.x-size/2}" y="${pos.y-size/2}" width="${size}" height="${size}" clip-path="${clip}" preserveAspectRatio="xMidYMid slice" onerror="this.style.display='none'"/>`;
+                        svg += `<text x="${pos.x}" y="${pos.y+6}" text-anchor="middle" fill="white" font-size="${isMain?22:11}" font-weight="700" class="initials-fallback" style="display:none;">${initials}</text>`;
+                    } else {
+                        svg += `<text x="${pos.x}" y="${pos.y+6}" text-anchor="middle" fill="white" font-size="${isMain?22:11}" font-weight="700">${initials}</text>`;
+                    }
+
+                    if (isMain) {
+                        svg += `<text x="${pos.x}" y="${pos.y+radius+18}" text-anchor="middle" fill="#4cc9f0" font-size="12" font-weight="700">▼</text>`;
+                    }
+
+                    const labelY = pos.y + radius + 20;
+                    svg += `<text x="${pos.x}" y="${labelY}" class="node-label" font-size="${isMain?13:10}">${p.name || '?'}</text>`;
+                    if (p.surname) {
+                        svg += `<text x="${pos.x}" y="${labelY+14}" class="node-sub-label" font-size="8">${p.surname}</text>`;
+                    }
+                    if (year) {
+                        svg += `<text x="${pos.x+radius+10}" y="${pos.y+4}" class="birth-year" font-size="${isMain?11:9}">${year}</text>`;
+                    }
+
+                    const roleIcon = isFather ? '👨' : isMother ? '👩' : isBrother ? '👦' : isSister ? '👧' :
+                        isGrandfather ? '👴' : isGrandmother ? '👵' : isChild ? '👶' : isSpouse ? '💍' : '👤';
+                    const roleY = labelY + (p.surname ? 22 : 13);
+                    svg += `<text x="${pos.x}" y="${roleY+5}" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="10">${roleIcon}</text>`;
+                    svg += `</g>`;
+                }
+
+                svg += `</svg>`;
+                return svg;
+            }
+
+            function fixImageErrors() {
+                const images = treeView.querySelectorAll('image');
+                images.forEach(img => {
+                    img.addEventListener('error', function() {
+                        this.style.display = 'none';
+                        const parentG = this.closest('g');
+                        if (parentG) {
+                            const fallback = parentG.querySelector('.initials-fallback');
+                            if (fallback) fallback.style.display = 'block';
+                        }
+                    });
+                });
+            }
+
+            // ---- Dropdowns ----
+            function populateDropdowns() {
+                const surnames = new Set();
+                for (const p of personsList) {
+                    if (p.surname) surnames.add(p.surname);
+                }
+                const sortedSurnames = Array.from(surnames).sort();
+                surnameFilter.innerHTML = '<option value="">All</option>';
+                for (const s of sortedSurnames) {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    surnameFilter.appendChild(opt);
+                }
+                updatePersonDropdown('');
+            }
+
+            function updatePersonDropdown(surnameFilterValue) {
+                const filtered = surnameFilterValue ?
+                    personsList.filter(p => p.surname === surnameFilterValue) :
+                    personsList;
+                const sorted = filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                personSelect.innerHTML = '<option value="">— Select a person —</option>';
+                for (const p of sorted) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    const label = `${p.name || '?'} ${p.surname || ''}`.trim() || p.id;
+                    opt.textContent = label;
+                    personSelect.appendChild(opt);
+                }
+            }
+
+            // ---- Update debug panel ----
+            function updateDebug() {
+                if (currentGeneratedStructure.length > 0) {
+                    const unique = [];
+                    const seen = new Set();
+                    for (const rel of currentGeneratedStructure) {
+                        const key = rel.parentId + '|' + rel.childId + '|' + rel.type;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            unique.push(rel);
+                        }
+                    }
+                    debugRelations.textContent = JSON.stringify(unique, null, 2);
+                } else {
+                    debugRelations.textContent = 'No relations generated.';
+                }
+
+                // Show persons
+                const sample = personsList.slice(0, 30).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    surname: p.surname,
+                    fatherKey: getFatherKey(p.id),
+                    familyCode: getFamilyCode(p.id)
+                }));
+                debugPersons.textContent = JSON.stringify(sample, null, 2);
+                if (personsList.length > 30) {
+                    debugPersons.textContent += `\n... and ${personsList.length - 30} more.`;
+                }
+
+                // Show missing keys
+                if (Object.keys(missingKeys).length > 0) {
+                    let msg = '⚠️ The following father keys could not be found:\n\n';
+                    for (const [key, children] of Object.entries(missingKeys)) {
+                        msg += `🔴 "${key}" needed by:\n`;
+                        for (const child of children) {
+                            msg += `   └─ ${child.childId} (${child.childName})\n`;
+                        }
+                        msg += `   💡 Add a person with ID starting with "${key.split('|')[0]}" and family code "${key.split('|')[1]}"\n\n`;
+                    }
+                    debugMissing.textContent = msg;
+                } else {
+                    debugMissing.textContent = '✅ All father keys were found! No missing persons.';
+                }
+            }
+
+            // ---- View tree ----
+            function viewTreeForSelected() {
+                const id = personSelect.value;
+                if (!id) {
+                    treeView.innerHTML =
+                        `<div class="empty-state"><i class="fas fa-user-slash"></i><p>Please select a person.</p></div>`;
+                    statsPanel.style.display = 'none';
+                    selectedNameDisplay.textContent = '— select a person';
+                    panX = 0;
+                    panY = 0;
+                    scale = 1;
+                    updateTransform();
+                    return;
+                }
+                const p = personsMap[id];
+                if (!p) {
+                    showError(`Person with ID "${id}" not found.`);
+                    return;
+                }
+                selectedNameDisplay.textContent = `${p.name || '?'} ${p.surname || ''}`.trim() || id;
+                const treeData = buildTreeForPerson(id);
+                if (!treeData || treeData.nodes.length === 0) {
+                    treeView.innerHTML =
+                        `<div class="empty-state"><i class="fas fa-user-slash"></i><p>No connections found.</p></div>`;
+                    statsPanel.style.display = 'none';
+                    return;
+                }
+                const layout = layoutTree(treeData);
+                if (!layout) {
+                    treeView.innerHTML =
+                        `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Layout failed.</p></div>`;
+                    statsPanel.style.display = 'none';
+                    return;
+                }
+                const svgContent = renderTree(layout, personsMap);
+                treeView.innerHTML = svgContent;
+                panX = 0;
+                panY = 0;
+                scale = 1;
+                updateTransform();
+                setTimeout(fixImageErrors, 100);
+
+                const nodeCount = treeData.nodes.length;
+                const depthSet = new Set(treeData.nodes.map(n => n.depth));
+                const genCount = depthSet.size;
+                const sphereCount = treeData.edges.length;
+                const siblingCount = treeData.nodes.filter(n => n.role === 'brother' || n.role === 'sister').length;
+                statMembers.textContent = nodeCount;
+                statGenerations.textContent = genCount;
+                statSpheres.textContent = sphereCount;
+                statSiblings.textContent = siblingCount;
+                statsPanel.style.display = 'flex';
+
+                document.querySelectorAll('.connection-sphere').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const from = this.dataset.from || '?';
+                        const to = this.dataset.to || '?';
+                        const rel = this.dataset.relationship || 'connection';
+                        document.querySelectorAll('.connection-sphere').forEach(s => s.classList.remove('active'));
+                        this.classList.add('active');
+                        showToast(`🔗 ${from} ↔ ${to}  (${rel})`, 'info', 'fa-circle-nodes');
+                    });
+                });
+                document.querySelectorAll('.tree-node').forEach(el => {
+                    el.addEventListener('click', function() {
+                        const nodeId = this.dataset.id;
+                        if (nodeId && personsMap[nodeId]) {
+                            const person = personsMap[nodeId];
+                            showToast(`👤 ${person.name || '?'} ${person.surname || ''}`.trim() || nodeId, 'info',
+                                'fa-user');
+                        }
+                    });
+                });
+                showToast(`Showing tree for ${p.name || '?'} ${p.surname || ''}`, 'success', 'fa-tree');
+            }
+
+            // ---- Show loading ----
+            function showLoading(msg, subMsg) {
+                loadingMsg.textContent = msg || 'Loading…';
+                loadingSubMsg.textContent = subMsg || '';
+                progressFill.style.width = '0%';
+                loadingOverlay.style.display = 'flex';
+                cancelRequested = false;
+            }
+
+            function hideLoading() {
+                loadingOverlay.style.display = 'none';
+                if (loadTimeout) { clearTimeout(loadTimeout);
+                    loadTimeout = null; }
+            }
+
+            function updateProgress(pct) {
+                progressFill.style.width = Math.min(pct, 100) + '%';
+            }
+
+            // ---- Load with timeout ----
+            async function loadWithTimeout(url, timeoutMs = 15000) {
+                const controller = new AbortController();
+                fetchAbortController = controller;
+                const timeoutId = setTimeout(() => {
+                    controller.abort();
+                }, timeoutMs);
+
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    clearTimeout(timeoutId);
+                    if (err.name === 'AbortError') {
+                        throw new Error('Request timed out after ' + (timeoutMs / 1000) + ' seconds');
+                    }
+                    throw err;
+                } finally {
+                    fetchAbortController = null;
+                }
+            }
+
+            // ---- Main load ----
+            async function loadData() {
+                const personsUrl = personsUrlInput.value.trim();
+                if (!personsUrl) {
+                    showError('Please enter the Persons JSON URL.');
+                    return;
+                }
+
+                // Reset UI
+                errorBox.style.display = 'none';
+                updateStatus('Loading…', 'blue', 0, 0);
+
+                showLoading('Loading family data…', 'Fetching ' + personsUrl);
+                updateProgress(10);
+
+                let personsData = null;
+                let usedFallback = false;
+
+                try {
+                    updateProgress(30);
+                    personsData = await loadWithTimeout(personsUrl, 15000);
+                    updateProgress(80);
+                } catch (err) {
+                    console.warn('Load failed:', err.message);
+                    usedFallback = true;
+                    showToast(`Could not load URL: ${err.message} — Using sample data`, 'warning', 'fa-exclamation-triangle');
+                    personsData = sampleData;
+                    updateProgress(100);
+                }
+
+                // Process data
+                if (!personsData || !Array.isArray(personsData)) {
+                    hideLoading();
+                    showError('Invalid data format. Expected an array of persons.');
+                    updateStatus('Error loading data', 'red', 0, 0);
+                    return;
+                }
+
+                personsMap = {};
+                personsList = [];
+                for (const p of personsData) {
+                    if (!p.id) continue;
+                    personsMap[p.id] = p;
+                    personsList.push(p);
+                }
+
+                const result = generateStructure(personsList);
+                const relations = result.relations;
+                missingKeys = result.missing;
+                currentGeneratedStructure = relations;
+                const maps = buildMaps(relations);
+                childrenMap = maps.childrenMap;
+                parentMap = maps.parentMap;
+
+                populateDropdowns();
+                surnameFilter.addEventListener('change', function() {
+                    updatePersonDropdown(this.value);
+                });
+
+                const relCount = relations.length;
+                const missingCount = Object.keys(missingKeys).length;
+                const statusMsg = usedFallback ? 'Using sample data' : 'Data loaded – structure auto‑generated';
+                updateStatus(statusMsg, usedFallback ? 'yellow' : 'green', personsList.length, relCount, missingCount);
+
+                if (missingCount > 0) {
+                    showToast(`Loaded ${personsList.length} persons, ${relCount} relations, ${missingCount} missing father keys`,
+                        'warning', 'fa-exclamation-triangle');
+                } else {
+                    showToast(`Loaded ${personsList.length} persons, ${relCount} relations`, 'success', 'fa-check-circle');
+                }
+
+                // Update debug
+                updateDebug();
+
+                // Auto-select Sondes Dali
+                if (personsList.length > 0) {
+                    let found = personsList.find(p => p.name && p.name.toLowerCase() === 'sondes');
+                    if (!found) found = personsList[0];
+                    personSelect.value = found.id;
+                    setTimeout(viewTreeForSelected, 200);
+                }
+
+                hideLoading();
+                updateProgress(100);
+
+                cancelLoadBtn.onclick = function() {
+                    cancelRequested = true;
+                    if (fetchAbortController) {
+                        fetchAbortController.abort();
+                    }
+                    hideLoading();
+                    updateStatus('Load cancelled', 'red', 0, 0);
+                    showToast('Load cancelled by user', 'warning', 'fa-times');
+                };
+            }
+
+            // ---- View JSON in new window ----
+            function viewTreeContent() {
+                if (currentGeneratedStructure.length === 0) {
+                    showError('No structure generated. Load data first.');
+                    return;
+                }
+                const unique = [];
+                const seen = new Set();
+                for (const rel of currentGeneratedStructure) {
+                    const key = rel.parentId + '|' + rel.childId + '|' + rel.type;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        unique.push(rel);
+                    }
+                }
+                const jsonStr = JSON.stringify(unique, null, 2);
+                const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                if (!win) {
+                    showError('Popup blocked. Please allow popups.');
+                    return;
+                }
+                win.document.write(`
+                    <html>
+                    <head><title>Generated Structure</title>
+                    <style>
+                        body { background: #1a1a2e; color: #e0e0e0; font-family: 'Courier New', monospace; padding: 30px; }
+                        pre { background: #0f0c29; padding: 20px; border-radius: 8px; overflow: auto; max-height: 90vh; border: 1px solid #302b63; }
+                        h1 { color: #4cc9f0; font-family: 'Segoe UI', sans-serif; }
+                        .count { color: #10b981; font-weight: bold; }
+                    </style>
+                    </head>
+                    <body>
+                        <h1>Generated Structure (unique relations)</h1>
+                        <p>Total relations: <span class="count">${unique.length}</span></p>
+                        <p style="color:#f59e0b; font-size:13px;">
+                            ⚠️ This shows every parent-child relation found in your JSON data.
+                            If a person is missing, their father key wasn't found.
+                        </p>
+                        <pre>${jsonStr}</pre>
+                        <p style="color:#888; font-size:12px; margin-top:20px;">
+                            <strong>How it works:</strong> Father key = third part of ID (e.g., "BD01") + family code.
+                            Mother = "mother" field.
+                        </p>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+                showToast(`JSON structure opened (${unique.length} unique relations)`, 'success', 'fa-external-link-alt');
+            }
+
+            // ---- Toggle debug ----
+            function toggleDebug() {
+                debugVisible = !debugVisible;
+                debugPanel.classList.toggle('open', debugVisible);
+                if (debugVisible) {
+                    updateDebug();
+                    showToast('Debug panel visible', 'info', 'fa-bug');
+                } else {
+                    showToast('Debug panel hidden', 'info', 'fa-bug');
+                }
+            }
+
+            // ---- Reset ----
+            function resetView() {
+                personSelect.value = '';
+                surnameFilter.value = '';
+                treeView.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-sitemap"></i><p>Select a person from the dropdown.</p></div>`;
+                statsPanel.style.display = 'none';
+                selectedNameDisplay.textContent = '— select a person';
+                currentTreeData = null;
+                currentPersonId = null;
+                panX = 0;
+                panY = 0;
+                scale = 1;
+                updateTransform();
+                showToast('Reset view', 'warning', 'fa-undo-alt');
+            }
+
+            // ---- Download structure ----
+            function downloadStructure() {
+                if (currentGeneratedStructure.length === 0) {
+                    showError('No structure generated. Load data first.');
+                    return;
+                }
+                const unique = [];
+                const seen = new Set();
+                for (const rel of currentGeneratedStructure) {
+                    const key = rel.parentId + '|' + rel.childId + '|' + rel.type;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        unique.push(rel);
+                    }
+                }
+                const jsonStr = JSON.stringify(unique, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bg2idx_fam.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Structure JSON downloaded!', 'success', 'fa-download');
+            }
+
+            // ---- Event listeners ----
+            loadBtn.addEventListener('click', loadData);
+            viewBtn.addEventListener('click', viewTreeForSelected);
+            viewContentBtn.addEventListener('click', viewTreeContent);
+            debugBtn.addEventListener('click', toggleDebug);
+            resetBtn.addEventListener('click', resetView);
+            downloadStructBtn.addEventListener('click', downloadStructure);
+            personSelect.addEventListener('change', viewTreeForSelected);
+
+            // ---- Auto-load ----
+            setTimeout(loadData, 400);
+        })();
+    </script>
+</body>
+</html>
