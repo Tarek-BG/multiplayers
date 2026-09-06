@@ -1,0 +1,688 @@
+
+[
+{
+"id":"V02M.bengadha.U00"
+"name": "hamida"
+"surname": "ben gadha"
+"birthDate": "1870"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W01M.bengadha.V02"
+"name": "abdelkader"
+"surname": "ben gadha"
+"birthDate": "1900"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W00F.mami.V00"
+"linkjson": "https"
+},
+{
+"id":"W02F.bengadha.V02"
+"name": "bouraouia"
+"surname": "ben gadha"
+"birthDate": "1900"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W00F.mami.V00"
+"linkjson": "https"
+},
+{
+"id":"W03F.bengadha.V02"
+"name": "bchuira GARN"
+"surname": "ben gadha"
+"birthDate": "1905"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W00F.mami.V00"
+"linkjson": "https"
+},
+{
+"id":"W00M.garnaoui.V02"
+"name": "BOU GARN"
+"surname": "garnaoui"
+"birthDate": "1905"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W04M.garnaoui.V02"
+"name": "touhami"
+"surname": "garnaoui"
+"birthDate": "1941"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W03F.bengadha.V02"
+"linkjson": "https"
+},
+{
+"id":"X01F.bengadha.W01"
+"name": "wassila"
+"surname": "ben gadha"
+"birthDate": "1922"
+"deathDate": "1979"
+"marriageDate": "1937"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W01F.kissy.V00"
+"linkjson": "https"
+},
+{
+"id":"X02M.bengadha.W01"
+"name": "ezzedine"
+"surname": "ben gadha"
+"birthDate": "1924-03-27"
+"deathDate": "2012-03-19"
+"marriageDate": "1957-03-27"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W01F.kissy.V00"
+"linkjson": "https"
+},
+{
+"id":"X03F.bengadha.W01"
+"name": "jouary"
+"surname": "ben gadha"
+"birthDate": "1925"
+"deathDate": "2015"
+"marriageDate": "1940"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W01F.kissy.V00"
+"linkjson": "https"
+},
+{
+"id":"X04M.bengadha.W01"
+"name": "borhan"
+"surname": "ben gadha"
+"birthDate": "1926"
+"deathDate": "1940"
+"marriageDate": null
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W01F.kissy.V00"
+"linkjson": "https"
+},
+{
+"id":"X05M.bengadha.W01"
+"name": "hechmi"
+"surname": "ben gadha"
+"birthDate": "1930"
+"deathDate": "2025"
+"marriageDate": "1947"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W00F.amara.V00"
+"linkjson": "https"
+},
+{
+"id":"W00F.amara.V00"
+"name": "OM hechmi"
+"surname": "amara"
+"birthDate": "1910"
+"deathDate": "2025"
+"marriageDate": "1947"
+"divorceDate": null
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X06F.bengadha.W01"
+"name": "mounira"
+"surname": "ben gadha"
+"birthDate": "1939"
+"deathDate": "2028"
+"marriageDate": "1960"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X03F.kenani.W00"
+"linkjson": "https"
+},
+{
+"id":"X07M.bengadha.W01"
+"name": "hedi"
+"surname": "ben gadha"
+"birthDate": "1942"
+"deathDate": ""
+"marriageDate": "1937"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X03F.kenani.W00"
+"linkjson": "https"
+},
+{
+"id":"X08F.bengadha.W01"
+"name": "mahria"
+"surname": "ben gadha"
+"birthDate": "1944"
+"deathDate": ""
+"marriageDate": "1987"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X03F.kenani.W00"
+"linkjson": "https"
+},
+{
+"id":"X09M.bengadha.W01"
+"name": "khaled"
+"surname": "ben gadha"
+"birthDate": "1946"
+"deathDate": ""
+"marriageDate": "1987"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X03F.kenani.W00"
+"linkjson": "https"
+},
+{
+"id":"Y01F.bengadha.X02"
+"name": "amel"
+"surname": "ben gadha"
+"birthDate": "1958-11-22"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X06F.zarrouk.W02"
+"linkjson": "https"
+},
+{
+"id":"X03M.amara.W00"
+"name": "bou nejib"
+"surname": "amara"
+"birthDate": "1905"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X03F.nebli.W00"
+"name": "om  nejib"
+"surname":"nebli"
+"birthDate": "1910"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"Y07M.amara.X00"
+"name": "nejib"
+"surname": "amara"
+"birthDate": "1956"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X03F.nebli.W00"
+"linkjson": "https"
+},
+{
+"id":"Z01M.amara.Y07"
+"name": "sahbi"
+"surname": "amara"
+"birthDate": "1988"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"Y01F.bengadha.X02"
+"linkjson": "https"
+},
+{
+"id":"Z02M.amara.Y07"
+"name": "saied"
+"surname": "amara"
+"birthDate": "2000"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"Y01F.bengadha.X02"
+"linkjson": "https"
+},
+{
+"id":"Y02F.bengadha.X02"
+"name": "besma_bg"
+"surname": "ben gadha"
+"birthDate": "1960-11-22"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X06F.zarrouk.W02"
+"linkjson": "https"
+},
+{
+"id":"Y04F.bengadha.X02"
+"name": "iness_bg"
+"surname": "ben gadha"
+"birthDate": "1969-11-22"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X06F.zarrouk.W02"
+"linkjson": "https"
+},
+{
+"id":"Y03M.bengadha.X02"
+"name": "tarek"
+"surname": "ben gadha"
+"birthDate": "1964-05-12"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X06F.zarrouk.W02"
+"linkjson": "https"
+},
+{
+"id":"Z01F.bengadha.Y03"
+"name": "eya"
+"surname": "ben gadha"
+"birthDate": "1996-11-22"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"Y02F.daly.X03"
+"linkjson": "https"
+},
+{
+"id":"X01F.amara.W01"
+"name": "hayette"
+"surname": "amara"
+"birthDate": "1945"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W01X.jaidane.V00"
+"linkjson": "https"
+},
+{
+"id":"W01M.amara.V00"
+"name": "alaya"
+"surname": "amara"
+"birthDate": "1910"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W02F.ammar.V00"
+"name": "nefissa"
+"surname": "ammar"
+"birthDate":1900
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"V00M.daly.U00"
+"name": "salah"
+"surname": "daly"
+"birthDate": "1880"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W01M.daly.V00"
+"name": "bechir"
+"surname": "daly"
+"birthDate": "1900"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X01M.zaoui.w00"
+"name": "hmed"
+"surname": "zaoui"
+"birthDate": "1936"
+"deathDate":"2012-12-01"
+"marriageDate":"1970-12-01"
+"divorceDate":
+"photoUrl": "https"
+"mother":"W02F.daly.V00"
+"linkjson": "https"
+},
+{
+"id":"W03F.OM dalyF.W01"
+"name": "OM faouzi"
+"surname": "OM dalyF"
+"birthDate":
+"deathDate":"2012-12-01"
+"marriageDate":"1970-12-01"
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W02F.daly.V00"
+"name": "soeur bechir"
+"surname": "daly"
+"birthDate": "1900"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X01M.daly.W01"
+"name": "taoufik pm"
+"surname": "daly"
+"birthDate": "1930"
+"deathDate":"1968"
+"marriageDate":"1965"
+"divorceDate":
+"photoUrl": "https"
+"mother":"W03F.OM daly.W01"
+"linkjson": "https"
+},
+{
+"id":"Y01F.kenani.X01"
+"name": "zinouba"
+"surname": "kenani"
+"birthDate": "1938"
+"deathDate": "2004"
+"marriageDate": "1956"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X01F.bengadha.W01"
+"linkjson": "https"
+},
+{
+"id":"Y05F.kenani.X01"
+"name": "karima"
+"surname": "kenani"
+"birthDate": "1938"
+"deathDate": "2004"
+"marriageDate": "1956"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X01F.bengadha.W01"
+"linkjson": "https"
+},
+{
+"id":"W02M.gechihe.V00"
+"name": "salem"
+"surname": "gechihe"
+"birthDate": "1900"
+"deathDate":
+"marriageDate":
+"divorceDate": null
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X03M.gechihe.W02"
+"name": "nouri"
+"surname": "gechihe"
+"birthDate": "1956"
+"deathDate": "1980"
+"marriageDate":
+"divorceDate": null
+"photoUrl": "https"
+"mother":"W02F.bengadha.V02"
+"linkjson": "https"
+},
+{
+"id":"Y04M.kenani.X01"
+"name": "habib"
+"surname": "kenani"
+"birthDate": "1952"
+"deathDate": "1970"
+"marriageDate": "1937"
+"divorceDate": null
+"photoUrl": "https"
+"mother":"X01F.bengadha.W01"
+"linkjson": "https"
+},
+{
+"id":"X03F.kenani.W00"
+"name": "jnina"
+"surname": "kenani"
+"birthDate": "1920"
+"deathDate": "1992"
+"marriageDate": "1937"
+"divorceDate": null
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X01M.kenani.W00"
+"name": "salem"
+"surname": "kenani"
+"birthDate": "1910"
+"deathDate": "1970"
+"marriageDate": null
+"divorceDate": null
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W01F.kissy.V00"
+"name": "OM ezzdine BG"
+"surname": "kissy"
+"birthDate": "1910"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W00F.mami.V00"
+"name": "om abdelkader"
+"surname": "mami"
+"birthDate": "1880-01-20"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"X06F.zarrouk.W02"
+"name": "wassila"
+"surname": "zarrouk"
+"birthDate": "1936-01-10"
+"deathDate":"2013-09-24"
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W02F.ammar.V00"
+"linkjson": "https"
+},
+{
+"id":"W02M.zarrouk.V00"
+"name": "sadok"
+"surname": "zarrouk"
+"birthDate":1900
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"W02F.ammar.V00"
+"linkjson": "https"
+},
+{
+"id":"X03M.daly.W01"
+"name": "faouzi"
+"surname": "daly"
+"birthDate": "1936"
+"deathDate":"2012-12-20"
+"marriageDate":"1970-12-01"
+"divorceDate":
+"photoUrl": "https"
+"mother":"W03F.OM daly.W01"
+"linkjson": "https"
+},
+{
+"id":"Z02F.bengadha.Y03"
+"name": "nour"
+"surname": "ben gadha"
+"birthDate": "2002-03-22"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"Y02F.daly.X03"
+"linkjson": "https"
+},
+{
+"id":"Z03M.bengadha.Y03"
+"name": "aziz"
+"surname": "ben gadha"
+"birthDate": "2010-08-30"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"Y02F.daly.X03"
+"linkjson": "https"
+},
+{
+"id":"Y01F.daly.X01"
+"name": "mouna"
+"surname": "daly"
+"birthDate": "1965"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Y02F.daly.X03"
+"name": "sondes"
+"surname": "daly"
+"birthDate": "1972-07-25"
+"deathDate":"1995"
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Y02M.daly.X03"
+"name": "taoufik"
+"surname": "daly"
+"birthDate": "1970-12-31"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Y03F.daly.X03"
+"name": "milen"
+"surname": "daly"
+"birthDate": "1974"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Y04F.daly.X03"
+"name": "jihen"
+"surname": "daly"
+"birthDate": "1977"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Y05M.daly.X03"
+"name": "bechir"
+"surname": "daly"
+"birthDate": "1978"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":"X01F.amara.W01"
+"linkjson": "https"
+},
+{
+"id":"Z01M.daly.Y02"
+"name": "mohamed fouzi"
+"surname": "daly"
+"birthDate": "2005"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+"id":"W01F.jaidane.V00"
+"name": "zohra"
+"surname": "jaidane"
+"birthDate": "1915"
+"deathDate":
+"marriageDate":
+"divorceDate":
+"photoUrl": "https"
+"mother":" null"
+"linkjson": "https"
+},
+{
+]
