@@ -682,5 +682,29 @@
 "photoUrl": "https",
 "mother":" null",
 "linkjson": "https"
+},
+{
+"id":"A01M.amara.Z02",
+"name": "saied fils",
+"surname": "amara",
+"birthDate": "2024",
+"deathDate":null,
+"marriageDate":null,
+"divorceDate":null,
+"photoUrl": "https",
+"mother":"Z01F.martsaied.Y00",
+"linkjson": "https"
+},
+{
+"id":"Z01F.martsaied.Y00",
+"name": "om saied fils",
+"surname": "martsaied",
+"birthDate": "2002",
+"deathDate":null,
+"marriageDate":null,
+"divorceDate":null,
+"photoUrl": "https",
+"mother":"Y01F.martsaied.X02",
+"linkjson": "https"
 }
 ]
