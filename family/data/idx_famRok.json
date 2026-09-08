@@ -685,26 +685,26 @@
 },
 {
 "id":"A01M.amara.Z02",
-"name": "saied fils",
+"name": "iyed",
 "surname": "amara",
-"birthDate": "2024",
+"birthDate": "2025",
 "deathDate":null,
 "marriageDate":null,
 "divorceDate":null,
 "photoUrl": "https",
-"mother":"Z01F.martsaied.Y00",
+"mother":"Z01F.nada2saied.Y00",
 "linkjson": "https"
 },
 {
-"id":"Z01F.martsaied.Y00",
-"name": "om saied fils",
-"surname": "martsaied",
+"id":"Z01F.nada2saied.Y00",
+"name": "nada",
+"surname": "nada2saied",
 "birthDate": "2002",
 "deathDate":null,
 "marriageDate":null,
 "divorceDate":null,
 "photoUrl": "https",
-"mother":"Y01F.ommartsaied.X02",
+"mother":"Y01F.nada2saied.X02",
 "linkjson": "https"
 }
 ]
