@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family Tree Gallery – Flat Data</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            color: #b8b8d1;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .url-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .url-input {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .url-input input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .url-input input:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #3a0ca3, #4361ee);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: #fff;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: #1a1a2e;
+        }
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .sample-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: #4cc9f0;
+            font-size: 1.2rem;
+        }
+        .loading i {
+            margin-right: 15px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            display: none;
+            background: rgba(220, 53, 69, 0.2);
+            color: #f8d7da;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .gallery-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 600px;
+            position: relative;
+        }
+
+        .gallery-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-size: 1.8rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(67, 97, 238, 0.5);
+        }
+
+        /* Family Tree Chart Layout */
+        .family-chart {
+            position: relative;
+            padding: 40px 20px;
+        }
+
+        .generation {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-bottom: 80px;
+            position: relative;
+            flex-wrap: wrap;
+        }
+
+        .generation-title {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #b8b8d1;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
+        }
+
+        .person-card {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(20, 20, 40, 0.9));
+            border-radius: 15px;
+            padding: 20px;
+            width: 250px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .person-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(67, 97, 238, 0.3);
+            border-color: rgba(67, 97, 238, 0.5);
+        }
+
+        .person-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 4px solid;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .person-photo:hover {
+            transform: scale(1.05);
+        }
+
+        .person-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .person-role {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        .person-main .person-photo {
+            border-color: #4cc9f0;
+        }
+        .person-father .person-photo {
+            border-color: #4361ee;
+        }
+        .person-mother .person-photo {
+            border-color: #f72585;
+        }
+        .person-brother .person-photo {
+            border-color: #f8961e;
+        }
+        .person-sister .person-photo {
+            border-color: #d946ef;
+        }
+        .person-grandfather .person-photo {
+            border-color: #7209b7;
+        }
+        .person-grandmother .person-photo {
+            border-color: #d946ef;
+        }
+        .person-child .person-photo {
+            border-color: #10b981;
+        }
+        .person-spouse .person-photo {
+            border-color: #f59e0b;
+        }
+        .person-uncle .person-photo {
+            border-color: #4a148c;
+        }
+        .person-aunt .person-photo {
+            border-color: #6a1b9a;
+        }
+
+        .person-info {
+            text-align: center;
+        }
+
+        .person-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .person-details {
+            color: #b8b8d1;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+
+        .person-age {
+            display: inline-block;
+            background: rgba(67, 97, 238, 0.2);
+            color: #4cc9f0;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .parents-row {
+            position: relative;
+        }
+        .parents-row::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .siblings-container,
+        .children-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 40px;
+            position: relative;
+        }
+
+        .siblings-container::before,
+        .children-container::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .siblings-title,
+        .children-title {
+            width: 100%;
+            text-align: center;
+            color: #b8b8d1;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .empty-state p {
+            font-size: 1.2rem;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #b8b8d1;
+            font-size: 0.95rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4cc9f0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #b8b8d1;
+        }
+
+        /* ===== PIE MENU STYLES ===== */
+        .pie-menu {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.5) rotate(-180deg);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .pie-menu.active {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            pointer-events: all;
+        }
+
+        .pie-menu-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pie-item {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 40, 0.98));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            transform: translate(-50%, -50%);
+            pointer-events: all;
+            text-decoration: none;
+            user-select: none;
+        }
+
+        .pie-item:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            border-color: #4cc9f0;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
+        }
+
+        .pie-item .tooltip {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pie-item:hover .tooltip {
+            opacity: 1;
+        }
+
+        .pie-item-1 {
+            top: 0%;
+            left: 50%;
+        }
+        .pie-item-2 {
+            top: 25%;
+            left: 93.3%;
+        }
+        .pie-item-3 {
+            top: 75%;
+            left: 93.3%;
+        }
+        .pie-item-4 {
+            top: 100%;
+            left: 50%;
+        }
+        .pie-item-5 {
+            top: 75%;
+            left: 6.7%;
+        }
+        .pie-item-6 {
+            top: 25%;
+            left: 6.7%;
+        }
+
+        .pie-item-1 {
+            background: linear-gradient(145deg, #4361ee, #3a0ca3);
+            border-color: #4361ee;
+        }
+        .pie-item-2 {
+            background: linear-gradient(145deg, #4cc9f0, #0ea5e9);
+            border-color: #4cc9f0;
+        }
+        .pie-item-3 {
+            background: linear-gradient(145deg, #f72585, #d946ef);
+            border-color: #f72585;
+        }
+        .pie-item-4 {
+            background: linear-gradient(145deg, #f8961e, #f59e0b);
+            border-color: #f8961e;
+        }
+        .pie-item-5 {
+            background: linear-gradient(145deg, #10b981, #059669);
+            border-color: #10b981;
+        }
+        .pie-item-6 {
+            background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+            border-color: #8b5cf6;
+        }
+
+        .pie-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+
+        .pie-center .initials {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4cc9f0;
+        }
+
+        .pie-center .small-name {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            margin-top: 2px;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pie-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(2px);
+        }
+
+        .pie-backdrop.active {
+            display: block;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast i {
+            font-size: 1.2rem;
+        }
+        .toast-success i {
+            color: #10b981;
+        }
+        .toast-info i {
+            color: #4cc9f0;
+        }
+        .toast-warning i {
+            color: #f8961e;
+        }
+        .toast-error i {
+            color: #f72585;
+        }
+
+        .person-selector {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .person-selector label {
+            color: #b8b8d1;
+            font-weight: 500;
+        }
+        .person-selector select {
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            min-width: 200px;
+            flex: 1;
+        }
+        .person-selector select:focus {
+            outline: none;
+            border-color: #4361ee;
+        }
+        .person-selector select option {
+            background: #1a1a2e;
+        }
+
+        @media (max-width: 1100px) {
+            .generation {
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+            .parents-row::after {
+                height: 40px;
+                bottom: -40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .url-section {
+                flex-direction: column;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .person-card {
+                width: 220px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .pie-menu {
+                width: 160px;
+                height: 160px;
+            }
+            .pie-item {
+                width: 44px;
+                height: 44px;
+                font-size: 1rem;
+            }
+            .pie-center {
+                width: 56px;
+                height: 56px;
+            }
+            .pie-center .initials {
+                font-size: 0.9rem;
+            }
+            .generation-title {
+                font-size: 0.9rem;
+                padding: 5px 14px;
+                white-space: normal;
+            }
+            .person-selector {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-images"></i> Family Tree Gallery</h1>
+            <p class="subtitle">Visualize family relationships with photos – using flat data format (IDs, mother refs).</p>
+        </header>
+
+        <section class="controls">
+            <div class="url-section">
+                <div class="url-input">
+                    <input type="url" id="jsonUrl"
+                    placeholder="URL to idx_famRok.json (or any JSON with array of persons)"
+                    value="https://tarek-bg.github.io/multiplayers/family/data/idx_famRok.json" />
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="loadData">
+                        <i class="fas fa-cloud-download-alt"></i> Load Data
+                    </button>
+                    <button class="btn btn-success" id="sampleBtn">
+                        <i class="fas fa-database"></i> Sample Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="sample-buttons">
+                <span style="color:#8888aa; font-size:0.85rem;">
+                    <i class="fas fa-info-circle"></i> Expects an array of persons with: id, name, surname, gender, birthDate, mother, photoUrl
+                </span>
+            </div>
+
+            <div class="loading" id="loadingIndicator">
+                <i class="fas fa-spinner"></i> Loading family data…
+            </div>
+
+            <div class="error" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Error loading data.</span>
+            </div>
+
+            <!-- Person selector -->
+            <div class="person-selector" id="personSelector" style="display:none;">
+                <label for="personSelect"><i class="fas fa-user"></i> Main Person:</label>
+                <select id="personSelect">
+                    <option value="">— Select —</option>
+                </select>
+                <button class="btn btn-secondary" id="viewTreeBtn" style="padding:10px 20px;">
+                    <i class="fas fa-eye"></i> View Tree
+                </button>
+            </div>
+        </section>
+
+        <section class="gallery-container">
+            <h2 class="gallery-title" id="galleryTitle">Family Tree</h2>
+            <div id="familyGallery">
+                <div class="empty-state">
+                    <i class="fas fa-sitemap"></i>
+                    <p>Click <strong>Load Data</strong> or <strong>Sample Data</strong> to see the family tree.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>Family Tree Gallery — Flat Data Version © 2026</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalMembers">0</div>
+                    <div class="stat-label">Family Members</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalPhotos">0</div>
+                    <div class="stat-label">Photos Loaded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgAge">—</div>
+                    <div class="stat-label">Average Age</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="genCount">0</div>
+                    <div class="stat-label">Generations</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Pie Menu -->
+    <div class="pie-backdrop" id="pieBackdrop"></div>
+    <div class="pie-menu" id="pieMenu">
+        <div class="pie-menu-inner">
+            <div class="pie-item pie-item-1" data-action="view-profile">
+                <i class="fas fa-user"></i>
+                <span class="tooltip">View Profile</span>
+            </div>
+            <div class="pie-item pie-item-2" data-action="edit">
+                <i class="fas fa-pen"></i>
+                <span class="tooltip">Edit</span>
+            </div>
+            <div class="pie-item pie-item-3" data-action="message">
+                <i class="fas fa-envelope"></i>
+                <span class="tooltip">Message</span>
+            </div>
+            <div class="pie-item pie-item-4" data-action="share">
+                <i class="fas fa-share-alt"></i>
+                <span class="tooltip">Share</span>
+            </div>
+            <div class="pie-item pie-item-5" data-action="download">
+                <i class="fas fa-download"></i>
+                <span class="tooltip">Download</span>
+            </div>
+            <div class="pie-item pie-item-6" data-action="delete">
+                <i class="fas fa-trash"></i>
+                <span class="tooltip">Delete</span>
+            </div>
+            <div class="pie-center" id="pieCenter">
+                <span class="initials" id="pieInitials">?</span>
+                <span class="small-name" id="pieName">Unknown</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMessage">Action performed</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            'use strict';
+
+            // ============================================================
+            //  SAMPLE DATA – exactly the same as ya2.html
+            // ============================================================
+            const SAMPLE_DATA = [
+                { "id": "V02M.bengadha.U00", "name": "hamida", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1870", "mother": null },
+                { "id": "W00F.mami.V00", "name": "om abdelkader", "surname": "mami", "gender": "F",
+                    "birthDate": "1880-01-20", "mother": null },
+                { "id": "W01M.bengadha.V02", "name": "abdelkader", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1900", "mother": "W00F.mami.V00" },
+                { "id": "W01F.kissy.V00", "name": "OM ezzdine BG", "surname": "kissy", "gender": "F",
+                    "birthDate": "1910", "mother": null },
+                { "id": "X01F.bengadha.W01", "name": "wassila", "surname": "ben gadha", "gender": "F",
+                    "birthDate": "1922", "mother": "W01F.kissy.V00" },
+                { "id": "X02M.bengadha.W01", "name": "ezzedine", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1924-03-27", "mother": "W01F.kissy.V00" },
+                { "id": "X06F.zarrouk.W02", "name": "wassila", "surname": "zarrouk", "gender": "F",
+                    "birthDate": "1936-01-10", "mother": "W02F.ammar.V00" },
+                { "id": "X03F.bengadha.W01", "name": "jouary", "surname": "ben gadha", "gender": "F",
+                    "birthDate": "1925", "mother": "W01F.kissy.V00" },
+                { "id": "X04M.bengadha.W01", "name": "borhan", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1926", "mother": "W01F.kissy.V00" },
+                { "id": "W00F.amara.V00", "name": "OM hechmi", "surname": "amara", "gender": "F", "birthDate": "1910",
+                    "mother": null },
+                { "id": "X05M.bengadha.W01", "name": "hechmi", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1930", "mother": "W00F.amara.V00" },
+                { "id": "X03F.kenani.W00", "name": "jnina", "surname": "kenani", "gender": "F", "birthDate": "1920",
+                    "mother": null },
+                { "id": "X06F.bengadha.W01", "name": "mounira", "surname": "ben gadha", "gender": "F",
+                    "birthDate": "1939", "mother": "X03F.kenani.W00" },
+                { "id": "X07M.bengadha.W01", "name": "hedi", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1942", "mother": "X03F.kenani.W00" },
+                { "id": "X08F.bengadha.W01", "name": "mahria", "surname": "ben gadha", "gender": "F",
+                    "birthDate": "1944", "mother": "X03F.kenani.W00" },
+                { "id": "X09M.bengadha.W01", "name": "khaled", "surname": "ben gadha", "gender": "M",
+                    "birthDate": "1946", "mother": "X03F.kenani.W00" },
+                { "id": "Y01F.bengadha.X02", "name": "amal", "surname": "bengadha", "gender": "F",
+                    "birthDate": "1958-11-22", "mother": "X06F.zarrouk.W02" },
+                { "id": "Y02F.bengadha.X02", "name": "besma", "surname": "bengadha", "gender": "F",
+                    "birthDate": "1960-11-22", "mother": "X06F.zarrouk.W02" },
+                { "id": "Y03M.bengadha.X02", "name": "tarek", "surname": "bengadha", "gender": "M",
+                    "birthDate": "1964-05-12", "mother": "X06F.zarrouk.W02",
+                    "photoUrl": "https://drive.google.com/uc?export=view&id=14nKY6MLHzf7Qkvsh3e6XpJhas5vp8Ccp" },
+                { "id": "Y02F.daly.X03", "name": "sondes", "surname": "daly", "gender": "F", "birthDate": "1972-07-25",
+                    "mother": "X01F.amara.W01" },
+                { "id": "Z01F.bengadha.Y03", "name": "eya", "surname": "bengadha", "gender": "F",
+                    "birthDate": "1996-11-22", "mother": "Y02F.daly.X03" },
+                { "id": "Z02F.bengadha.Y03", "name": "nour", "surname": "bengadha", "gender": "F",
+                    "birthDate": "2002-03-22", "mother": "Y02F.daly.X03" },
+                { "id": "Z03M.bengadha.Y03", "name": "aziz", "surname": "bengadha", "gender": "M",
+                    "birthDate": "2010-08-30", "mother": "Y02F.daly.X03" },
+                { "id": "Y04F.bengadha.X02", "name": "iness", "surname": "bengadha", "gender": "F",
+                    "birthDate": "1969-11-22", "mother": "X06F.zarrouk.W02" },
+                { "id": "W02F.ammar.V00", "name": "nefissa", "surname": "ammar", "gender": "F", "birthDate": "1900",
+                    "mother": null },
+                { "id": "X01F.amara.W01", "name": "hayette", "surname": "amara", "gender": "F", "birthDate": "1945",
+                    "mother": "W01X.jaidane.V00" },
+                { "id": "W01X.jaidane.V00", "name": "zohra", "surname": "jaidane", "gender": "F", "birthDate": "1915",
+                    "mother": null },
+                { "id": "X03M.amara.W00", "name": "grandfather_amara", "surname": "amara", "gender": "M",
+                    "birthDate": "1890", "mother": null },
+                { "id": "Y07M.amara.X0", "name": "saied", "surname": "amara", "gender": "M",
+                    "birthDate": "1920", "mother": null },
+                { "id": "Z02M.amara.Y07", "name": "saied_jr", "surname": "amara", "gender": "M",
+                    "birthDate": "1950", "mother": "Y01F.bengadha.X02" },
+                { "id": "A01M.amara.Z02", "name": "iyed", "surname": "amara", "gender": "M",
+                    "birthDate": "1980", "mother": null },
+            ];
+
+            // ============================================================
+            //  DOM REFS
+            // ============================================================
+            const jsonUrlInput = document.getElementById('jsonUrl');
+            const loadDataButton = document.getElementById('loadData');
+            const sampleBtn = document.getElementById('sampleBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const familyGallery = document.getElementById('familyGallery');
+            const galleryTitle = document.getElementById('galleryTitle');
+            const personSelector = document.getElementById('personSelector');
+            const personSelect = document.getElementById('personSelect');
+            const viewTreeBtn = document.getElementById('viewTreeBtn');
+
+            const totalMembers = document.getElementById('totalMembers');
+            const totalPhotos = document.getElementById('totalPhotos');
+            const avgAge = document.getElementById('avgAge');
+            const genCount = document.getElementById('genCount');
+
+            const pieMenu = document.getElementById('pieMenu');
+            const pieBackdrop = document.getElementById('pieBackdrop');
+            const pieInitials = document.getElementById('pieInitials');
+            const pieName = document.getElementById('pieName');
+            const pieItems = document.querySelectorAll('.pie-item');
+
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            // ============================================================
+            //  STATE
+            // ============================================================
+            let allPersons = [];
+            let personsMap = {};
+            let currentRootId = null;
+            let selectedPersonData = null;
+            let toastTimeout = null;
+
+            // ============================================================
+            //  HELPERS (same as ya2.html)
+            // ============================================================
+            function parseId(id) {
+                if (!id) return null;
+                const parts = id.split('.');
+                if (parts.length !== 3) return null;
+                return {
+                    gender: parts[0].charAt(parts[0].length - 1),
+                    rank: parts[0].substring(1, 3),
+                    familyCode: parts[1],
+                    fatherKey: parts[2],
+                    genLetter: parts[0].charAt(0).toUpperCase(),
+                    isMale: parts[0].charAt(parts[0].length - 1) === 'M' || parts[0].charAt(parts[0].length - 1) ===
+                    'Y',
+                    isFemale: parts[0].charAt(parts[0].length - 1) === 'F' || parts[0].charAt(parts[0].length - 1) ===
+                    'X'
+                };
+            }
+
+            function getGender(id) { const p = parseId(id); return p ? p.gender : null; }
+
+            function getGenLetter(id) { const p = parseId(id); return p ? p.genLetter : ''; }
+
+            function getFatherKey(id) { const p = parseId(id); return p ? p.fatherKey : null; }
+
+            function getFamilyCode(id) { const p = parseId(id); return p ? p.familyCode : null; }
+
+            function calculateAge(birthDate) {
+                if (!birthDate) return null;
+                try {
+                    const today = new Date();
+                    const birth = new Date(birthDate);
+                    if (isNaN(birth.getTime())) return null;
+                    let age = today.getFullYear() - birth.getFullYear();
+                    const monthDiff = today.getMonth() - birth.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+                    return age;
+                } catch (e) { return null; }
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'Unknown';
+                try {
+                    const d = new Date(dateString);
+                    if (isNaN(d.getTime())) return dateString;
+                    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                } catch (e) { return dateString; }
+            }
+
+            function getYear(birthDate) {
+                if (!birthDate) return '';
+                const m = birthDate.match(/\d{4}/);
+                return m ? m[0] : '';
+            }
+
+            // ============================================================
+            //  BUILD RELATIONSHIPS (same as ya2.html)
+            // ============================================================
+            function generateStructure(persons) {
+                const lookup = {};
+                for (const p of persons) lookup[p.id] = p;
+                const relations = [];
+
+                // Father lookup: child's third part → father's first part (prefix)
+                for (const p of persons) {
+                    const id = p.id;
+                    const parsed = parseId(id);
+                    if (!parsed) continue;
+                    const thirdPart = parsed.fatherKey;
+                    if (!thirdPart || thirdPart === '---' || thirdPart === 'null' || thirdPart === '') continue;
+                    let foundFather = null;
+                    for (const q of persons) {
+                        if (q.id === id) continue;
+                        const qParsed = parseId(q.id);
+                        if (!qParsed) continue;
+                        if (qParsed.familyCode !== parsed.familyCode) continue;
+                        const qFirstPart = q.id.split('.')[0];
+                        if (qFirstPart.startsWith(thirdPart)) {
+                            foundFather = q.id;
+                            break;
+                        }
+                    }
+                    if (foundFather) {
+                        relations.push({ parentId: foundFather, childId: id, type: 'father' });
+                    }
+                }
+
+                // Mother lookup
+                for (const p of persons) {
+                    const id = p.id;
+                    let motherId = p.mother;
+                    if (!id || !motherId) continue;
+                    motherId = String(motherId).trim().replace(/^["']|["']$/g, '');
+                    if (motherId === 'null' || motherId === '' || motherId === 'undefined') continue;
+                    if (lookup[motherId]) {
+                        relations.push({ parentId: motherId, childId: id, type: 'mother' });
+                    }
+                }
+
+                return relations;
+            }
+
+            function buildMaps(relations) {
+                const nc = {},
+                    np = {},
+                    sp = {};
+                for (const rel of relations) {
+                    const p = rel.parentId,
+                        c = rel.childId;
+                    if (!p || !c) continue;
+                    if (!nc[p]) nc[p] = [];
+                    if (!nc[p].includes(c)) nc[p].push(c);
+                    if (!np[c]) np[c] = [];
+                    if (!np[c].includes(p)) np[c].push(p);
+
+                    if (rel.type === 'father' || rel.type === 'mother') {
+                        const otherType = rel.type === 'father' ? 'mother' : 'father';
+                        for (const rel2 of relations) {
+                            if (rel2.childId === c && rel2.type === otherType) {
+                                if (!sp[p]) sp[p] = [];
+                                if (!sp[p].includes(rel2.parentId)) sp[p].push(rel2.parentId);
+                                if (!sp[rel2.parentId]) sp[rel2.parentId] = [];
+                                if (!sp[rel2.parentId].includes(p)) sp[rel2.parentId].push(p);
+                            }
+                        }
+                    }
+                }
+                return { childrenMap: nc, parentMap: np, spouseMap: sp };
+            }
+
+            function findSpouse(personId, spouseMap) {
+                const spouses = spouseMap[personId] || [];
+                return spouses.length > 0 ? spouses[0] : null;
+            }
+
+            // ============================================================
+            //  BUILD TREE (flat → hierarchical)
+            // ============================================================
+            function buildTreeForPerson(rootId, persons, relations) {
+                const maps = buildMaps(relations);
+                const { childrenMap, parentMap, spouseMap } = maps;
+                const lookup = {};
+                for (const p of persons) lookup[p.id] = p;
+
+                const allNodes = [];
+                const nodeIds = new Set();
+                const queue = [];
+
+                const rootPerson = lookup[rootId];
+                if (!rootPerson) return null;
+
+                allNodes.push({ id: rootId, person: rootPerson, role: 'main', depth: 0 });
+                nodeIds.add(rootId);
+                queue.push({ id: rootId, depth: 0 });
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    const currentId = current.id;
+                    const currentDepth = current.depth;
+
+                    // Spouse
+                    const spouseId = findSpouse(currentId, spouseMap);
+                    if (spouseId && !nodeIds.has(spouseId)) {
+                        const sp = lookup[spouseId];
+                        if (sp) {
+                            allNodes.push({ id: spouseId, person: sp, role: 'spouse', depth: currentDepth });
+                            nodeIds.add(spouseId);
+                            queue.push({ id: spouseId, depth: currentDepth });
+                        }
+                    }
+
+                    // Parents
+                    const parents = parentMap[currentId] || [];
+                    for (const parentId of parents) {
+                        if (nodeIds.has(parentId)) continue;
+                        const pp = lookup[parentId];
+                        if (!pp) continue;
+                        const gender = getGender(parentId);
+                        let newDepth, role;
+                        if (gender === 'F' || gender === 'X') {
+                            newDepth = currentDepth - 1;
+                            role = 'mother';
+                        } else {
+                            newDepth = currentDepth - 2;
+                            role = 'father';
+                        }
+                        allNodes.push({ id: parentId, person: pp, role, depth: newDepth });
+                        nodeIds.add(parentId);
+                        queue.push({ id: parentId, depth: newDepth });
+                    }
+
+                    // Children
+                    const children = childrenMap[currentId] || [];
+                    for (const childId of children) {
+                        if (nodeIds.has(childId)) continue;
+                        const cp = lookup[childId];
+                        if (!cp) continue;
+                        const newDepth = currentDepth + 1;
+                        allNodes.push({ id: childId, person: cp, role: 'child', depth: newDepth });
+                        nodeIds.add(childId);
+                        queue.push({ id: childId, depth: newDepth });
+                    }
+                }
+
+                // Siblings of main
+                const mainFatherId = (parentMap[rootId] || []).find(pid => {
+                    const g = getGender(pid);
+                    return g === 'M' || g === 'Y';
+                });
+                if (mainFatherId) {
+                    const siblings = childrenMap[mainFatherId] || [];
+                    for (const siblingId of siblings) {
+                        if (siblingId === rootId) continue;
+                        if (nodeIds.has(siblingId)) continue;
+                        const sp = lookup[siblingId];
+                        if (!sp) continue;
+                        const gender = getGender(siblingId);
+                        const role = (gender === 'F' || gender === 'X') ? 'sister' : 'brother';
+                        allNodes.push({ id: siblingId, person: sp, role, depth: 0 });
+                        nodeIds.add(siblingId);
+                    }
+                }
+
+                // Aunts/uncles
+                const parentIds = parentMap[rootId] || [];
+                for (const pid of parentIds) {
+                    const pGen = getGenLetter(pid);
+                    const pFather = (parentMap[pid] || []).find(ppid => {
+                        const g = getGender(ppid);
+                        return g === 'M' || g === 'Y';
+                    });
+                    if (pFather) {
+                        const sibs = childrenMap[pFather] || [];
+                        for (const sid of sibs) {
+                            if (sid === pid) continue;
+                            if (nodeIds.has(sid)) continue;
+                            if (!lookup[sid]) continue;
+                            const sGen = getGenLetter(sid);
+                            if (sGen === pGen) {
+                                const gender = getGender(sid);
+                                const role = (gender === 'F' || gender === 'X') ? 'aunt' : 'uncle';
+                                const parentNode = allNodes.find(n => n.id === pid);
+                                const depth = parentNode ? parentNode.depth : 0;
+                                allNodes.push({ id: sid, person: lookup[sid], role, depth });
+                                nodeIds.add(sid);
+                            }
+                        }
+                    }
+                }
+
+                // Also add grandparents (parents of parents)
+                const allParentIds = new Set();
+                for (const node of allNodes) {
+                    const pList = parentMap[node.id] || [];
+                    for (const pid of pList) allParentIds.add(pid);
+                }
+                for (const pid of allParentIds) {
+                    if (nodeIds.has(pid)) continue;
+                    if (!lookup[pid]) continue;
+                    const gender = getGender(pid);
+                    let role = (gender === 'F' || gender === 'X') ? 'grandmother' : 'grandfather';
+                    // Find a node that is child of this parent to determine depth
+                    let depth = 0;
+                    for (const node of allNodes) {
+                        if ((parentMap[node.id] || []).includes(pid)) {
+                            depth = node.depth - 1;
+                            break;
+                        }
+                    }
+                    allNodes.push({ id: pid, person: lookup[pid], role, depth });
+                    nodeIds.add(pid);
+                }
+
+                // Build edges
+                const edges = [];
+                const allNodeIds = new Set(allNodes.map(n => n.id));
+                for (const node of allNodes) {
+                    const id = node.id;
+                    if (childrenMap[id]) {
+                        for (const childId of childrenMap[id]) {
+                            if (allNodeIds.has(childId)) {
+                                const p = lookup[id];
+                                const gender = p ? getGender(p.id) : '';
+                                const type = (gender === 'F' || gender === 'X') ? 'mother-child' : 'father-child';
+                                const already = edges.some(e => e.from === id && e.to === childId);
+                                if (!already) edges.push({ from: id, to: childId, type });
+                            }
+                        }
+                    }
+                }
+
+                // Spouse edges
+                for (const node of allNodes) {
+                    const id = node.id;
+                    const spouseId = findSpouse(id, spouseMap);
+                    if (spouseId && allNodeIds.has(spouseId)) {
+                        const already = edges.some(e => (e.from === id && e.to === spouseId) || (e.from === spouseId &&
+                            e.to === id));
+                        if (!already) edges.push({ from: id, to: spouseId, type: 'spouse' });
+                    }
+                }
+
+                // Sibling edges
+                for (const node of allNodes) {
+                    if (node.role === 'brother' || node.role === 'sister') {
+                        for (const other of allNodes) {
+                            if (other.id !== node.id && (other.role === 'brother' || other.role === 'sister')) {
+                                const f1 = parentMap[node.id] || [];
+                                const f2 = parentMap[other.id] || [];
+                                let common = false;
+                                for (const f of f1) { if (f2.includes(f)) { common = true; break; } }
+                                if (common) {
+                                    const key = [node.id, other.id].sort().join('-');
+                                    const already = edges.some(e => { const ek = [e.from, e.to].sort().join('-'); return ek ===
+                                            key; });
+                                    if (!already) edges.push({ from: node.id, to: other.id, type: 'sibling' });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Deduplicate edges
+                const uniqueEdges = [];
+                const edgeSet = new Set();
+                for (const e of edges) {
+                    const key = [e.from, e.to].sort().join('-');
+                    if (!edgeSet.has(key)) { edgeSet.add(key);
+                        uniqueEdges.push(e); }
+                }
+
+                return { rootId, nodes: allNodes, edges: uniqueEdges, personMap: lookup };
+            }
+
+            // ============================================================
+            //  RENDER GALLERY from flat tree data
+            // ============================================================
+            function renderGalleryFromTree(treeData, rootId) {
+                if (!treeData || treeData.nodes.length === 0) {
+                    familyGallery.innerHTML =
+                        `<div class="empty-state"><i class="fas fa-user-slash"></i><p>No family data found.</p></div>`;
+                    return;
+                }
+
+                const lookup = treeData.personMap || {};
+                const nodes = treeData.nodes;
+
+                // Group by depth
+                const depthGroups = {};
+                for (const node of nodes) {
+                    const d = node.depth;
+                    if (!depthGroups[d]) depthGroups[d] = [];
+                    depthGroups[d].push(node);
+                }
+                const depths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+                const minDepth = depths[0] || 0;
+                const maxDepth = depths[depths.length - 1] || 0;
+
+                // Find main node
+                const mainNode = nodes.find(n => n.role === 'main') || nodes[0];
+
+                let html = `<div class="family-chart">`;
+
+                // Render by depth levels
+                for (const d of depths) {
+                    const levelNodes = depthGroups[d];
+                    const isAncestor = d < 0;
+                    const isDescendant = d > 0;
+                    const isSame = d === 0;
+
+                    let label = '';
+                    if (isAncestor) {
+                        const abs = Math.abs(d);
+                        label = abs === 1 ? 'Parents' : abs === 2 ? 'Grandparents' : `Great-Grandparents (${abs})`;
+                    } else if (isDescendant) {
+                        label = d === 1 ? 'Children' : d === 2 ? 'Grandchildren' : `Descendants (${d})`;
+                    } else {
+                        label = 'Current Generation';
+                    }
+
+                    html += `<div class="generation" style="margin-bottom: ${d === maxDepth ? '40px' : '80px'};">`;
+                    html += `<div class="generation-title">${label}</div>`;
+
+                    // Sort nodes: main first, then spouses, then others
+                    const sorted = [...levelNodes].sort((a, b) => {
+                        if (a.role === 'main') return -1;
+                        if (b.role === 'main') return 1;
+                        if (a.role === 'spouse') return -1;
+                        if (b.role === 'spouse') return 1;
+                        return (a.person?.name || '').localeCompare(b.person?.name || '');
+                    });
+
+                    for (const node of sorted) {
+                        const p = node.person || lookup[node.id];
+                        if (!p) continue;
+                        const role = node.role || 'unknown';
+                        const cssClass = getRoleClass(role);
+                        const roleLabel = getRoleLabel(role);
+                        const age = calculateAge(p.birthDate);
+                        const ageStr = age !== null ? `${age} years` : '—';
+                        const birthDisplay = p.birthDate ? formatDate(p.birthDate) : 'Birth unknown';
+                        const photoUrl = p.photoUrl || getDefaultPhoto(role);
+                        const displayName = p.name || 'Unknown';
+                        const displaySurname = p.surname || '';
+                        const fullName = `${displayName} ${displaySurname}`.trim() || 'Unknown';
+
+                        html += `
+                            <div class="person-card ${cssClass}" data-person='${JSON.stringify({id: p.id, name: displayName, surname: displaySurname, birthDate: p.birthDate, photoUrl: photoUrl, role: roleLabel})}'>
+                                <div class="person-role">${roleLabel}</div>
+                                <div class="person-photo">
+                                    <img src="${photoUrl}" alt="${fullName}" 
+                                         onerror="this.src='${getDefaultPhoto(role)}'">
+                                </div>
+                                <div class="person-info">
+                                    <div class="person-name">${fullName}</div>
+                                    <div class="person-details">${birthDisplay}</div>
+                                    <div class="person-age">${ageStr}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+                familyGallery.innerHTML = html;
+
+                // Update stats
+                const memberCount = nodes.length;
+                const photoCount = nodes.filter(n => n.person?.photoUrl).length;
+                const ages = nodes.map(n => calculateAge(n.person?.birthDate)).filter(a => a !== null);
+                const avgAgeVal = ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null;
+                const genCountVal = depths.length;
+
+                totalMembers.textContent = memberCount;
+                totalPhotos.textContent = photoCount;
+                avgAge.textContent = avgAgeVal !== null ? avgAgeVal : '—';
+                genCount.textContent = genCountVal;
+
+                // Add double-click events
+                document.querySelectorAll('.person-photo').forEach(photo => {
+                    photo.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        const card = this.closest('.person-card');
+                        if (card) {
+                            try {
+                                const data = JSON.parse(card.dataset.person);
+                                if (data) {
+                                    const x = e.clientX || window.innerWidth / 2;
+                                    const y = e.clientY || window.innerHeight / 2;
+                                    openPieMenu(x, y, data);
+                                }
+                            } catch (err) {
+                                console.warn('Could not parse person data:', err);
+                            }
+                        }
+                    });
+                });
+
+                // Update title
+                const mainPerson = lookup[rootId] || mainNode?.person;
+                if (mainPerson) {
+                    const name = `${mainPerson.name || '?'} ${mainPerson.surname || ''}`.trim() || 'Family';
+                    galleryTitle.textContent = `${name} — Family Tree`;
+                } else {
+                    galleryTitle.textContent = 'Family Tree';
+                }
+            }
+
+            function getRoleClass(role) {
+                const map = {
+                    'main': 'person-main',
+                    'father': 'person-father',
+                    'mother': 'person-mother',
+                    'grandfather': 'person-grandfather',
+                    'grandmother': 'person-grandmother',
+                    'brother': 'person-brother',
+                    'sister': 'person-sister',
+                    'child': 'person-child',
+                    'spouse': 'person-spouse',
+                    'uncle': 'person-uncle',
+                    'aunt': 'person-aunt',
+                    'great-grandfather': 'person-grandfather',
+                    'great-grandmother': 'person-grandmother',
+                };
+                return map[role] || 'person-main';
+            }
+
+            function getRoleLabel(role) {
+                const map = {
+                    'main': 'Main',
+                    'father': 'Father',
+                    'mother': 'Mother',
+                    'grandfather': 'Grandfather',
+                    'grandmother': 'Grandmother',
+                    'great-grandfather': 'Great-Grandfather',
+                    'great-grandmother': 'Great-Grandmother',
+                    'brother': 'Brother',
+                    'sister': 'Sister',
+                    'child': 'Child',
+                    'spouse': 'Spouse',
+                    'uncle': 'Uncle',
+                    'aunt': 'Aunt',
+                };
+                return map[role] || role;
+            }
+
+            function getDefaultPhoto(role) {
+                const map = {
+                    'main': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png',
+                    'father': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png',
+                    'mother': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png',
+                    'brother': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'sister': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'grandfather': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png',
+                    'grandmother': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'child': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'spouse': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'uncle': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                    'aunt': 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/hamida_bg.png',
+                };
+                return map[role] || 'https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png';
+            }
+
+            // ============================================================
+            //  LOAD DATA (flat array format)
+            // ============================================================
+            function loadDataFromArray(personsData, source = 'sample') {
+                if (!personsData || !Array.isArray(personsData) || personsData.length === 0) {
+                    showError('Invalid data: expected a non-empty array of persons.');
+                    return;
+                }
+
+                allPersons = [];
+                personsMap = {};
+                for (const p of personsData) {
+                    if (!p.id) continue;
+                    p.id = String(p.id).trim().replace(/^["']|["']$/g, '');
+                    personsMap[p.id] = p;
+                    allPersons.push(p);
+                }
+
+                // Build relations
+                const relations = generateStructure(allPersons);
+
+                // Find a good root: "tarek" by name, or first person with children, or first person
+                let rootId = null;
+                const tarek = allPersons.find(p => p.name && p.name.toLowerCase() === 'tarek');
+                if (tarek) rootId = tarek.id;
+                if (!rootId) {
+                    // Find person with children
+                    const childrenMap = buildMaps(relations).childrenMap;
+                    for (const p of allPersons) {
+                        if (childrenMap[p.id] && childrenMap[p.id].length > 0) {
+                            rootId = p.id;
+                            break;
+                        }
+                    }
+                }
+                if (!rootId && allPersons.length > 0) rootId = allPersons[0].id;
+
+                // Build tree
+                const treeData = buildTreeForPerson(rootId, allPersons, relations);
+                if (!treeData) {
+                    showError('Failed to build tree from data.');
+                    return;
+                }
+
+                currentRootId = rootId;
+
+                // Populate person selector
+                populatePersonSelector();
+
+                // Render
+                renderGalleryFromTree(treeData, rootId);
+
+                // Show selector
+                personSelector.style.display = 'flex';
+
+                const msg = source === 'sample' ? 'Sample data loaded' : 'Data loaded';
+                showToast(`${msg} — ${allPersons.length} persons, ${relations.length} relations`, 'success', 'fa-check-circle');
+            }
+
+            function populatePersonSelector() {
+                const sorted = [...allPersons].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                personSelect.innerHTML = '<option value="">— Select a person —</option>';
+                for (const p of sorted) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    const label = `${p.name || '?'} ${p.surname || ''}`.trim() || p.id;
+                    opt.textContent = label;
+                    if (p.id === currentRootId) opt.selected = true;
+                    personSelect.appendChild(opt);
+                }
+            }
+
+            // ============================================================
+            //  VIEW TREE FOR SELECTED PERSON
+            // ============================================================
+            function viewTreeForSelected() {
+                const id = personSelect.value;
+                if (!id) {
+                    showToast('Please select a person.', 'warning', 'fa-exclamation-triangle');
+                    return;
+                }
+                if (!personsMap[id]) {
+                    showError(`Person with ID "${id}" not found.`);
+                    return;
+                }
+                const relations = generateStructure(allPersons);
+                const treeData = buildTreeForPerson(id, allPersons, relations);
+                if (!treeData) {
+                    showError('Failed to build tree for this person.');
+                    return;
+                }
+                currentRootId = id;
+                renderGalleryFromTree(treeData, id);
+                showToast(`Showing tree for ${personsMap[id].name || '?'}`, 'success', 'fa-tree');
+            }
+
+            // ============================================================
+            //  LOAD FROM URL
+            // ============================================================
+            async function loadFromUrl() {
+                const url = jsonUrlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a data URL.');
+                    return;
+                }
+
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    let rawData = await response.json();
+
+                    // Handle the idx_famRok.json format: { files: [...] }
+                    let personsData = null;
+                    if (rawData.files && Array.isArray(rawData.files)) {
+                        for (const file of rawData.files) {
+                            if (file.name && file.name.endsWith('.json') && file.content) {
+                                try {
+                                    let content = file.content;
+                                    if (typeof content === 'string') content = JSON.parse(content);
+                                    if (Array.isArray(content)) { personsData = content; break; }
+                                } catch (e) { console.warn('Failed to parse file content:', e); }
+                            }
+                        }
+                        if (!personsData) throw new Error('No valid JSON file found in the response.');
+                    } else if (Array.isArray(rawData)) {
+                        personsData = rawData;
+                    } else {
+                        throw new Error('Unexpected data format. Expected an array of persons.');
+                    }
+
+                    loadDataFromArray(personsData, 'url');
+
+                } catch (err) {
+                    console.error('Load error:', err);
+                    showError(`Failed to load: ${err.message}`);
+                    showToast(`Error: ${err.message}`, 'error', 'fa-exclamation-triangle');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            // ============================================================
+            //  PIE MENU
+            // ============================================================
+            function openPieMenu(x, y, personData) {
+                selectedPersonData = personData;
+
+                const initials = (personData.name ? personData.name.charAt(0).toUpperCase() : '') +
+                    (personData.surname ? personData.surname.charAt(0).toUpperCase() : '') || '?';
+                pieInitials.textContent = initials;
+                pieName.textContent = personData.name ? `${personData.name} ${personData.surname || ''}`.trim() :
+                    'Unknown';
+
+                const menuSize = Math.min(window.innerWidth * 0.3, 200);
+                const halfSize = menuSize / 2;
+
+                let left = x - halfSize;
+                let top = y - halfSize;
+
+                if (left < 20) left = 20;
+                if (top < 20) top = 20;
+                if (left + menuSize > window.innerWidth - 20) left = window.innerWidth - menuSize - 20;
+                if (top + menuSize > window.innerHeight - 20) top = window.innerHeight - menuSize - 20;
+
+                pieMenu.style.left = left + 'px';
+                pieMenu.style.top = top + 'px';
+                pieMenu.style.width = menuSize + 'px';
+                pieMenu.style.height = menuSize + 'px';
+
+                const itemSize = menuSize * 0.28;
+                document.querySelectorAll('.pie-item').forEach(item => {
+                    item.style.width = itemSize + 'px';
+                    item.style.height = itemSize + 'px';
+                    item.style.fontSize = (itemSize * 0.35) + 'px';
+                });
+
+                const centerSize = menuSize * 0.35;
+                document.querySelector('.pie-center').style.width = centerSize + 'px';
+                document.querySelector('.pie-center').style.height = centerSize + 'px';
+                document.querySelector('.pie-center .initials').style.fontSize = (centerSize * 0.25) + 'px';
+                document.querySelector('.pie-center .small-name').style.fontSize = (centerSize * 0.12) + 'px';
+
+                pieBackdrop.classList.add('active');
+                pieMenu.classList.add('active');
+            }
+
+            function closePieMenu() {
+                pieBackdrop.classList.remove('active');
+                pieMenu.classList.remove('active');
+                selectedPersonData = null;
+            }
+
+            function handlePieAction(action) {
+                const name = selectedPersonData ? (selectedPersonData.name || 'Unknown') : 'Unknown';
+                let icon = 'fa-info-circle',
+                    type = 'info',
+                    message = '';
+
+                switch (action) {
+                    case 'view-profile':
+                        message = `Viewing profile of ${name}`;
+                        icon = 'fa-user';
+                        break;
+                    case 'edit':
+                        message = `Editing ${name}'s profile`;
+                        icon = 'fa-pen';
+                        break;
+                    case 'message':
+                        message = `Composing message to ${name}`;
+                        icon = 'fa-envelope';
+                        break;
+                    case 'share':
+                        message = `Sharing ${name}'s profile`;
+                        icon = 'fa-share-alt';
+                        type = 'success';
+                        break;
+                    case 'download':
+                        message = `Downloading ${name}'s photo`;
+                        icon = 'fa-download';
+                        type = 'success';
+                        break;
+                    case 'delete':
+                        message = `Delete ${name}'s profile?`;
+                        icon = 'fa-trash';
+                        type = 'warning';
+                        break;
+                    default:
+                        message = `Action: ${action} on ${name}`;
+                }
+
+                showToast(message, type, icon);
+                closePieMenu();
+                console.log(`Pie action: ${action} on`, selectedPersonData);
+            }
+
+            // ============================================================
+            //  TOAST
+            // ============================================================
+            function showToast(message, type = 'info', icon = 'fa-info-circle') {
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toastMessage.textContent = message;
+                toast.className = 'toast';
+                toast.classList.add(`toast-${type}`);
+                const iconEl = toast.querySelector('i');
+                iconEl.className = `fas ${icon}`;
+                setTimeout(() => toast.classList.add('show'), 30);
+                toastTimeout = setTimeout(() => toast.classList.remove('show'), 3500);
+            }
+
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+                setTimeout(() => { errorMessage.style.display = 'none'; }, 6000);
+            }
+
+            // ============================================================
+            //  EVENT LISTENERS
+            // ============================================================
+            loadDataButton.addEventListener('click', loadFromUrl);
+            sampleBtn.addEventListener('click', function() {
+                loadDataFromArray(SAMPLE_DATA, 'sample');
+            });
+            viewTreeBtn.addEventListener('click', viewTreeForSelected);
+            personSelect.addEventListener('change', function() {
+                // Auto-view on change
+                viewTreeForSelected();
+            });
+
+            pieItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    handlePieAction(this.dataset.action);
+                });
+            });
+
+            pieBackdrop.addEventListener('click', closePieMenu);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closePieMenu();
+            });
+
+            // ============================================================
+            //  AUTO-LOAD SAMPLE ON START
+            // ============================================================
+            setTimeout(() => {
+                loadDataFromArray(SAMPLE_DATA, 'sample');
+            }, 300);
+
+        });
+    </script>
+</body>
+</html>
