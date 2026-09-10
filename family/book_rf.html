@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Book</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap");
+
+/* ============================================================
+   1) THE 5 IMAGE VARIABLES  (url01 … url05)
+   default = your original 5 pictures, in this order :
+   url01 = hamida_bg.png
+   url02 = abdelkder_bg.png
+   url03 = dadE.png
+   url04 = momW.png
+   url05 = tarek_bg.png
+   They are overwritten by JS with the JSON urls.
+   ============================================================ */
+:root{
+  --url01: url("https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/sondes.png");
+  --url02: url("https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png");
+  --url03: url("https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png");
+  --url04: url("https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png");
+  --url05: url("https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png");
+}
+
+* {
+  padding: 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Indie Flower", cursive;
+  background-color: #eee;
+  color: #555;
+  text-align: center;
+  padding: 4em 0;
+}
+
+/* ---------- picker panel ---------- */
+.picker {
+  position: fixed;
+  top: 1em;
+  left: 1em;
+  width: 300px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+  z-index: 20;
+  font-size: 15px;
+}
+.picker h2 { font-size: 1.1em; margin-bottom: 4px; text-align: left; }
+.picker .hint { font-size: .78em; color: #888; margin-bottom: 8px; line-height: 1.3; }
+
+/* ---- data url box ---- */
+.urlRow {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+#dataUrl {
+  flex: 1;
+  padding: 5px 7px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: .78em;
+  min-width: 0;
+}
+#loadBtn {
+  font-family: inherit;
+  font-size: .78em;
+  padding: 5px 10px;
+  border: 1px solid #0aa7ff;
+  background: #0aa7ff;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: .15s;
+}
+#loadBtn:hover:not(:disabled) { background: #0088cc; border-color: #0088cc; }
+#loadBtn:disabled { opacity: .55; cursor: not-allowed; }
+
+#filter {
+  width: 100%;
+  padding: 4px 6px;
+  margin-bottom: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: .85em;
+}
+#peopleSelect {
+  width: 100%;
+  height: 170px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 3px;
+  font-family: inherit;
+  font-size: .85em;
+  outline: none;
+}
+#peopleSelect option { padding: 3px 5px; border-radius: 4px; }
+#peopleSelect option:checked { background: #0aa7ff linear-gradient(0deg, #0aa7ff, #0aa7ff); color: #fff; }
+#peopleSelect option:disabled { color: #bbb; }
+
+.picker .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+#counter { font-size: .85em; color: #777; flex: 1; }
+.picker button:not(#loadBtn) {
+  font-family: inherit;
+  font-size: .82em;
+  padding: 5px 10px;
+  border: 1px solid #bbb;
+  background: #f7f7f7;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: .15s;
+}
+.picker button:not(#loadBtn):hover:not(:disabled) { background: #0aa7ff; border-color: #0aa7ff; color: #fff; }
+.picker button:disabled { opacity: .45; cursor: not-allowed; }
+
+#status { font-size: .75em; margin-top: 8px; line-height: 1.35; color: #777; word-break: break-word; }
+#status.ok   { color: #2e7d32; }
+#status.warn { color: #c62828; }
+
+/* ---------- preloader ---------- */
+.imgLoader {
+  position: fixed;
+  animation: preLoad 1s steps(1);
+  width: 1px;
+  height: 1px;
+}
+@keyframes preLoad {
+  0%   { background-image: var(--url01); }
+  10%  { background-image: var(--url02); }
+  20%  { background-image: var(--url03); }
+  30%  { background-image: var(--url04); }
+  40%  { background-image: var(--url05); }
+  100% { display: none; }
+}
+
+/* ---------- book ---------- */
+.container {
+  position: relative;
+  width: 520px;
+  border: #fff solid 2px;
+  border-radius: 4px;
+  height: 420px;
+}
+
+.title {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  width: 100%;
+  font-size: 2em;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.credit {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  font-size: .9em;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.book {
+  position: relative;
+  perspective: 630px;
+  perspective-origin: center 50px;
+  transform: scale(1.2);
+  filter: drop-shadow(0px 10px 5px rgba(0, 0, 0, .25));
+}
+
+.page {
+  width: 210px;
+  height: 300px;
+  background-color: #bbb;
+  position: absolute;
+  top: 0px;
+  right: 50%;
+  transform-origin: 100% 100%;
+  border: solid #555 2px;
+  background-size: 420px 300px;
+  background-position: center;
+  transform-style: preserve-3d;
+}
+.page:nth-child(1) { transform: rotateX(60deg) rotateY(3deg); }
+.page:nth-child(2) { transform: rotateX(60deg) rotateY(4.5deg); }
+.page:nth-child(3) {
+  transform: rotateX(60deg) rotateY(6deg);
+  animation: nextPage 25s infinite -24s steps(1);
+  background-size: 420px 300px;
+  background-position: -2px -2px;
+}
+.page:nth-child(4) { transform: rotateX(60deg) rotateY(177deg); }
+.page:nth-child(5) { transform: rotateX(60deg) rotateY(175.5deg); }
+.page:nth-child(6) {
+  transform: rotateX(60deg) rotateY(174deg);
+  overflow: hidden;
+}
+.page:nth-child(6)::after {
+  content: "";
+  width: 210px;
+  height: 300px;
+  position: absolute;
+  top: 0px;
+  right: 0%;
+  transform-origin: center;
+  transform: rotateY(180deg);
+  animation: nextPage 25s -20s infinite steps(1);
+  background-size: 420px 300px;
+  background-position: 100% -2px;
+}
+@keyframes nextPage {
+  0%   { background-image: var(--url01); }
+  20%  { background-image: var(--url02); }
+  40%  { background-image: var(--url03); }
+  60%  { background-image: var(--url04); }
+  80%  { background-image: var(--url05); }
+  100% { background-image: var(--url01); }
+}
+
+.gap {
+  width: 10px;
+  height: 300px;
+  background: none;
+  transform: rotateX(60deg);
+  transform-origin: bottom;
+  position: absolute;
+  top: 0px;
+  left: calc(50% - 5px);
+}
+.gap::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  background-color: #555;
+  width: 10px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.pages, .flips { transform-style: preserve-3d; }
+
+.flip {
+  width: 32px;
+  height: 300px;
+  position: absolute;
+  top: 0px;
+  transform-origin: 100% 100%;
+  right: 100%;
+  border: solid #555;
+  border-width: 2px 0px;
+  perspective: 4200px;
+  perspective-origin: center;
+  transform-style: preserve-3d;
+  background-size: 420px 300px;
+}
+.flip::after {
+  content: "";
+  position: absolute;
+  top: 0px;
+  right: 0%;
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+  background-size: 420px 300px;
+}
+.flip.flip1 {
+  right: 50%;
+  animation: flip1 5s infinite ease-in-out;
+  border-width: 2px 2px 2px 0;
+}
+.flip.flip1::after { animation: nextFlip1 25s -20s infinite steps(1); }
+.flip:not(.flip1) {
+  right: calc(100% - 2px);
+  top: -2px;
+  transform-origin: right;
+  animation: flip2 5s ease-in-out infinite;
+}
+.flip.flip2::after { animation: nextFlip2 25s -20s infinite steps(1); }
+.flip.flip3::after { animation: nextFlip3 25s -20s infinite steps(1); }
+.flip.flip4::after { animation: nextFlip4 25s -20s infinite steps(1); }
+.flip.flip5::after { animation: nextFlip5 25s -20s infinite steps(1); }
+.flip.flip6::after { animation: nextFlip6 25s -20s infinite steps(1); }
+.flip.flip7 {
+  width: 30px;
+  border-width: 2px 0px 2px 2px;
+}
+.flip.flip7::after { animation: nextFlip7 25s -20s infinite steps(1); }
+
+@keyframes flip1 {
+  0%, 20%    { transform: rotateX(60deg) rotateY(6deg); }
+  80%, 100%  { transform: rotateX(60deg) rotateY(174deg); }
+}
+@keyframes flip2 {
+  0%, 20% { transform: rotateY(0deg) translateY(0px); }
+  50%     { transform: rotateY(-15deg) translateY(0px); }
+}
+
+/* ----- image sequence : url01 → url02 → url03 → url04 → url05 ----- */
+@keyframes nextFlip1 {
+  0%   { background-image: var(--url01); background-position: -178px -2px; transform: rotateY(0deg); }
+  10%  { background-image: var(--url02); background-position: -210px -2px; transform: rotateY(180deg); }
+  20%  { background-image: var(--url02); background-position: -178px -2px; transform: rotateY(0deg); }
+  30%  { background-image: var(--url03); background-position: -210px -2px; transform: rotateY(180deg); }
+  40%  { background-image: var(--url03); background-position: -178px -2px; transform: rotateY(0deg); }
+  50%  { background-image: var(--url04); background-position: -210px -2px; transform: rotateY(180deg); }
+  60%  { background-image: var(--url04); background-position: -178px -2px; transform: rotateY(0deg); }
+  70%  { background-image: var(--url05); background-position: -210px -2px; transform: rotateY(180deg); }
+  80%  { background-image: var(--url05); background-position: -178px -2px; transform: rotateY(0deg); }
+  90%  { background-image: var(--url01); background-position: -210px -2px; transform: rotateY(180deg); }
+  100% { background-image: var(--url01); background-position: -178px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip2 {
+  0%    { background-image: var(--url01); background-position: -148px -2px; transform: rotateY(0deg); }
+  10.5% { background-image: var(--url02); background-position: -238px -2px; transform: rotateY(180deg); }
+  20%   { background-image: var(--url02); background-position: -148px -2px; transform: rotateY(0deg); }
+  30.5% { background-image: var(--url03); background-position: -238px -2px; transform: rotateY(180deg); }
+  40%   { background-image: var(--url03); background-position: -148px -2px; transform: rotateY(0deg); }
+  50.5% { background-image: var(--url04); background-position: -238px -2px; transform: rotateY(180deg); }
+  60%   { background-image: var(--url04); background-position: -148px -2px; transform: rotateY(0deg); }
+  70.5% { background-image: var(--url05); background-position: -238px -2px; transform: rotateY(180deg); }
+  80%   { background-image: var(--url05); background-position: -148px -2px; transform: rotateY(0deg); }
+  90.5% { background-image: var(--url01); background-position: -238px -2px; transform: rotateY(180deg); }
+  100%  { background-image: var(--url01); background-position: -148px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip3 {
+  0%   { background-image: var(--url01); background-position: -118px -2px; transform: rotateY(0deg); }
+  11%  { background-image: var(--url02); background-position: -268px -2px; transform: rotateY(180deg); }
+  20%  { background-image: var(--url02); background-position: -118px -2px; transform: rotateY(0deg); }
+  31%  { background-image: var(--url03); background-position: -268px -2px; transform: rotateY(180deg); }
+  40%  { background-image: var(--url03); background-position: -118px -2px; transform: rotateY(0deg); }
+  51%  { background-image: var(--url04); background-position: -268px -2px; transform: rotateY(180deg); }
+  60%  { background-image: var(--url04); background-position: -118px -2px; transform: rotateY(0deg); }
+  71%  { background-image: var(--url05); background-position: -268px -2px; transform: rotateY(180deg); }
+  80%  { background-image: var(--url05); background-position: -118px -2px; transform: rotateY(0deg); }
+  91%  { background-image: var(--url01); background-position: -268px -2px; transform: rotateY(180deg); }
+  100% { background-image: var(--url01); background-position: -118px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip4 {
+  0%    { background-image: var(--url01); background-position: -88px -2px; transform: rotateY(0deg); }
+  11.5% { background-image: var(--url02); background-position: -298px -2px; transform: rotateY(180deg); }
+  20%   { background-image: var(--url02); background-position: -88px -2px; transform: rotateY(0deg); }
+  31.5% { background-image: var(--url03); background-position: -298px -2px; transform: rotateY(180deg); }
+  40%   { background-image: var(--url03); background-position: -88px -2px; transform: rotateY(0deg); }
+  51.5% { background-image: var(--url04); background-position: -298px -2px; transform: rotateY(180deg); }
+  60%   { background-image: var(--url04); background-position: -88px -2px; transform: rotateY(0deg); }
+  71.5% { background-image: var(--url05); background-position: -298px -2px; transform: rotateY(180deg); }
+  80%   { background-image: var(--url05); background-position: -88px -2px; transform: rotateY(0deg); }
+  91.5% { background-image: var(--url01); background-position: -298px -2px; transform: rotateY(180deg); }
+  100%  { background-image: var(--url01); background-position: -88px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip5 {
+  0%   { background-image: var(--url01); background-position: -58px -2px; transform: rotateY(0deg); }
+  12%  { background-image: var(--url02); background-position: -328px -2px; transform: rotateY(180deg); }
+  20%  { background-image: var(--url02); background-position: -58px -2px; transform: rotateY(0deg); }
+  32%  { background-image: var(--url03); background-position: -328px -2px; transform: rotateY(180deg); }
+  40%  { background-image: var(--url03); background-position: -58px -2px; transform: rotateY(0deg); }
+  52%  { background-image: var(--url04); background-position: -328px -2px; transform: rotateY(180deg); }
+  60%  { background-image: var(--url04); background-position: -58px -2px; transform: rotateY(0deg); }
+  72%  { background-image: var(--url05); background-position: -328px -2px; transform: rotateY(180deg); }
+  80%  { background-image: var(--url05); background-position: -58px -2px; transform: rotateY(0deg); }
+  92%  { background-image: var(--url01); background-position: -328px -2px; transform: rotateY(180deg); }
+  100% { background-image: var(--url01); background-position: -58px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip6 {
+  0%    { background-image: var(--url01); background-position: -28px -2px; transform: rotateY(0deg); }
+  12.5% { background-image: var(--url02); background-position: -358px -2px; transform: rotateY(180deg); }
+  20%   { background-image: var(--url02); background-position: -28px -2px; transform: rotateY(0deg); }
+  32.5% { background-image: var(--url03); background-position: -358px -2px; transform: rotateY(180deg); }
+  40%   { background-image: var(--url03); background-position: -28px -2px; transform: rotateY(0deg); }
+  52.5% { background-image: var(--url04); background-position: -358px -2px; transform: rotateY(180deg); }
+  60%   { background-image: var(--url04); background-position: -28px -2px; transform: rotateY(0deg); }
+  72.5% { background-image: var(--url05); background-position: -358px -2px; transform: rotateY(180deg); }
+  80%   { background-image: var(--url05); background-position: -28px -2px; transform: rotateY(0deg); }
+  92.5% { background-image: var(--url01); background-position: -358px -2px; transform: rotateY(180deg); }
+  100%  { background-image: var(--url01); background-position: -28px -2px; transform: rotateY(0deg); }
+}
+@keyframes nextFlip7 {
+  0%   { background-image: var(--url01); background-position: -2px -2px; transform: rotateY(0deg); }
+  13%  { background-image: var(--url02); background-position: -388px -2px; transform: rotateY(180deg); }
+  20%  { background-image: var(--url02); background-position: -2px -2px; transform: rotateY(0deg); }
+  33%  { background-image: var(--url03); background-position: -388px -2px; transform: rotateY(180deg); }
+  40%  { background-image: var(--url03); background-position: -2px -2px; transform: rotateY(0deg); }
+  53%  { background-image: var(--url04); background-position: -388px -2px; transform: rotateY(180deg); }
+  60%  { background-image: var(--url04); background-position: -2px -2px; transform: rotateY(0deg); }
+  73%  { background-image: var(--url05); background-position: -388px -2px; transform: rotateY(180deg); }
+  80%  { background-image: var(--url05); background-position: -2px -2px; transform: rotateY(0deg); }
+  93%  { background-image: var(--url01); background-position: -388px -2px; transform: rotateY(180deg); }
+  100% { background-image: var(--url01); background-position: -2px -2px; transform: rotateY(0deg); }
+}
+
+/* small screens : picker goes on top of the page */
+@media (max-width: 900px) {
+  body { padding-top: 1em; }
+  .picker { position: static; width: 92%; max-width: 420px; margin: 0 auto 2em; }
+  #peopleSelect { height: 140px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== PICKER ===================== -->
+<div class="picker">
+  <h2>Family book</h2>
+  <p class="hint">Select <b>5</b> people — the 1st pick becomes <code>url01</code>, the 5th <code>url05</code>.</p>
+
+  <!-- ---- DATA URL BOX + LOAD BUTTON ---- -->
+  <div class="urlRow">
+    <input id="dataUrl" type="url"
+           value="https://tarek-bg.github.io/multiplayers/family/data/idx_famRF.json"
+           placeholder="Paste JSON URL here…"
+           spellcheck="false">
+    <button id="loadBtn">Load</button>
+  </div>
+
+  <input id="filter" type="search" placeholder="Filter name…" autocomplete="off">
+  <select id="peopleSelect" multiple size="10"></select>
+
+  <div class="row">
+    <span id="counter">0 / 5</span>
+    <button id="applyBtn" disabled>Display</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+
+  <div id="status">Loading…</div>
+</div>
+
+<!-- ===================== BOOK ===================== -->
+<div class="imgLoader"></div>
+
+<div class="container">
+
+  <h1 class="title">
+    Turning pages test<br>with css
+  </h1>
+
+  <div class="credit" id="caption">* pick 5 people on the left</div>
+
+  <div class="book">
+    <div class="gap"></div>
+    <div class="pages">
+      <div class="page"></div>
+      <div class="page"></div>
+      <div class="page"></div>
+      <div class="page"></div>
+      <div class="page"></div>
+      <div class="page"></div>
+    </div>
+    <div class="flips">
+      <div class="flip flip1">
+        <div class="flip flip2">
+          <div class="flip flip3">
+            <div class="flip flip4">
+              <div class="flip flip5">
+                <div class="flip flip6">
+                  <div class="flip flip7"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================= configuration ================= */
+  const DEFAULT_LIST_URL = "https://tarek-bg.github.io/multiplayers/family/data/idx_famRF.json";
+  const DEFAULT_BG_URL   = "https://tarek-bg.github.io/multiplayers/family/data/idx_bg2_famRok.json";
+  const VARS = ["--url01", "--url02", "--url03", "--url04", "--url05"];
+  const MAX  = 5;
+
+  /* used only if the JSON cannot be reached (e.g. opened with file://) */
+  const FALLBACK = [
+    { label: "Hamida",     img: "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/sondes.png" },
+    { label: "Abdelkader", img: "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/abdelkder_bg.png" },
+    { label: "Dad",        img: "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/dadE.png" },
+    { label: "Mom",        img: "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/momW.png" },
+    { label: "Tarek",      img: "https://raw.githubusercontent.com/Tarek-BG/multiplayers/main/family/data/foto/tarek_bg.png" }
+  ];
+
+  /* ================= dom ================= */
+  const sel       = document.getElementById("peopleSelect");
+  const filterInp = document.getElementById("filter");
+  const counter   = document.getElementById("counter");
+  const statusEl  = document.getElementById("status");
+  const applyBtn  = document.getElementById("applyBtn");
+  const clearBtn  = document.getElementById("clearBtn");
+  const caption   = document.getElementById("caption");
+  const urlInp    = document.getElementById("dataUrl");
+  const loadBtn   = document.getElementById("loadBtn");
+
+  let people = [];   // [{label, img}]
+  let order  = [];   // values (= index in people) in click order
+  let listUrl = DEFAULT_LIST_URL;   // currently used list url
+  let bgUrl   = DEFAULT_BG_URL;     // currently used bg url
+
+  /* ================= helpers ================= */
+  function setStatus(msg, cls) {
+    statusEl.textContent = msg;
+    statusEl.className = cls || "";
+  }
+
+  function getJSON(url, ms) {
+    ms = ms || 12000;
+    return new Promise(function (resolve, reject) {
+      const ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      const timer = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+        reject(new Error("timeout"));
+      }, ms);
+
+      fetch(url, ctrl ? { signal: ctrl.signal, cache: "no-cache" } : { cache: "no-cache" })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (data) { clearTimeout(timer); resolve(data); })
+        .catch(function (err) { clearTimeout(timer); reject(err); });
+    });
+  }
+
+  function toArray(raw) {
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object") {
+      const keys = ["people", "items", "list", "data", "family", "fam", "members", "records", "rows", "photos"];
+      for (let i = 0; i < keys.length; i++) {
+        if (Array.isArray(raw[keys[i]])) return raw[keys[i]];
+      }
+      return Object.keys(raw).map(function (k) { return raw[k]; });
+    }
+    return [];
+  }
+
+  function looksLikeImage(s) {
+    if (typeof s !== "string") return false;
+    s = s.trim();
+    if (!s) return false;
+    if (/^data:image\//i.test(s)) return true;
+    return /\.(png|jpe?g|webp|gif|svg|avif|bmp)(\?.*)?$/i.test(s);
+  }
+
+  function absUrl(u, base) {
+    u = String(u).trim();
+    if (/^(https?:)?\/\//i.test(u) || /^data:/i.test(u)) return u;
+    if (u.charAt(0) === "/") return base.replace(/\/[^/]*$/, "") + u;
+    if (u.indexOf("./") === 0) u = u.slice(2);
+    return base.replace(/\/[^/]*$/, "/") + u;
+  }
+
+  /* reads a value from an object, key names compared case-insensitively */
+  function pickKey(obj, keys) {
+    const lower = {};
+    for (const k in obj) lower[k.toLowerCase()] = obj[k];
+    for (let i = 0; i < keys.length; i++) {
+      if (keys[i] in lower) return lower[keys[i]];
+    }
+    return undefined;
+  }
+
+  /* find the image url inside one record (any field) */
+  function imageFrom(item, base) {
+    if (item == null) return "";
+    if (typeof item === "string") return looksLikeImage(item) ? absUrl(item, base) : "";
+    if (typeof item !== "object") return "";
+
+    const preferred = ["photourl", "photo_url", "bg", "background", "image", "img",
+                       "photo", "foto", "picture", "pic", "src", "url", "file",
+                       "path", "avatar", "thumb", "thumbnail"];
+
+    for (let i = 0; i < preferred.length; i++) {
+      const v = pickKey(item, [preferred[i]]);
+      if (looksLikeImage(v)) return absUrl(v, base);
+    }
+    for (const k in item) {
+      if (looksLikeImage(item[k])) return absUrl(item[k], base);
+    }
+    return "";
+  }
+
+  function normalizePerson(item, index, base) {
+    if (typeof item === "string") {
+      return { label: item, img: looksLikeImage(item) ? absUrl(item, base) : "" };
+    }
+    if (!item || typeof item !== "object") return null;
+
+    const name    = pickKey(item, ["name", "firstname", "first", "prenom", "prénom", "given", "givenname"]);
+    const surname = pickKey(item, ["surname", "lastname", "last", "nom", "family", "familyname", "famille"]);
+
+    let label = pickKey(item, ["fullname", "full_name", "nomprenom", "nom_prenom", "label", "display", "title", "text"]);
+    if (!label && (name || surname)) label = [name, surname].filter(Boolean).join(" ");
+    if (!label) label = "Person " + (index + 1);
+
+    return { label: String(label).trim(), img: imageFrom(item, base) };
+  }
+
+  /* ================= load the json (from a given url) ================= */
+  function loadPeople(url) {
+    setStatus("Loading " + url + " …");
+    loadBtn.disabled = true;
+
+    /* derive a possible bg url next to the list url */
+    const guessedBg = url.replace(/idx_famRok\.json/i, "idx_bg2_famRok.json");
+
+    return getJSON(url)
+      .then(function (raw) {
+        const arr = toArray(raw);
+        people = arr.map(function (item, i) { return normalizePerson(item, i, url); }).filter(Boolean);
+        if (!people.length) throw new Error("empty list");
+
+        /* if some records have no image → try the matching bg json */
+        if (people.some(function (p) { return !p.img; })) {
+          return getJSON(guessedBg)
+            .then(function (bgRaw) {
+              const bgArr = toArray(bgRaw);
+              people = people.map(function (p, i) {
+                if (p.img) return p;
+                return { label: p.label, img: imageFrom(bgArr[i], guessedBg) };
+              });
+            })
+            .catch(function () { /* ignore, we keep what we have */ });
+        }
+      })
+      .then(function () {
+        listUrl = url;
+        bgUrl   = guessedBg;
+        setStatus(people.length + " people loaded — select 5.");
+      })
+      .catch(function (err) {
+        people = FALLBACK.map(function (p) { return { label: p.label, img: p.img }; });
+        setStatus("JSON not reachable (" + err.message + "). Using the 5 built-in images. " +
+                  "Tip: open the page through a web server, not file://", "warn");
+      })
+      .then(function () {
+        loadBtn.disabled = false;
+        renderOptions();
+      });
+  }
+
+  /* ================= dropdown ================= */
+  function renderOptions() {
+    sel.innerHTML = "";
+    order = [];
+
+    people.forEach(function (p, i) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = p.label + (p.img ? "" : "  (no image)");
+      opt.disabled = !p.img;
+      opt.title = p.img || "no image found for this person";
+      sel.appendChild(opt);
+    });
+
+    applyFilter();
+    updateCounter();
+  }
+
+  function applyFilter() {
+    const q = filterInp.value.trim().toLowerCase();
+    Array.prototype.forEach.call(sel.options, function (o) {
+      o.hidden = q ? o.textContent.toLowerCase().indexOf(q) === -1 : false;
+    });
+  }
+
+  function updateCounter() {
+    counter.textContent = order.length + " / " + MAX;
+    applyBtn.disabled = order.length !== MAX;
+    if (order.length === MAX) applySelection();
+  }
+
+  /* ================= selection logic (keeps click order) ================= */
+  sel.addEventListener("change", function () {
+    const now = {};
+    Array.prototype.forEach.call(sel.selectedOptions, function (o) { now[o.value] = true; });
+
+    /* removed */
+    order = order.filter(function (v) { return now[v]; });
+
+    /* added, in the order they appear selected */
+    Object.keys(now).forEach(function (v) {
+      if (order.indexOf(v) === -1) order.push(v);
+    });
+
+    /* more than 5 → keep the first 5, unselect the rest */
+    if (order.length > MAX) {
+      const drop = order.slice(MAX);
+      order = order.slice(0, MAX);
+      Array.prototype.forEach.call(sel.options, function (o) {
+        if (drop.indexOf(o.value) !== -1) o.selected = false;
+      });
+      setStatus("Only 5 allowed — extra selection removed.", "warn");
+    }
+
+    updateCounter();
+  });
+
+  filterInp.addEventListener("input", applyFilter);
+
+  clearBtn.addEventListener("click", function () {
+    order = [];
+    Array.prototype.forEach.call(sel.options, function (o) { o.selected = false; });
+    updateCounter();
+    caption.textContent = "* pick 5 people on the left";
+    setStatus("Selection cleared.");
+  });
+
+  applyBtn.addEventListener("click", function () {
+    if (order.length === MAX) applySelection();
+  });
+
+  /* ================= push the 5 urls into the css variables ================= */
+  function applySelection() {
+    const chosen = order.map(function (v) { return people[Number(v)]; }).filter(Boolean);
+    if (chosen.length !== MAX) return;
+
+    chosen.forEach(function (p, i) {
+      document.documentElement.style.setProperty(VARS[i], 'url("' + p.img + '")');
+    });
+
+    /* preload so the flip animation shows them without flicker */
+    chosen.forEach(function (p) { const im = new Image(); im.src = p.img; });
+
+    caption.innerHTML = chosen.map(function (p, i) {
+      return "<b>url0" + (i + 1) + "</b> " + escapeHtml(p.label);
+    }).join("  •  ");
+
+    setStatus("Showing: " + chosen.map(function (p) { return p.label; }).join(", "), "ok");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* ================= go ================= */
+  loadPeople(listUrl);
+
+  /* ---- reload when the Load button is clicked ---- */
+  loadBtn.addEventListener("click", function () {
+    const url = urlInp.value.trim();
+    if (!url) {
+      setStatus("Please paste a JSON URL first.", "warn");
+      return;
+    }
+    loadPeople(url);
+  });
+
+  /* ---- also reload when Enter is pressed inside the url input ---- */
+  urlInp.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadBtn.click();
+    }
+  });
+
+  /* ---- auto-fill the bg-url box when the list url changes (optional) ---- */
+  urlInp.addEventListener("input", function () {
+    /* nothing forced — the loadPeople() derives the bg url automatically */
+  });
+
+})();
+</script>
+
+</body>
+</html>
