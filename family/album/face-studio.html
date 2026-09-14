@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Face Recognition Studio</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111721; --panel-2:#161d29; --line:#232c3a;
+    --txt:#e7eef7; --muted:#8b99ad; --accent:#00e5a0; --accent-2:#ffb400;
+    --danger:#ff5c6c;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  /* ---------- header ---------- */
+  .top{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:11px 18px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#121924,#0d131c);
+  }
+  .brand{font-weight:700; letter-spacing:.3px; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 12px var(--accent)}
+  .tools{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+
+  .seg{display:flex; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:3px; gap:3px}
+  .seg label{cursor:pointer}
+  .seg input{position:absolute; opacity:0; pointer-events:none}
+  .seg span{display:block; padding:6px 14px; border-radius:7px; font-size:13px;
+    color:var(--muted); transition:.15s; user-select:none}
+  .seg input:checked + span{background:var(--accent); color:#04120d; font-weight:700}
+
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--panel-2);
+    color:var(--txt); padding:9px 16px; border-radius:10px; font:inherit;
+    font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s;
+    white-space:nowrap;
+  }
+  .btn:hover:not(:disabled){border-color:#3a475c; background:#1d2637}
+  .btn:disabled{opacity:.35; cursor:not-allowed}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#04120d}
+  .btn.primary:hover:not(:disabled){background:#2bf3b4}
+  .btn.active{outline:2px solid var(--accent-2); outline-offset:1px}
+  .btn.danger{border-color:#5a2730; color:#ffb3bb; background:#2a1418}
+  .btn.file{display:inline-flex; align-items:center}
+
+  /* ---------- layout ---------- */
+  main{flex:1; min-height:0; display:flex}
+  .canvas-area{flex:1; min-width:0; display:flex; flex-direction:column; position:relative}
+
+  /* ---------- dropzone ---------- */
+  .drop{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:26px; margin:18px; border:2px dashed #2b3648; border-radius:18px;
+    background:radial-gradient(120% 120% at 50% 0%,#121a26,#0b0f16);
+    transition:.2s; overflow:auto;
+  }
+  body.dragging .drop{border-color:var(--accent);
+    background:radial-gradient(120% 120% at 50% 0%,#13251f,#0b0f16)}
+  .drop-inner{max-width:640px; text-align:center}
+  .drop .ico{font-size:46px; margin-bottom:4px}
+  .drop h2{margin:.2em 0; font-size:21px}
+  .drop p{color:var(--muted); font-size:13.5px; margin:.4em 0 1.2em}
+  .row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .row input[type=url]{
+    flex:1; min-width:220px; background:#0c1119; border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; color:var(--txt); font:inherit; font-size:13.5px;
+  }
+  .row input[type=url]:focus{outline:none; border-color:var(--accent)}
+  .samples{margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  .samples .btn{padding:6px 12px; font-size:12.5px}
+
+  /* ---------- viewer ---------- */
+  .viewer{flex:1; min-height:0; display:flex; flex-direction:column}
+  .viewer-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:16px}
+  .stagebox{
+    position:relative; background:#000; border-radius:14px; overflow:hidden;
+    border:1px solid var(--line); box-shadow:0 24px 70px rgba(0,0,0,.65);
+    width:300px; height:400px;
+  }
+  .stagebox .photo{
+    display:block; width:100%; height:100%; object-fit:contain;
+    user-select:none; -webkit-user-drag:none;
+  }
+  .stagebox svg.overlay{
+    position:absolute; inset:0; width:100%; height:100%;
+    touch-action:none; cursor:default;
+  }
+  .stagebox svg.overlay.crosshair{cursor:crosshair}
+  .stagebox svg.overlay .face{
+    pointer-events:all; cursor:pointer;
+    fill:rgba(0,229,160,.12); stroke:#00e5a0; stroke-width:2.5;
+    vector-effect:non-scaling-stroke; transition:fill .15s, stroke .15s;
+  }
+  .stagebox svg.overlay .face:hover{fill:rgba(0,229,160,.30)}
+  .stagebox svg.overlay .face.sel{fill:rgba(255,180,0,.30); stroke:#ffb400}
+  .stagebox svg.overlay .face.draft{fill:rgba(0,229,160,.20); stroke-dasharray:7 5}
+  .stagebox svg.overlay text{
+    pointer-events:none; font-family:system-ui,sans-serif; font-weight:700;
+    fill:#00e5a0; stroke:rgba(0,0,0,.8); stroke-width:.3em;
+    paint-order:stroke fill;
+  }
+
+  .hint{text-align:center; color:var(--muted); font-size:12.5px; padding:0 0 12px}
+
+  /* ---------- sidebar ---------- */
+  .side{
+    width:320px; flex:none; border-left:1px solid var(--line); background:var(--panel);
+    display:flex; flex-direction:column; overflow-y:auto;
+  }
+  .side-block{padding:14px 16px; border-bottom:1px solid var(--line)}
+  .side-block h3{
+    margin:0 0 10px; font-size:11.5px; text-transform:uppercase; letter-spacing:.9px;
+    color:var(--muted); display:flex; align-items:center; gap:8px;
+  }
+  .pill{background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+    padding:1px 9px; font-size:11px; color:var(--txt)}
+  .status{padding:14px 16px; font-size:13px; color:var(--muted);
+    border-bottom:1px solid var(--line); min-height:54px}
+  .status.busy{color:var(--accent-2)}
+  .status.err{color:var(--danger)}
+  .status.ok{color:var(--accent)}
+  .status.warn{color:var(--accent-2)}
+
+  .face-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+    gap:6px; max-height:300px; overflow:auto}
+  .face-item{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    background:var(--panel-2); border:1px solid transparent; cursor:pointer; font-size:13px;
+  }
+  .face-item:hover{border-color:#33415a}
+  .face-item.sel{border-color:var(--accent-2); background:#241d0e}
+  .face-item .num{
+    width:22px; height:22px; flex:none; display:grid; place-items:center;
+    border-radius:6px; background:#0d131d; font-size:11.5px; font-weight:700; color:var(--accent);
+  }
+  .face-item .meta{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .empty{color:var(--muted); font-size:12.5px; font-style:italic}
+
+  .editor label{display:block; font-size:12px; color:var(--muted); margin-bottom:10px}
+  .editor input{
+    width:100%; margin-top:4px; background:#0c1119; border:1px solid var(--line);
+    border-radius:8px; padding:8px 11px; color:var(--txt); font:inherit; font-size:13px;
+  }
+  .editor input:focus{outline:none; border-color:var(--accent)}
+
+  @media (max-width:860px){
+    main{flex-direction:column}
+    .side{width:auto; border-left:0; border-top:1px solid var(--line); max-height:46%}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="dot"></span> Face Recognition Studio</div>
+  <div class="tools">
+    <div class="seg" role="radiogroup" aria-label="Orientation">
+      <label><input type="radio" name="orient" value="portrait" checked><span>Portrait</span></label>
+      <label><input type="radio" name="orient" value="landscape"><span>Landscape</span></label>
+    </div>
+    <button id="btnDetect" class="btn primary" disabled>Detect faces</button>
+    <button id="btnAdd" class="btn" disabled>Add region</button>
+    <button id="btnSvg" class="btn" disabled>Download SVG</button>
+    <button id="btnClear" class="btn" disabled>Clear</button>
+  </div>
+</header>
+
+<main>
+  <section class="canvas-area">
+
+    <!-- ---------- DROP ZONE ---------- -->
+    <div id="drop" class="drop">
+      <div class="drop-inner">
+        <div class="ico">🖼️</div>
+        <h2>Drop a photo here</h2>
+        <p>
+          Drag a file from Explorer&nbsp;/&nbsp;Finder, drag an image straight out of another web page,
+          paste a copied image or an image link (<kbd>Ctrl</kbd>+<kbd>V</kbd>), or use the fields below.
+        </p>
+        <div class="row">
+          <label class="btn file">Choose file<input type="file" id="fileInput" accept="image/*" hidden></label>
+          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg" spellcheck="false">
+          <button id="urlGo" class="btn">Load URL</button>
+        </div>
+        <div class="samples">
+          <button class="btn" data-sample="https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg">Sample: Lena (CORS ✓)</button>
+          <button class="btn" data-sample="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80">Sample: Unsplash portrait</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- VIEWER (direct img + SVG overlay) ---------- -->
+    <div id="viewer" class="viewer" hidden>
+      <div class="viewer-body" id="viewerBody">
+        <div id="stagebox" class="stagebox">
+          <img id="photo" class="photo" alt="Loaded image">
+          <svg id="overlay" class="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+      <div class="hint">Click a green box to select a face &nbsp;•&nbsp; use “Add region” to draw one manually</div>
+    </div>
+
+  </section>
+
+  <!-- ---------- SIDEBAR ---------- -->
+  <aside class="side">
+    <div id="status" class="status">No image loaded.</div>
+
+    <div class="side-block">
+      <h3>Detected faces <span id="faceCount" class="pill">0</span></h3>
+      <ul id="faceList" class="face-list"></ul>
+      <div id="listEmpty" class="empty">Nothing detected yet.</div>
+    </div>
+
+    <div id="editor" class="side-block editor" hidden>
+      <h3>Selected region <span id="selNo" class="pill">–</span></h3>
+      <label>Label
+        <input id="inName" type="text" placeholder="Face 1" spellcheck="false">
+      </label>
+      <label>Link (becomes the clickable href in the SVG)
+        <input id="inLink" type="url" placeholder="https://example.com/profile" spellcheck="false">
+      </label>
+      <button id="btnDel" class="btn danger">Delete this region</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* =========================================================================
+   Face Recognition Studio  (v2 — direct <img> + SVG overlay, CORS friendly)
+   ========================================================================= */
+(() => {
+'use strict';
+
+const NS = 'http://www.w3.org/2000/svg';
+const $  = s => document.querySelector(s);
+
+const els = {
+  drop:      $('#drop'),
+  viewer:    $('#viewer'),
+  viewerBody:$('#viewerBody'),
+  stagebox:  $('#stagebox'),
+  photo:     $('#photo'),
+  overlay:   $('#overlay'),
+  status:    $('#status'),
+  faceList:  $('#faceList'),
+  listEmpty: $('#listEmpty'),
+  faceCount: $('#faceCount'),
+  editor:    $('#editor'),
+  selNo:     $('#selNo'),
+  inName:    $('#inName'),
+  inLink:    $('#inLink'),
+  btnDetect: $('#btnDetect'),
+  btnAdd:    $('#btnAdd'),
+  btnSvg:    $('#btnSvg'),
+  btnClear:  $('#btnClear'),
+  btnDel:    $('#btnDel'),
+  fileInput: $('#fileInput'),
+  urlInput:  $('#urlInput'),
+  urlGo:     $('#urlGo'),
+};
+
+const state = {
+  src: null,
+  img: null,          // HTMLImageElement currently displayed
+  natW: 0, natH: 0,
+  faces: [],          // { x, y, w, h, name, link }
+  selected: -1,
+  orientation: 'portrait',
+  dataUri: null,      // cached data: URI of the image
+  blob: null,         // original File/Blob when loaded from disk
+  corsOk: true,       // false => image is CORS-tainted
+  fileName: 'faces'
+};
+
+let addMode = false;
+
+/* ------------------------------------------------------------------ utils */
+const escapeAttr = s => String(s)
+  .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+  .replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&apos;');
+
+const escapeHtml = s => String(s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function setStatus(msg, kind='') {
+  els.status.textContent = msg;
+  els.status.className = 'status ' + kind;
+}
+
+function blobToDataURL(blob) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload  = () => res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+}
+
+/* Try loading with CORS first; if the server refuses, retry without it
+   (image still displays, but its pixels become tainted). */
+function loadImage(src, useCors) {
+  return new Promise((resolve, reject) => {
+    const attempt = (cors) => {
+      const img = new Image();
+      if (cors) img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve({ img, corsOk: cors });
+      img.onerror = () => {
+        if (cors) attempt(false);
+        else reject(new Error('Image failed to load'));
+      };
+      img.src = src;
+    };
+    attempt(useCors);
+  });
+}
+
+/* --------------------------------------------------------------- rendering */
+function renderOverlay() {
+  const svg = els.overlay;
+  if (!svg) return;
+  const fs = Math.max(state.natW, state.natH) / 50 || 20;
+  const frag = document.createDocumentFragment();
+
+  state.faces.forEach((f, i) => {
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', f.x);
+    rect.setAttribute('y', f.y);
+    rect.setAttribute('width', f.w);
+    rect.setAttribute('height', f.h);
+    rect.setAttribute('rx', Math.min(f.w, f.h) * 0.06);
+    rect.setAttribute('class', 'face' + (i === state.selected ? ' sel' : ''));
+    rect.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      selectFace(i);
+    });
+    frag.appendChild(rect);
+
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', f.x + fs * 0.35);
+    t.setAttribute('y', f.y + fs * 1.15);
+    t.setAttribute('font-size', fs);
+    t.textContent = String(i + 1);
+    frag.appendChild(t);
+  });
+
+  svg.replaceChildren(frag);
+}
+
+function renderList() {
+  els.faceCount.textContent = state.faces.length;
+  els.faceList.replaceChildren();
+  els.listEmpty.hidden = state.faces.length > 0;
+
+  state.faces.forEach((f, i) => {
+    const li = document.createElement('li');
+    li.className = 'face-item' + (i === state.selected ? ' sel' : '');
+    const label = f.name ? f.name : `Face ${i + 1}`;
+    li.innerHTML =
+      `<span class="num">${i + 1}</span>` +
+      `<span class="meta">${escapeHtml(label)}${f.link ? ' 🔗' : ''}</span>`;
+    li.addEventListener('click', () => selectFace(i));
+    els.faceList.appendChild(li);
+  });
+}
+
+function renderEditor() {
+  const f = state.faces[state.selected];
+  if (!f) { els.editor.hidden = true; return; }
+  els.editor.hidden = false;
+  els.selNo.textContent = String(state.selected + 1);
+  els.inName.value = f.name || '';
+  els.inLink.value = f.link || '';
+}
+
+function selectFace(i) {
+  state.selected = i;
+  renderOverlay();
+  renderList();
+  renderEditor();
+}
+
+/* ------------------------------------------------------- overlay drawing  */
+function svgPoint(svg, e) {
+  const p = svg.createSVGPoint();
+  p.x = e.clientX; p.y = e.clientY;
+  const m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  const q = p.matrixTransform(m.inverse());
+  return { x: q.x, y: q.y };
+}
+
+function bindOverlay() {
+  const svg = els.overlay;
+  let drawing = false, sx = 0, sy = 0, draft = null;
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (!addMode) return;
+    e.preventDefault();
+    drawing = true;
+    const p = svgPoint(svg, e);
+    sx = p.x; sy = p.y;
+    draft = document.createElementNS(NS, 'rect');
+    draft.setAttribute('class', 'face draft');
+    draft.setAttribute('x', sx);
+    draft.setAttribute('y', sy);
+    draft.setAttribute('width', 0);
+    draft.setAttribute('height', 0);
+    svg.appendChild(draft);
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    if (!drawing || !draft) return;
+    const p = svgPoint(svg, e);
+    const x = Math.min(sx, p.x), y = Math.min(sy, p.y);
+    const w = Math.abs(p.x - sx), h = Math.abs(p.y - sy);
+    draft.setAttribute('x', x);
+    draft.setAttribute('y', y);
+    draft.setAttribute('width', w);
+    draft.setAttribute('height', h);
+  });
+
+  const finish = () => {
+    if (!drawing) return;
+    drawing = false;
+    if (!draft) return;
+    const r = {
+      x: parseFloat(draft.getAttribute('x')) || 0,
+      y: parseFloat(draft.getAttribute('y')) || 0,
+      w: parseFloat(draft.getAttribute('width')) || 0,
+      h: parseFloat(draft.getAttribute('height')) || 0
+    };
+    draft.remove();
+    draft = null;
+    if (r.w > 8 && r.h > 8) {
+      state.faces.push({ ...r, name: '', link: '' });
+      state.selected = state.faces.length - 1;
+      renderOverlay(); renderList(); renderEditor();
+      setStatus(`Region added — ${state.faces.length} region(s).`, 'ok');
+    }
+    setAddMode(false);
+  };
+
+  svg.addEventListener('pointerup', finish);
+  svg.addEventListener('pointercancel', finish);
+}
+
+/* -------------------------------------------------------------- detection */
+const MODEL_URLS = [
+  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+  'https://justadudewhohacks.github.io/face-api.js/models',
+  'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+];
+
+let faceApiLoading = null;
+let modelsReady = false;
+
+function loadFaceApi() {
+  if (window.faceapi) return Promise.resolve(true);
+  if (faceApiLoading) return faceApiLoading;
+  faceApiLoading = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.onload  = () => resolve(!!window.faceapi);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+  return faceApiLoading;
+}
+
+async function ensureModels() {
+  if (modelsReady) return;
+  let lastErr;
+  for (const url of MODEL_URLS) {
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+      modelsReady = true;
+      return;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Could not load models');
+}
+
+function clampBox(b, W, H) {
+  const x = Math.max(0, Math.min(W - 1, b.x));
+  const y = Math.max(0, Math.min(H - 1, b.y));
+  const w = Math.max(1, Math.min(W - x, b.w));
+  const h = Math.max(1, Math.min(H - y, b.h));
+  return { x, y, w, h };
+}
+
+async function detectFaces() {
+  if (!state.img) return;
+
+  els.btnDetect.disabled = true;
+  setStatus('Detecting faces…', 'busy');
+
+  const W = state.natW, H = state.natH;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(state.img, 0, 0, W, H);
+
+  // Check if the canvas is readable (CORS-tainted images aren't)
+  let tainted = false;
+  try { ctx.getImageData(0, 0, 1, 1); } catch (_) { tainted = true; }
+
+  if (tainted) {
+    els.btnDetect.disabled = false;
+    setStatus(
+      'This image blocks pixel access (CORS), so it cannot be analysed. ' +
+      'Use a local file, re-host it, or draw regions manually with “Add region”.',
+      'err'
+    );
+    return;
+  }
+
+  let boxes = [];
+  let engine = '';
+
+  /* 1) Native Shape Detection API (Chrome) */
+  if (typeof window.FaceDetector === 'function') {
+    try {
+      const fd = new FaceDetector({ maxDetectedFaces: 64, fastMode: false });
+      const found = await fd.detect(canvas);
+      if (found.length) {
+        boxes = found.map(f => ({
+          x: f.boundingBox.x, y: f.boundingBox.y,
+          w: f.boundingBox.width, h: f.boundingBox.height
+        }));
+        engine = 'native FaceDetector';
+      }
+    } catch (_) { /* fall through */ }
+  }
+
+  /* 2) face-api.js TinyFaceDetector */
+  if (!boxes.length) {
+    const ok = await loadFaceApi();
+    if (ok) {
+      try {
+        await ensureModels();
+        const opts = new faceapi.TinyFaceDetectorOptions({
+          inputSize: 608,
+          scoreThreshold: 0.35
+        });
+        const found = await faceapi.detectAllFaces(canvas, opts);
+        boxes = found.map(d => ({
+          x: d.box.x, y: d.box.y, w: d.box.width, h: d.box.height
+        }));
+        engine = 'face-api.js';
+      } catch (e) {
+        console.warn('face-api detection failed:', e);
+      }
+    }
+  }
+
+  els.btnDetect.disabled = false;
+
+  if (!boxes.length) {
+    setStatus(
+      'No faces found (or the detector could not load). ' +
+      'Try a sharper / larger photo, or add regions manually with “Add region”.',
+      'warn'
+    );
+    renderList(); renderEditor();
+    return;
+  }
+
+  state.faces = boxes.map(b => ({ ...clampBox(b, W, H), name: '', link: '' }));
+  state.selected = -1;
+
+  renderOverlay();
+  renderList();
+  renderEditor();
+  setStatus(`${state.faces.length} face(s) detected with ${engine}.`, 'ok');
+}
+
+/* ------------------------------------------------------------ add mode UI */
+function setAddMode(on) {
+  addMode = on;
+  els.btnAdd.classList.toggle('active', on);
+  els.overlay.classList.toggle('crosshair', on);
+  if (on) setStatus('Drag on the photo to draw a face region.', 'busy');
+}
+
+/* ------------------------------------------------------------ SVG export */
+async function getImageDataUri() {
+  if (state.dataUri) return state.dataUri;
+
+  // 1. From the original File / Blob
+  if (state.blob) {
+    state.dataUri = await blobToDataURL(state.blob);
+    return state.dataUri;
+  }
+
+  // 2. Fetch remote (works only if the server sends CORS headers)
+  try {
+    const res = await fetch(state.src, { mode: 'cors' });
+    if (!res.ok) throw new Error('fetch failed');
+    const blob = await res.blob();
+    state.dataUri = await blobToDataURL(blob);
+    return state.dataUri;
+  } catch (_) {
+    // 3. Fall back to a remote reference (SVG will need network to render)
+    state.dataUri = state.src;
+    return state.dataUri;
+  }
+}
+
+async function downloadSvg() {
+  if (!state.natW || !state.natH) return;
+
+  els.btnSvg.disabled = true;
+  setStatus('Building SVG…', 'busy');
+
+  const W = state.natW, H = state.natH;
+  const uri = await getImageDataUri();
+  const sw = Math.max(W, H) / 400;
+  const fs = Math.max(W, H) / 50;
+
+  const out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+           `width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  out.push('  <title>Image with clickable face regions</title>');
+  out.push('  <style>');
+  out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) +
+           'px;cursor:pointer;transition:fill .15s}');
+  out.push('    a:hover .face{fill:rgba(0,229,160,0.38)}');
+  out.push('    text{font-family:system-ui,-apple-system,sans-serif;font-weight:700;' +
+           'fill:#00e5a0;stroke:rgba(0,0,0,0.8);stroke-width:.3em;paint-order:stroke fill;pointer-events:none}');
+  out.push('  </style>');
+  out.push(`  <image x="0" y="0" width="${W}" height="${H}" ` +
+           `xlink:href="${escapeAttr(uri)}" href="${escapeAttr(uri)}"/>`);
+
+  state.faces.forEach((f, i) => {
+    const label = f.name ? f.name : `Face ${i + 1}`;
+    const href  = f.link ? f.link : '#';
+    const rx    = (Math.min(f.w, f.h) * 0.06).toFixed(2);
+    out.push(`  <a xlink:href="${escapeAttr(href)}" href="${escapeAttr(href)}" target="_blank" rel="noopener">`);
+    out.push(`    <title>${escapeAttr(label)}</title>`);
+    out.push(`    <rect class="face" x="${f.x.toFixed(2)}" y="${f.y.toFixed(2)}" ` +
+             `width="${f.w.toFixed(2)}" height="${f.h.toFixed(2)}" rx="${rx}"/>`);
+    out.push(`    <text x="${(f.x + fs * 0.35).toFixed(2)}" y="${(f.y + fs * 1.15).toFixed(2)}" ` +
+             `font-size="${fs.toFixed(2)}">${i + 1}</text>`);
+    out.push('  </a>');
+  });
+
+  out.push('</svg>');
+
+  const blob = new Blob([out.join('\n')], { type: 'image/svg+xml;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = (state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.svg';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+  els.btnSvg.disabled = false;
+  const embedded = uri.startsWith('data:');
+  setStatus(
+    embedded
+      ? `SVG saved with ${state.faces.length} clickable region(s) and the image embedded.`
+      : `SVG saved (image linked remotely — CORS prevented embedding).`,
+    embedded ? 'ok' : 'warn'
+  );
+}
+
+/* ------------------------------------------------------------ image input */
+async function setImage(src, fileName, blob) {
+  setStatus('Loading image…', 'busy');
+
+  const isRemote = /^https?:/i.test(src);
+  let loaded;
+  try {
+    loaded = await loadImage(src, isRemote);
+  } catch (e) {
+    console.error(e);
+    setStatus('Could not load that image. Check the URL or try a local file.', 'err');
+    return;
+  }
+
+  state.src      = src;
+  state.img      = loaded.img;
+  state.natW     = loaded.img.naturalWidth;
+  state.natH     = loaded.img.naturalHeight;
+  state.faces    = [];
+  state.selected = -1;
+  state.dataUri  = null;
+  state.blob     = blob || null;
+  state.corsOk   = loaded.corsOk;
+  state.fileName = (fileName || 'image').split('?')[0];
+
+  if (!state.natW || !state.natH) {
+    setStatus('That file is not a valid image.', 'err');
+    return;
+  }
+
+  // Swap the <img> in the stage for the already-loaded element
+  const old = els.stagebox.querySelector('img.photo');
+  if (old && old !== loaded.img) old.remove();
+  loaded.img.id = 'photo';
+  loaded.img.className = 'photo';
+  loaded.img.alt = 'Loaded image';
+  els.photo = loaded.img;
+  els.stagebox.insertBefore(loaded.img, els.overlay);
+
+  // Set up the SVG overlay with the image's pixel coordinate system
+  els.overlay.setAttribute('viewBox', `0 0 ${state.natW} ${state.natH}`);
+  els.overlay.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  els.overlay.replaceChildren();
+
+  els.drop.hidden = true;
+  els.viewer.hidden = false;
+
+  setAddMode(false);
+  renderOverlay();
+  renderList();
+  renderEditor();
+
+  els.btnDetect.disabled = false;
+  els.btnAdd.disabled    = false;
+  els.btnSvg.disabled    = false;
+  els.btnClear.disabled  = false;
+
+  requestAnimationFrame(fitStage);
+
+  setStatus(
+    `Image loaded (${state.natW}×${state.natH}). Press “Detect faces”.` +
+    (loaded.corsOk ? '' : '  ⚠ Cross-origin image: pixel analysis may be blocked.'),
+    loaded.corsOk ? 'ok' : 'warn'
+  );
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    setStatus('That is not an image file.', 'err');
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  setImage(url, file.name, file);
+}
+
+function handleUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return;
+  if (!/^(https?:\/\/|data:image\/|blob:)/i.test(u)) {
+    setStatus('That does not look like an image URL.', 'err');
+    return;
+  }
+  const name = u.startsWith('data:') ? 'image' : (u.split('/').pop().split('?')[0] || 'image');
+  setImage(u, name, null);
+}
+
+/* ------------------------------------------------------------ drag & drop */
+['dragenter', 'dragover'].forEach(t =>
+  document.addEventListener(t, (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    document.body.classList.add('dragging');
+  })
+);
+
+document.addEventListener('dragleave', (e) => {
+  if (e.relatedTarget === null || e.relatedTarget === document.documentElement) {
+    document.body.classList.remove('dragging');
+  }
+});
+
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  const dt = e.dataTransfer;
+  if (!dt) return;
+
+  // 1. Real files
+  if (dt.files && dt.files.length) {
+    const f = Array.from(dt.files).find(x => x.type.startsWith('image/')) || dt.files[0];
+    if (f) return handleFile(f);
+  }
+
+  // 2. Items (dragging an <img> out of a web page)
+  if (dt.items && dt.items.length) {
+    for (const it of dt.items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) return handleFile(f);
+      }
+    }
+  }
+
+  // 3. HTML payload with <img src="…">
+  const html = dt.getData('text/html');
+  if (html) {
+    const m = /<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i.exec(html);
+    if (m) return handleUrl(m[1]);
+  }
+
+  // 4. URI list / plain text
+  const uri = dt.getData('text/uri-list') || dt.getData('text/plain');
+  if (uri) {
+    const first = uri.split(/\r?\n/).map(s => s.trim())
+      .find(l => l && !l.startsWith('#'));
+    if (first) return handleUrl(first);
+  }
+
+  setStatus('Nothing usable was dropped. Try an image file or an image link.', 'err');
+});
+
+/* ----------------------------------------------------------------- paste */
+document.addEventListener('paste', (e) => {
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+
+  const cd = e.clipboardData;
+  if (!cd) return;
+
+  const items = Array.from(cd.items || []);
+  const imgItem = items.find(i => i.type && i.type.startsWith('image/'));
+  if (imgItem) {
+    const f = imgItem.getAsFile();
+    if (f) { e.preventDefault(); return handleFile(f); }
+  }
+
+  const text = cd.getData('text');
+  if (text && /^(https?:\/\/|data:image\/)/i.test(text.trim())) {
+    e.preventDefault();
+    handleUrl(text.trim());
+  }
+});
+
+/* ---------------------------------------------------------------- sizing */
+function fitStage() {
+  if (els.viewer.hidden) return;
+  const ar = state.orientation === 'portrait' ? 3 / 4 : 4 / 3;
+  const box = els.viewerBody.getBoundingClientRect();
+  const availW = Math.max(60, box.width  - 32);
+  const availH = Math.max(60, box.height - 32);
+
+  let w = availW;
+  let h = w / ar;
+  if (h > availH) { h = availH; w = h * ar; }
+
+  els.stagebox.style.width  = Math.round(w) + 'px';
+  els.stagebox.style.height = Math.round(h) + 'px';
+}
+
+window.addEventListener('resize', fitStage);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(fitStage).observe(els.viewerBody);
+}
+
+/* ---------------------------------------------------------------- events */
+document.querySelectorAll('input[name="orient"]').forEach(r =>
+  r.addEventListener('change', () => {
+    const checked = document.querySelector('input[name="orient"]:checked');
+    state.orientation = checked ? checked.value : 'portrait';
+    fitStage();
+  })
+);
+
+els.btnDetect.addEventListener('click', detectFaces);
+els.btnAdd.addEventListener('click', () => setAddMode(!addMode));
+els.btnSvg.addEventListener('click', downloadSvg);
+
+els.btnClear.addEventListener('click', () => {
+  state.src = null;
+  state.img = null;
+  state.faces = [];
+  state.selected = -1;
+  state.dataUri = null;
+  state.blob = null;
+
+  const old = els.stagebox.querySelector('img.photo');
+  if (old) old.remove();
+  els.overlay.replaceChildren();
+
+  els.viewer.hidden = true;
+  els.drop.hidden = false;
+
+  els.btnDetect.disabled = true;
+  els.btnAdd.disabled = true;
+  els.btnSvg.disabled = true;
+  els.btnClear.disabled = true;
+
+  setAddMode(false);
+  renderList();
+  renderEditor();
+  setStatus('No image loaded.');
+});
+
+els.btnDel.addEventListener('click', () => {
+  if (state.selected < 0) return;
+  state.faces.splice(state.selected, 1);
+  state.selected = Math.min(state.selected, state.faces.length - 1);
+  renderOverlay();
+  renderList();
+  renderEditor();
+  setStatus(`${state.faces.length} region(s).`, 'ok');
+});
+
+els.inName.addEventListener('input', () => {
+  const f = state.faces[state.selected];
+  if (!f) return;
+  f.name = els.inName.value;
+  renderList();
+});
+
+els.inLink.addEventListener('input', () => {
+  const f = state.faces[state.selected];
+  if (!f) return;
+  f.link = els.inLink.value.trim();
+  renderList();
+});
+
+els.fileInput.addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) handleFile(f);
+  e.target.value = '';
+});
+
+els.urlGo.addEventListener('click', () => handleUrl(els.urlInput.value));
+els.urlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); handleUrl(els.urlInput.value); }
+});
+
+document.querySelectorAll('[data-sample]').forEach(b =>
+  b.addEventListener('click', () => handleUrl(b.dataset.sample))
+);
+
+/* prevent the browser from navigating on stray drops */
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop',     e => e.preventDefault());
+
+/* ------------------------------------------------------------------ init */
+bindOverlay();
+renderList();
+renderEditor();
+})();
+</script>
+</body>
+</html>
