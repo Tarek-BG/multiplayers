@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Public File Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h2 {
+            color: #1a73e8;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: "Courier New", Courier, monospace;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            display: block;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: #d93025;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Google Drive Public Assets Demo</h1>
+    <p>This page tests fetching shared JSON data and embedding media from Google Drive using public download links.</p>
+
+    <!-- 1. MEDIA SECTION -->
+    <div class="container">
+        <h2>1. Media Output (Image via Direct URL)</h2>
+        <p>Using the Google UserContent delivery path for reliable standard HTML rendering:</p>
+        
+        <!-- REPLACE THE ID BELOW WITH YOUR OWN VIEW-SHARED IMAGE FILE ID -->
+        <img id="drive-image" src="https://googleusercontent.com" alt="https://drive.google.com/file/d/1OR7Zm3L-0kZwJBWZA4P8_g6j0E2f-9JN/view?usp=drive_link">
+    </div>
+
+    <!-- 2. JSON SECTION -->
+    <div class="container">
+        <h2>2. JSON Output (Parsed via JavaScript)</h2>
+        <p>Fetching public file bytes directly into code context:</p>
+        <div id="json-loading">Loading JSON data from Google Drive...</div>
+        <pre id="json-output" style="display:none;"></pre>
+    </div>
+
+    <script>
+        // REPLACE THIS ID WITH YOUR OWN VIEW-SHARED JSON FILE ID
+        const PUBLIC_JSON_FILE_ID = '1BtzrhNJtG21Pto0Sq6v0k2F14hgE8ki3'; 
+        
+        // Google's universal download endpoint for public file bypass
+        const jsonDownloadUrl = `https://google.com{1BtzrhNJtG21Pto0Sq6v0k2F14hgE8ki3}`;
+
+        // Fetching and parsing the public JSON file dynamically
+        fetch(jsonDownloadUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const outputElement = document.getElementById('json-output');
+                const loadingElement = document.getElementById('json-loading');
+                
+                // Pretty-print JSON data on page
+                outputElement.textContent = JSON.stringify(data, null, 2);
+                outputElement.style.display = 'block';
+                loadingElement.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error reading the JSON file:', error);
+                const loadingElement = document.getElementById('json-loading');
+                loadingElement.className = 'error';
+                loadingElement.innerHTML = `Failed to load JSON.<br><small>Tip: Double-check that your file is set to "Anyone with the link can view".</small>`;
+            });
+    </script>
+
+</body>
+</html>
