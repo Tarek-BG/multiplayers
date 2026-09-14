@@ -247,13 +247,13 @@
         <p>
           Drag a file from Explorer&nbsp;/&nbsp;Finder, drag an image straight out of another web page,
           paste a copied image or an image link (<kbd>Ctrl</kbd>+<kbd>V</kbd>), or use the fields below.
-          <br>Paste or drop a <b>.svg</b> URL — it will be re-imported with its editable regions.
+          <br>Re-import a previously exported <b>.svg</b> to recover its editable regions.
         </p>
         <div class="row">
           <label class="btn file">Choose image
             <input type="file" id="fileInput" accept="image/*">
           </label>
-          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg  or  .svg" spellcheck="false">
+          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg" spellcheck="false">
           <button id="urlGo" class="btn">Load URL</button>
         </div>
         <div class="samples">
@@ -515,11 +515,14 @@ function renderOverlay() {
   if (!svg) return;
 
   while (svg.firstChild) svg.removeChild(svg.firstChild);
+
   if (!state.natW || !state.natH) return;
 
   var fs = Math.max(state.natW, state.natH) / 50;
   var frag = document.createDocumentFragment();
 
+  /* Hit-area rect so empty regions catch clicks. fill-opacity 0.001 (visible
+     to the hit-tester) is more reliable than fill="transparent". */
   var bg = document.createElementNS(NS, 'rect');
   bg.setAttribute('x', 0);
   bg.setAttribute('y', 0);
@@ -669,6 +672,7 @@ function bindOverlay() {
     if (e.button !== 0 && e.button !== 1) return;
     var t = e.target;
 
+    /* In add mode: start drawing a new region */
     if (addMode) {
       e.preventDefault();
       drawing = true;
@@ -685,6 +689,7 @@ function bindOverlay() {
       return;
     }
 
+    /* Handle hit */
     var handle = t.getAttribute ? t.getAttribute('data-handle') : null;
     var idxAttr = t.getAttribute ? t.getAttribute('data-idx') : null;
 
@@ -694,6 +699,7 @@ function bindOverlay() {
       return;
     }
 
+    /* Face body hit */
     if (t.classList && t.classList.contains('face') && !t.classList.contains('draft')) {
       var idx = parseInt(idxAttr, 10);
       if (!isNaN(idx)) {
@@ -704,6 +710,7 @@ function bindOverlay() {
       }
     }
 
+    /* Empty area → pan */
     e.preventDefault();
     panState = {
       pointerId: e.pointerId,
@@ -1095,6 +1102,9 @@ function downloadSvg() {
              '</div></div>');
     out.push('  </foreignObject>');
 
+    /* The next line writes the literal closing tag for the exported SVG's
+       internal script — split the string so the outer HTML parser doesn't
+       see it as a closer. */
     var ST = '<' + 'script type="text/javascript"><![CDATA[';
     var END = ']]>' + '<' + '/script' + '>';
 
@@ -1146,123 +1156,80 @@ function downloadSvg() {
   });
 }
 
-/* ============================ SVG IMPORT ============================
-   Two paths:
-     • parseSvgText(text, name)   — shared by file input, URL fetch, drag
-     • importSvgFromUrl(url)      — used when the user pastes an .svg URL
-   ==================================================================== */
-
-function parseSvgText(text, fileName) {
-  var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-  if (doc.querySelector('parsererror')) {
-    setStatus('✖ Could not parse that SVG.', 'err');
-    return Promise.resolve();
-  }
-  var metaEl = doc.querySelector('metadata#face-studio-data');
-  var payload = null;
-  if (metaEl) {
-    try { payload = JSON.parse(b64decode(metaEl.textContent.trim())); }
-    catch (e) { console.warn('metadata decode failed', e); }
-  }
-
-  var src = null, faces = [], name = (fileName || 'imported.svg').replace(/\.svg$/i, '');
-
-  if (payload && payload.imageSrc) {
-    src = payload.imageSrc;
-    name = payload.imageName || name;
-    faces = (payload.faces || []).map(function (f) {
-      return {
-        x: Number(f.x) || 0, y: Number(f.y) || 0,
-        w: Number(f.w) || 0, h: Number(f.h) || 0,
-        shape: f.shape || 'rect',
-        name: f.name || '',
-        surname: f.surname || '',
-        link: f.link || ''
-      };
-    });
-  } else {
-    var imgEl = doc.querySelector('image');
-    var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
-    if (!href) {
-      setStatus('✖ This SVG contains no image and no Face Studio metadata.', 'err');
-      return Promise.resolve();
-    }
-    src = href;
-    var shapes = doc.querySelectorAll('rect.face, circle.face, ellipse.face');
-    for (var i = 0; i < shapes.length; i++) {
-      var el = shapes[i];
-      var a = el.closest('a');
-      var x, y, w, h, shape;
-      var tag = el.tagName.toLowerCase();
-      if (tag === 'circle') {
-        var cx = Number(el.getAttribute('cx')) || 0;
-        var cy = Number(el.getAttribute('cy')) || 0;
-        var r = Number(el.getAttribute('r')) || 0;
-        x = cx - r; y = cy - r; w = 2 * r; h = 2 * r; shape = 'circle';
-      } else if (tag === 'ellipse') {
-        var ecx = Number(el.getAttribute('cx')) || 0;
-        var ecy = Number(el.getAttribute('cy')) || 0;
-        var erx = Number(el.getAttribute('rx')) || 0;
-        var ery = Number(el.getAttribute('ry')) || 0;
-        x = ecx - erx; y = ecy - ery; w = 2 * erx; h = 2 * ery; shape = 'ellipse';
-      } else {
-        x = Number(el.getAttribute('x')) || 0;
-        y = Number(el.getAttribute('y')) || 0;
-        w = Number(el.getAttribute('width')) || 0;
-        h = Number(el.getAttribute('height')) || 0;
-        shape = 'rect';
-      }
-      faces.push({
-        x: x, y: y, w: w, h: h, shape: shape,
-        name: '', surname: '',
-        link: a ? (a.getAttribute('href') || a.getAttribute('xlink:href') || '') : ''
-      });
-    }
-  }
-
-  return setImage(src, name, null, faces).then(function () {
-    setStatus('✔ Imported "' + (fileName || 'SVG') + '" with ' + faces.length + ' editable region(s).', 'ok');
-  });
-}
-
+/* ------------------------------------------------------------ SVG import */
 function importSvg(file) {
   return file.text().then(function (text) {
-    return parseSvgText(text, file.name);
-  });
-}
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    if (doc.querySelector('parsererror')) {
+      setStatus('✖ Could not parse that SVG.', 'err');
+      return;
+    }
+    var metaEl = doc.querySelector('metadata#face-studio-data');
+    var payload = null;
+    if (metaEl) {
+      try { payload = JSON.parse(b64decode(metaEl.textContent.trim())); }
+      catch (e) { console.warn('metadata decode failed', e); }
+    }
 
-function importSvgFromUrl(url) {
-  setStatus('Fetching SVG from URL…', 'busy');
-  return fetch(url, { mode: 'cors' })
-    .then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.text();
-    })
-    .then(function (text) {
-      // Confirm the payload really is SVG
-      if (!/<svg[\s>]/i.test(text.slice(0, 2000)) && !/<svg[\s>]/i.test(text)) {
-        throw new Error('Response does not look like SVG');
+    var src = null, faces = [], name = file.name.replace(/\.svg$/i, '');
+
+    if (payload && payload.imageSrc) {
+      src = payload.imageSrc;
+      name = payload.imageName || name;
+      faces = (payload.faces || []).map(function (f) {
+        return {
+          x: Number(f.x) || 0, y: Number(f.y) || 0,
+          w: Number(f.w) || 0, h: Number(f.h) || 0,
+          shape: f.shape || 'rect',
+          name: f.name || '',
+          surname: f.surname || '',
+          link: f.link || ''
+        };
+      });
+    } else {
+      var imgEl = doc.querySelector('image');
+      var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
+      if (!href) {
+        setStatus('✖ This SVG contains no image and no Face Studio metadata.', 'err');
+        return;
       }
-      var name;
-      try { name = decodeURIComponent(url.split('/').pop().split('?')[0]) || 'remote.svg'; }
-      catch (_) { name = 'remote.svg'; }
-      return parseSvgText(text, name);
-    })
-    .catch(function (err) {
-      var msg = (err && err.message) ? err.message : String(err);
-      if (/file:\/\//i.test(url)) {
-        setStatus(
-          '✖ Cannot read ' + url + '\n' +
-          'Browsers block scripts from fetching other file:// URLs.\n' +
-          'Use “Import SVG” to pick the file, or drop the .svg file onto the page.',
-          'err');
-      } else {
-        setStatus(
-          '✖ Could not fetch that SVG — ' + msg + '\n' +
-          'Tip: use “Import SVG” to pick the file, or drop the .svg onto the page.',
-          'err');
+      src = href;
+      var shapes = doc.querySelectorAll('rect.face, circle.face, ellipse.face');
+      for (var i = 0; i < shapes.length; i++) {
+        var el = shapes[i];
+        var a = el.closest('a');
+        var x, y, w, h, shape;
+        var tag = el.tagName.toLowerCase();
+        if (tag === 'circle') {
+          var cx = Number(el.getAttribute('cx')) || 0;
+          var cy = Number(el.getAttribute('cy')) || 0;
+          var r = Number(el.getAttribute('r')) || 0;
+          x = cx - r; y = cy - r; w = 2 * r; h = 2 * r; shape = 'circle';
+        } else if (tag === 'ellipse') {
+          var ecx = Number(el.getAttribute('cx')) || 0;
+          var ecy = Number(el.getAttribute('cy')) || 0;
+          var erx = Number(el.getAttribute('rx')) || 0;
+          var ery = Number(el.getAttribute('ry')) || 0;
+          x = ecx - erx; y = ecy - ery; w = 2 * erx; h = 2 * ery; shape = 'ellipse';
+        } else {
+          x = Number(el.getAttribute('x')) || 0;
+          y = Number(el.getAttribute('y')) || 0;
+          w = Number(el.getAttribute('width')) || 0;
+          h = Number(el.getAttribute('height')) || 0;
+          shape = 'rect';
+        }
+        faces.push({
+          x: x, y: y, w: w, h: h, shape: shape,
+          name: '', surname: '',
+          link: a ? (a.getAttribute('href') || a.getAttribute('xlink:href') || '') : ''
+        });
       }
+    }
+
+    return setImage(src, name, null, faces).then(function () {
+      setStatus('✔ Imported "' + file.name + '" with ' + faces.length + ' editable region(s).', 'ok');
     });
+  });
 }
 
 /* ------------------------------------------------------------ image input */
@@ -1286,6 +1253,7 @@ function setImage(src, fileName, blob, faces) {
       return;
     }
 
+    /* Swap the <img> in the DOM */
     var oldImg = els.zoomLayer.querySelector('img.photo');
     if (oldImg && oldImg !== loaded.img) oldImg.remove();
     loaded.img.id = 'photo';
@@ -1339,24 +1307,11 @@ function handleFile(file) {
   setImage(url, file.name, file, null);
 }
 
-/* New: detect SVG URLs so we can re-import editable regions */
-function looksLikeSvgUrl(u) {
-  if (/^data:image\/svg\+xml/i.test(u)) return true;
-  if (!/^https?:|^file:/i.test(u)) return false;
-  var noHash = u.split('#')[0];
-  var noQuery = noHash.split('?')[0];
-  return /\.svg$/i.test(noQuery);
-}
-
 function handleUrl(url) {
   var u = String(url || '').trim();
   if (!u) return;
-  if (!/^(https?:\/\/|data:|blob:|file:)/i.test(u)) {
+  if (!/^(https?:\/\/|data:image\/|blob:)/i.test(u)) {
     setStatus('✖ That does not look like an image URL.', 'err');
-    return;
-  }
-  if (looksLikeSvgUrl(u)) {
-    importSvgFromUrl(u);
     return;
   }
   var name = u.indexOf('data:') === 0 ? 'image' : (u.split('/').pop().split('?')[0] || 'image');
@@ -1382,7 +1337,6 @@ document.addEventListener('drop', function (e) {
   var dt = e.dataTransfer;
   if (!dt) return;
 
-  /* 1. Real files (Explorer, desktop, or dragging a file out of a page) */
   if (dt.files && dt.files.length) {
     var files = Array.prototype.slice.call(dt.files);
     var f = null;
@@ -1402,18 +1356,11 @@ document.addEventListener('drop', function (e) {
       }
     }
   }
-
-  /* 2. Inline SVG markup (some browsers put the actual SVG source in
-        text/html when you drag an SVG image element). */
   var html = dt.getData('text/html');
   if (html) {
-    var svgMatch = /(<svg[\s\S]*?<\/svg>)/i.exec(html);
-    if (svgMatch) { parseSvgText(svgMatch[1], 'dropped.svg'); return; }
     var m = /<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i.exec(html);
     if (m) { handleUrl(m[1]); return; }
   }
-
-  /* 3. URI list / plain text (dragging a link or the browser's URL bar) */
   var uri = dt.getData('text/uri-list') || dt.getData('text/plain');
   if (uri) {
     var lines = uri.split(/\r?\n/);
@@ -1431,8 +1378,6 @@ document.addEventListener('paste', function (e) {
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
   var cd = e.clipboardData;
   if (!cd) return;
-
-  /* Image bytes */
   var items = Array.prototype.slice.call(cd.items || []);
   for (var i = 0; i < items.length; i++) {
     if (items[i].type && items[i].type.indexOf('image/') === 0) {
@@ -1440,20 +1385,10 @@ document.addEventListener('paste', function (e) {
       if (f) { e.preventDefault(); handleFile(f); return; }
     }
   }
-
-  /* Text — could be an image URL, an SVG URL, or an inline <svg> */
   var text = cd.getData('text');
-  if (text) {
-    var trimmed = text.trim();
-    if (/<svg[\s>]/i.test(trimmed)) {
-      e.preventDefault();
-      parseSvgText(trimmed, 'pasted.svg');
-      return;
-    }
-    if (/^(https?:\/\/|data:|blob:|file:)/i.test(trimmed)) {
-      e.preventDefault();
-      handleUrl(trimmed);
-    }
+  if (text && /^(https?:\/\/|data:image\/)/i.test(text.trim())) {
+    e.preventDefault();
+    handleUrl(text.trim());
   }
 });
 
