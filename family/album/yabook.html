@@ -1,0 +1,1508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Face Recognition Studio</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111721; --panel-2:#161d29; --line:#232c3a;
+    --txt:#e7eef7; --muted:#8b99ad; --accent:#00e5a0; --accent-2:#ffb400;
+    --danger:#ff5c6c;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  .top{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:11px 18px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#121924,#0d131c);
+  }
+  .brand{font-weight:700; letter-spacing:.3px; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 12px var(--accent)}
+  .tools{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+
+  .seg{display:flex; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:3px; gap:3px}
+  .seg label{cursor:pointer}
+  .seg input{position:absolute; opacity:0; pointer-events:none}
+  .seg span{display:block; padding:6px 14px; border-radius:7px; font-size:13px;
+    color:var(--muted); transition:.15s; user-select:none}
+  .seg input:checked + span{background:var(--accent); color:#04120d; font-weight:700}
+
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--panel-2);
+    color:var(--txt); padding:9px 16px; border-radius:10px; font:inherit;
+    font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s;
+    white-space:nowrap;
+  }
+  .btn:hover:not(:disabled){border-color:#3a475c; background:#1d2637}
+  .btn:disabled{opacity:.35; cursor:not-allowed}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#04120d}
+  .btn.primary:hover:not(:disabled){background:#2bf3b4}
+  .btn.active{outline:2px solid var(--accent-2); outline-offset:1px}
+  .btn.danger{border-color:#5a2730; color:#ffb3bb; background:#2a1418}
+  .btn.file{display:inline-flex; align-items:center; position:relative; overflow:hidden}
+  .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
+
+  main{flex:1; min-height:0; display:flex}
+  .canvas-area{flex:1; min-width:0; display:flex; flex-direction:column; position:relative}
+
+  .drop{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:26px; margin:18px; border:2px dashed #2b3648; border-radius:18px;
+    background:radial-gradient(120% 120% at 50% 0%,#121a26,#0b0f16);
+    transition:.2s; overflow:auto;
+  }
+  body.dragging .drop{border-color:var(--accent);
+    background:radial-gradient(120% 120% at 50% 0%,#13251f,#0b0f16)}
+  .drop-inner{max-width:640px; text-align:center}
+  .drop .ico{font-size:46px; margin-bottom:4px}
+  .drop h2{margin:.2em 0; font-size:21px}
+  .drop p{color:var(--muted); font-size:13.5px; margin:.4em 0 1.2em}
+  .row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .row input[type=url]{
+    flex:1; min-width:220px; background:#0c1119; border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; color:var(--txt); font:inherit; font-size:13.5px;
+  }
+  .row input[type=url]:focus{outline:none; border-color:var(--accent)}
+  .samples{margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  .samples .btn{padding:6px 12px; font-size:12.5px}
+
+  .viewer{flex:1; min-height:0; display:flex; flex-direction:column}
+  .viewer-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:16px}
+
+  .stagebox{
+    position:relative; background:#05070a; border-radius:14px; overflow:hidden;
+    border:1px solid var(--line); box-shadow:0 24px 70px rgba(0,0,0,.65);
+    width:320px; height:420px; touch-action:none;
+  }
+
+  .zoom-layer{
+    position:absolute; inset:0;
+    transform-origin:50% 50%;
+    will-change:transform;
+  }
+  .zoom-layer img.photo{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:contain; display:block;
+    user-select:none; -webkit-user-drag:none;
+    pointer-events:none;
+  }
+  .zoom-layer svg.overlay{
+    position:absolute; inset:0; width:100%; height:100%;
+    touch-action:none; cursor:grab; user-select:none;
+    background:transparent;
+  }
+  .zoom-layer svg.overlay.grabbing{cursor:grabbing;}
+  .zoom-layer svg.overlay.add-mode{cursor:crosshair;}
+
+  .zoom-layer svg.overlay .bg-hit{
+    fill:#000; fill-opacity:0.001; pointer-events:all;
+  }
+  .zoom-layer svg.overlay .face{
+    cursor:pointer;
+    fill:rgba(0,229,160,0.12); stroke:#00e5a0; stroke-width:2.5;
+    vector-effect:non-scaling-stroke;
+    transition:fill .12s, stroke .12s;
+    pointer-events:all;
+  }
+  .zoom-layer svg.overlay .face:hover{fill:rgba(0,229,160,0.30)}
+  .zoom-layer svg.overlay .face.sel{
+    fill:rgba(255,180,0,0.30); stroke:#ffb400; cursor:move;
+  }
+  .zoom-layer svg.overlay .face.draft{
+    fill:rgba(0,229,160,0.20); stroke-dasharray:7 5;
+  }
+  .zoom-layer svg.overlay .lbl{
+    pointer-events:none;
+    font-family:system-ui,sans-serif; font-weight:700;
+    fill:#00e5a0; stroke:rgba(0,0,0,0.8); stroke-width:.3em;
+    paint-order:stroke fill;
+  }
+  .zoom-layer svg.overlay .handle{
+    fill:#ffb400; stroke:#000; stroke-width:1;
+    vector-effect:non-scaling-stroke;
+    pointer-events:all;
+  }
+  .zoom-layer svg.overlay .handle[data-handle="nw"],
+  .zoom-layer svg.overlay .handle[data-handle="se"]{cursor:nwse-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="ne"],
+  .zoom-layer svg.overlay .handle[data-handle="sw"]{cursor:nesw-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="n"],
+  .zoom-layer svg.overlay .handle[data-handle="s"]{cursor:ns-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="e"],
+  .zoom-layer svg.overlay .handle[data-handle="w"]{cursor:ew-resize;}
+
+  .zoom-layer svg.overlay.hidden-regions .face,
+  .zoom-layer svg.overlay.hidden-regions .handle,
+  .zoom-layer svg.overlay.hidden-regions .lbl{display:none;}
+
+  .zoom-controls{
+    position:absolute; right:10px; bottom:10px; z-index:5;
+    display:flex; align-items:center; gap:4px;
+    background:rgba(10,13,18,.82);
+    border:1px solid var(--line); border-radius:10px; padding:3px;
+    font-size:12px;
+  }
+  .zoom-controls button{
+    appearance:none; border:0; background:transparent; color:var(--txt);
+    width:26px; height:26px; border-radius:6px; cursor:pointer;
+    font:inherit; font-size:15px; line-height:1; display:grid; place-items:center;
+  }
+  .zoom-controls button:hover{background:#1d2637}
+  .zoom-controls .zoom-label{
+    min-width:42px; text-align:center; color:var(--muted);
+    font-variant-numeric:tabular-nums; user-select:none;
+  }
+
+  .hint{text-align:center; color:var(--muted); font-size:12.5px; padding:0 0 12px}
+
+  .side{
+    width:340px; flex:none; border-left:1px solid var(--line); background:var(--panel);
+    display:flex; flex-direction:column; overflow-y:auto;
+  }
+  .side-block{padding:14px 16px; border-bottom:1px solid var(--line)}
+  .side-block h3{
+    margin:0 0 10px; font-size:11.5px; text-transform:uppercase; letter-spacing:.9px;
+    color:var(--muted); display:flex; align-items:center; gap:8px;
+  }
+  .pill{background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+    padding:1px 9px; font-size:11px; color:var(--txt)}
+  .status{padding:14px 16px; font-size:12.5px; color:var(--muted);
+    border-bottom:1px solid var(--line); min-height:54px;
+    white-space:pre-line; font-family:ui-monospace,Menlo,Consolas,monospace; line-height:1.5}
+  .status.busy{color:var(--accent-2)}
+  .status.err{color:var(--danger)}
+  .status.ok{color:var(--accent)}
+  .status.warn{color:var(--accent-2)}
+
+  .check-row{
+    display:flex; gap:8px; align-items:center; cursor:pointer;
+    font-size:13px; color:var(--txt); user-select:none;
+  }
+  .check-row input{ accent-color: var(--accent); width:15px; height:15px; }
+
+  .face-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+    gap:6px; max-height:280px; overflow:auto}
+  .face-item{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    background:var(--panel-2); border:1px solid transparent; cursor:pointer; font-size:13px;
+  }
+  .face-item:hover{border-color:#33415a}
+  .face-item.sel{border-color:var(--accent-2); background:#241d0e}
+  .face-item .num{
+    width:22px; height:22px; flex:none; display:grid; place-items:center;
+    border-radius:6px; background:#0d131d; font-size:11.5px; font-weight:700; color:var(--accent);
+  }
+  .face-item .meta{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .empty{color:var(--muted); font-size:12.5px; font-style:italic}
+
+  .editor label{display:block; font-size:12px; color:var(--muted); margin-bottom:10px}
+  .editor input, .editor select{
+    width:100%; margin-top:4px; background:#0c1119; border:1px solid var(--line);
+    border-radius:8px; padding:8px 11px; color:var(--txt); font:inherit; font-size:13px;
+  }
+  .editor input:focus, .editor select:focus{outline:none; border-color:var(--accent)}
+
+  @media (max-width:860px){
+    main{flex-direction:column}
+    .side{width:auto; border-left:0; border-top:1px solid var(--line); max-height:46%}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="dot"></span> Face Recognition Studio</div>
+  <div class="tools">
+    <div class="seg" role="radiogroup" aria-label="Orientation">
+      <label><input type="radio" name="orient" value="portrait" checked><span>Portrait</span></label>
+      <label><input type="radio" name="orient" value="landscape"><span>Landscape</span></label>
+    </div>
+    <button id="btnDetect" class="btn primary" disabled>Detect faces</button>
+    <button id="btnAdd" class="btn" disabled>Add region</button>
+    <button id="btnSvg" class="btn" disabled>Download SVG</button>
+    <label class="btn file">Import SVG
+      <input type="file" id="svgInput" accept=".svg,image/svg+xml">
+    </label>
+    <button id="btnClear" class="btn" disabled>Clear</button>
+  </div>
+</header>
+
+<main>
+  <section class="canvas-area">
+
+    <div id="drop" class="drop">
+      <div class="drop-inner">
+        <div class="ico">🖼️</div>
+        <h2>Drop a photo or an exported .svg here</h2>
+        <p>
+          Drag a file from Explorer&nbsp;/&nbsp;Finder, drag an image straight out of another web page,
+          paste a copied image or an image link (<kbd>Ctrl</kbd>+<kbd>V</kbd>), or use the fields below.
+          <br>Re-import a previously exported <b>.svg</b> to recover its editable regions.
+        </p>
+        <div class="row">
+          <label class="btn file">Choose image
+            <input type="file" id="fileInput" accept="image/*">
+          </label>
+          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg" spellcheck="false">
+          <button id="urlGo" class="btn">Load URL</button>
+        </div>
+        <div class="samples">
+          <button class="btn" data-sample="https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg">Sample: Lena (CORS ✓)</button>
+          <button class="btn" data-sample="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80">Sample: Unsplash portrait</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewer" class="viewer" hidden>
+      <div class="viewer-body" id="viewerBody">
+        <div id="stagebox" class="stagebox">
+          <div id="zoomLayer" class="zoom-layer">
+            <img id="photo" class="photo" alt="Loaded image">
+            <svg id="overlay" class="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="zoom-controls" id="zoomControls">
+            <button type="button" data-zoom="out" title="Zoom out">−</button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button type="button" data-zoom="in" title="Zoom in">+</button>
+            <button type="button" data-zoom="reset" title="Reset view">⟲</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint">
+        Wheel = zoom &nbsp;•&nbsp; Drag empty area = pan &nbsp;•&nbsp; Click a region to select &nbsp;•&nbsp;
+        Drag body to move, handles to resize
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="side">
+    <div id="status" class="status">No image loaded.</div>
+
+    <div class="side-block" style="padding:10px 16px">
+      <label class="check-row">
+        <input type="checkbox" id="showRegions" checked>
+        <span>Show face regions</span>
+      </label>
+    </div>
+
+    <div class="side-block">
+      <h3>Detected faces <span id="faceCount" class="pill">0</span></h3>
+      <ul id="faceList" class="face-list"></ul>
+      <div id="listEmpty" class="empty">Nothing detected yet.</div>
+    </div>
+
+    <div id="editor" class="side-block editor" hidden>
+      <h3>Selected region <span id="selNo" class="pill">–</span></h3>
+      <label>Index
+        <input id="inIndex" type="text" readonly>
+      </label>
+      <label>Face name
+        <input id="inName" type="text" placeholder="e.g. Ada" spellcheck="false">
+      </label>
+      <label>Surname
+        <input id="inSurname" type="text" placeholder="e.g. Lovelace" spellcheck="false">
+      </label>
+      <label>Link (URL opened when this region is clicked)
+        <input id="inLink" type="url" placeholder="https://example.com/profile" spellcheck="false">
+      </label>
+      <label>Shape
+        <select id="inShape">
+          <option value="rect">Rectangle</option>
+          <option value="circle">Circle</option>
+          <option value="ellipse">Ellipse</option>
+        </select>
+      </label>
+      <button id="btnDel" class="btn danger">Delete this region</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+window.addEventListener('error', function (ev) {
+  var box = document.getElementById('status');
+  if (box) {
+    box.textContent = 'JS error: ' + (ev.message || 'unknown');
+    box.className = 'status err';
+  }
+});
+
+(function () {
+'use strict';
+
+var NS = 'http://www.w3.org/2000/svg';
+
+function $(sel) { return document.querySelector(sel); }
+
+var els = {
+  drop:       $('#drop'),
+  viewer:     $('#viewer'),
+  viewerBody: $('#viewerBody'),
+  stagebox:   $('#stagebox'),
+  zoomLayer:  $('#zoomLayer'),
+  overlay:    $('#overlay'),
+  status:     $('#status'),
+  faceList:   $('#faceList'),
+  listEmpty:  $('#listEmpty'),
+  faceCount:  $('#faceCount'),
+  editor:     $('#editor'),
+  selNo:      $('#selNo'),
+  inIndex:    $('#inIndex'),
+  inName:     $('#inName'),
+  inSurname:  $('#inSurname'),
+  inLink:     $('#inLink'),
+  inShape:    $('#inShape'),
+  btnDetect:  $('#btnDetect'),
+  btnAdd:     $('#btnAdd'),
+  btnSvg:     $('#btnSvg'),
+  btnClear:   $('#btnClear'),
+  btnDel:     $('#btnDel'),
+  fileInput:  $('#fileInput'),
+  svgInput:   $('#svgInput'),
+  urlInput:   $('#urlInput'),
+  urlGo:      $('#urlGo'),
+  zoomLabel:  $('#zoomLabel'),
+  zoomControls: $('#zoomControls'),
+  showRegions:  $('#showRegions')
+};
+
+var state = {
+  src: null,
+  img: null,
+  natW: 0, natH: 0,
+  faces: [],
+  selected: -1,
+  orientation: 'portrait',
+  dataUri: null,
+  blob: null,
+  corsOk: true,
+  fileName: 'faces'
+};
+
+var zoom = { scale: 1, x: 0, y: 0, min: 0.25, max: 12 };
+var addMode = false;
+var editState = null;
+var panState = null;
+
+/* ------------------------------------------------------------------ utils */
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;');
+}
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function setStatus(msg, kind) {
+  els.status.textContent = msg;
+  els.status.className = 'status ' + (kind || '');
+}
+function blobToDataURL(blob) {
+  return new Promise(function (resolve, reject) {
+    var fr = new FileReader();
+    fr.onload = function () { resolve(fr.result); };
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+function b64encode(str) {
+  var bytes = new TextEncoder().encode(str);
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function b64decode(b64) {
+  var bin = atob(b64);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function loadImage(src, useCors) {
+  return new Promise(function (resolve, reject) {
+    function attempt(cors) {
+      var img = new Image();
+      if (cors) img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve({ img: img, corsOk: cors }); };
+      img.onerror = function () {
+        if (cors) attempt(false);
+        else reject(new Error('Image failed to load'));
+      };
+      img.src = src;
+    }
+    attempt(useCors);
+  });
+}
+
+/* ---------------------------------------------------------------- zoom/pan */
+function applyZoom() {
+  els.zoomLayer.style.transform =
+    'translate(' + zoom.x + 'px, ' + zoom.y + 'px) scale(' + zoom.scale + ')';
+  els.zoomLabel.textContent = Math.round(zoom.scale * 100) + '%';
+}
+function zoomBy(factor, anchorX, anchorY) {
+  var oldS = zoom.scale;
+  var newS = Math.min(zoom.max, Math.max(zoom.min, oldS * factor));
+  if (newS === oldS) return;
+  var rect = els.stagebox.getBoundingClientRect();
+  var cx = (anchorX != null) ? anchorX : rect.width / 2;
+  var cy = (anchorY != null) ? anchorY : rect.height / 2;
+  var Dx = cx - rect.width / 2;
+  var Dy = cy - rect.height / 2;
+  zoom.x = Dx - (Dx - zoom.x) * newS / oldS;
+  zoom.y = Dy - (Dy - zoom.y) * newS / oldS;
+  zoom.scale = newS;
+  applyZoom();
+}
+function resetZoom() {
+  zoom.scale = 1; zoom.x = 0; zoom.y = 0; applyZoom();
+}
+
+els.zoomControls.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+els.zoomControls.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-zoom]');
+  if (!t) return;
+  var act = t.getAttribute('data-zoom');
+  if (act === 'in')    zoomBy(1.25);
+  if (act === 'out')   zoomBy(1 / 1.25);
+  if (act === 'reset') resetZoom();
+});
+
+els.stagebox.addEventListener('wheel', function (e) {
+  if (els.viewer.hidden) return;
+  e.preventDefault();
+  var rect = els.stagebox.getBoundingClientRect();
+  zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+/* --------------------------------------------------------------- rendering */
+function makeShapeEl(f) {
+  var shape = f.shape || 'rect';
+  var el;
+  if (shape === 'circle') {
+    el = document.createElementNS(NS, 'circle');
+    el.setAttribute('cx', f.x + f.w / 2);
+    el.setAttribute('cy', f.y + f.h / 2);
+    el.setAttribute('r', Math.max(1, Math.min(f.w, f.h) / 2));
+  } else if (shape === 'ellipse') {
+    el = document.createElementNS(NS, 'ellipse');
+    el.setAttribute('cx', f.x + f.w / 2);
+    el.setAttribute('cy', f.y + f.h / 2);
+    el.setAttribute('rx', Math.max(1, f.w / 2));
+    el.setAttribute('ry', Math.max(1, f.h / 2));
+  } else {
+    el = document.createElementNS(NS, 'rect');
+    el.setAttribute('x', f.x);
+    el.setAttribute('y', f.y);
+    el.setAttribute('width', f.w);
+    el.setAttribute('height', f.h);
+    el.setAttribute('rx', Math.min(f.w, f.h) * 0.06);
+  }
+  return el;
+}
+
+function renderOverlay() {
+  var svg = els.overlay;
+  if (!svg) return;
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  if (!state.natW || !state.natH) return;
+
+  var fs = Math.max(state.natW, state.natH) / 50;
+  var frag = document.createDocumentFragment();
+
+  /* Hit-area rect so empty regions catch clicks. fill-opacity 0.001 (visible
+     to the hit-tester) is more reliable than fill="transparent". */
+  var bg = document.createElementNS(NS, 'rect');
+  bg.setAttribute('x', 0);
+  bg.setAttribute('y', 0);
+  bg.setAttribute('width', state.natW);
+  bg.setAttribute('height', state.natH);
+  bg.setAttribute('class', 'bg-hit');
+  frag.appendChild(bg);
+
+  state.faces.forEach(function (f, i) {
+    var el = makeShapeEl(f);
+    el.setAttribute('class', 'face' + (i === state.selected ? ' sel' : ''));
+    el.setAttribute('data-idx', String(i));
+    frag.appendChild(el);
+
+    var t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', f.x + fs * 0.35);
+    t.setAttribute('y', f.y + fs * 1.15);
+    t.setAttribute('font-size', fs);
+    t.setAttribute('class', 'lbl');
+    t.textContent = String(i + 1);
+    frag.appendChild(t);
+
+    if (i === state.selected) {
+      var hs = Math.max(state.natW, state.natH) / 120;
+      var half = hs / 2;
+      var handles = [
+        ['nw', f.x,         f.y        ],
+        ['n',  f.x + f.w/2, f.y        ],
+        ['ne', f.x + f.w,   f.y        ],
+        ['e',  f.x + f.w,   f.y + f.h/2],
+        ['se', f.x + f.w,   f.y + f.h  ],
+        ['s',  f.x + f.w/2, f.y + f.h  ],
+        ['sw', f.x,         f.y + f.h  ],
+        ['w',  f.x,         f.y + f.h/2]
+      ];
+      for (var k = 0; k < handles.length; k++) {
+        var hh = handles[k];
+        var h = document.createElementNS(NS, 'rect');
+        h.setAttribute('x', hh[1] - half);
+        h.setAttribute('y', hh[2] - half);
+        h.setAttribute('width', hs);
+        h.setAttribute('height', hs);
+        h.setAttribute('class', 'handle');
+        h.setAttribute('data-handle', hh[0]);
+        h.setAttribute('data-idx', String(i));
+        frag.appendChild(h);
+      }
+    }
+  });
+
+  svg.appendChild(frag);
+}
+
+function renderList() {
+  els.faceCount.textContent = state.faces.length;
+  while (els.faceList.firstChild) els.faceList.removeChild(els.faceList.firstChild);
+  els.listEmpty.hidden = state.faces.length > 0;
+
+  state.faces.forEach(function (f, i) {
+    var li = document.createElement('li');
+    li.className = 'face-item' + (i === state.selected ? ' sel' : '');
+    var name = [f.name, f.surname].filter(Boolean).join(' ') || ('Face ' + (i + 1));
+    li.innerHTML =
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<span class="meta">' + escapeHtml(name) + (f.link ? ' 🔗' : '') + '</span>';
+    (function (idx) {
+      li.addEventListener('click', function () { selectFace(idx); });
+    })(i);
+    els.faceList.appendChild(li);
+  });
+}
+
+function renderEditor() {
+  var f = state.faces[state.selected];
+  if (!f) { els.editor.hidden = true; return; }
+  els.editor.hidden = false;
+  els.selNo.textContent = String(state.selected + 1);
+  els.inIndex.value = String(state.selected + 1);
+  els.inName.value = f.name || '';
+  els.inSurname.value = f.surname || '';
+  els.inLink.value = f.link || '';
+  els.inShape.value = f.shape || 'rect';
+}
+
+function selectFace(i) {
+  state.selected = i;
+  renderOverlay();
+  renderList();
+  renderEditor();
+}
+
+/* ----------------------------------------------------------- overlay logic */
+function svgPoint(svg, e) {
+  var pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  var m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  var q = pt.matrixTransform(m.inverse());
+  return { x: q.x, y: q.y };
+}
+
+function startEdit(type, faceIdx, handle, e) {
+  var f = state.faces[faceIdx];
+  if (!f) return;
+  editState = {
+    type: type,
+    faceIdx: faceIdx,
+    handle: handle,
+    startPt: svgPoint(els.overlay, e),
+    orig: { x: f.x, y: f.y, w: f.w, h: f.h }
+  };
+  try { els.overlay.setPointerCapture(e.pointerId); } catch (_) {}
+}
+
+function applyEdit(p) {
+  var s = editState;
+  if (!s) return;
+  var f = state.faces[s.faceIdx];
+  if (!f) { editState = null; return; }
+  var dx = p.x - s.startPt.x;
+  var dy = p.y - s.startPt.y;
+  var o = s.orig;
+
+  if (s.type === 'move') {
+    f.x = o.x + dx;
+    f.y = o.y + dy;
+  } else {
+    var nx = o.x, ny = o.y, nw = o.w, nh = o.h;
+    var h = s.handle;
+    if (h.indexOf('n') !== -1) { ny = o.y + dy; nh = o.h - dy; }
+    if (h.indexOf('s') !== -1) { nh = o.h + dy; }
+    if (h.indexOf('w') !== -1) { nx = o.x + dx; nw = o.w - dx; }
+    if (h.indexOf('e') !== -1) { nw = o.w + dx; }
+    var min = 8;
+    if (nw < min) { nw = min; if (h.indexOf('w') !== -1) nx = o.x + o.w - min; }
+    if (nh < min) { nh = min; if (h.indexOf('n') !== -1) ny = o.y + o.h - min; }
+    f.x = nx; f.y = ny; f.w = nw; f.h = nh;
+  }
+  renderOverlay();
+}
+
+function bindOverlay() {
+  var svg = els.overlay;
+  var drawing = false, sx = 0, sy = 0, draft = null;
+
+  svg.addEventListener('pointerdown', function (e) {
+    if (e.button !== 0 && e.button !== 1) return;
+    var t = e.target;
+
+    /* In add mode: start drawing a new region */
+    if (addMode) {
+      e.preventDefault();
+      drawing = true;
+      var pt = svgPoint(svg, e);
+      sx = pt.x; sy = pt.y;
+      draft = document.createElementNS(NS, 'rect');
+      draft.setAttribute('class', 'face draft');
+      draft.setAttribute('x', sx);
+      draft.setAttribute('y', sy);
+      draft.setAttribute('width', 0);
+      draft.setAttribute('height', 0);
+      svg.appendChild(draft);
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+
+    /* Handle hit */
+    var handle = t.getAttribute ? t.getAttribute('data-handle') : null;
+    var idxAttr = t.getAttribute ? t.getAttribute('data-idx') : null;
+
+    if (handle && idxAttr != null) {
+      e.preventDefault();
+      startEdit('resize', parseInt(idxAttr, 10), handle, e);
+      return;
+    }
+
+    /* Face body hit */
+    if (t.classList && t.classList.contains('face') && !t.classList.contains('draft')) {
+      var idx = parseInt(idxAttr, 10);
+      if (!isNaN(idx)) {
+        if (state.selected !== idx) selectFace(idx);
+        e.preventDefault();
+        startEdit('move', idx, null, e);
+        return;
+      }
+    }
+
+    /* Empty area → pan */
+    e.preventDefault();
+    panState = {
+      pointerId: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      startZoomX: zoom.x, startZoomY: zoom.y,
+      moved: false
+    };
+    svg.classList.add('grabbing');
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  svg.addEventListener('pointermove', function (e) {
+    if (editState) {
+      e.preventDefault();
+      applyEdit(svgPoint(svg, e));
+      return;
+    }
+    if (drawing && draft) {
+      var p = svgPoint(svg, e);
+      var x = Math.min(sx, p.x), y = Math.min(sy, p.y);
+      var w = Math.abs(p.x - sx), h = Math.abs(p.y - sy);
+      draft.setAttribute('x', x);
+      draft.setAttribute('y', y);
+      draft.setAttribute('width', w);
+      draft.setAttribute('height', h);
+      return;
+    }
+    if (panState && e.pointerId === panState.pointerId) {
+      var dx = e.clientX - panState.startX;
+      var dy = e.clientY - panState.startY;
+      if (!panState.moved && Math.sqrt(dx*dx + dy*dy) >= 4) panState.moved = true;
+      if (panState.moved) {
+        zoom.x = panState.startZoomX + dx;
+        zoom.y = panState.startZoomY + dy;
+        applyZoom();
+      }
+    }
+  });
+
+  function onUp(e) {
+    if (editState) {
+      editState = null;
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    if (drawing) {
+      drawing = false;
+      if (draft) {
+        var r = {
+          x: parseFloat(draft.getAttribute('x')) || 0,
+          y: parseFloat(draft.getAttribute('y')) || 0,
+          w: parseFloat(draft.getAttribute('width')) || 0,
+          h: parseFloat(draft.getAttribute('height')) || 0
+        };
+        svg.removeChild(draft);
+        draft = null;
+        if (r.w > 8 && r.h > 8) {
+          state.faces.push({
+            x: r.x, y: r.y, w: r.w, h: r.h,
+            shape: 'rect', name: '', surname: '', link: ''
+          });
+          state.selected = state.faces.length - 1;
+          renderOverlay(); renderList(); renderEditor();
+          setStatus('Region added — ' + state.faces.length + ' region(s).', 'ok');
+        }
+        setAddMode(false);
+      }
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    if (panState && e.pointerId === panState.pointerId) {
+      panState = null;
+      svg.classList.remove('grabbing');
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+  }
+  svg.addEventListener('pointerup', onUp);
+  svg.addEventListener('pointercancel', onUp);
+}
+
+/* ---------------------------------------------------------------- detection */
+var MODEL_URLS = [
+  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+  'https://justadudewhohacks.github.io/face-api.js/models',
+  'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+];
+var faceApiLoading = null;
+var modelsReady = false;
+
+function loadFaceApi() {
+  if (window.faceapi) return Promise.resolve(true);
+  if (faceApiLoading) return faceApiLoading;
+  faceApiLoading = new Promise(function (resolve) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.onload = function () { resolve(!!window.faceapi); };
+    s.onerror = function () { resolve(false); };
+    document.head.appendChild(s);
+  });
+  return faceApiLoading;
+}
+
+function ensureModels() {
+  if (modelsReady) return Promise.resolve();
+  var i = 0;
+  function tryNext() {
+    if (i >= MODEL_URLS.length) return Promise.reject(new Error('Could not load models'));
+    var url = MODEL_URLS[i++];
+    return faceapi.nets.tinyFaceDetector.loadFromUri(url).then(function () {
+      modelsReady = true;
+    }, function () {
+      return tryNext();
+    });
+  }
+  return tryNext();
+}
+
+function clampBox(b, W, H) {
+  var x = Math.max(0, Math.min(W - 1, b.x));
+  var y = Math.max(0, Math.min(H - 1, b.y));
+  var w = Math.max(1, Math.min(W - x, b.w));
+  var h = Math.max(1, Math.min(H - y, b.h));
+  return { x: x, y: y, w: w, h: h };
+}
+
+function iou(a, b) {
+  var x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y);
+  var x2 = Math.min(a.x + a.w, b.x + b.w);
+  var y2 = Math.min(a.y + a.h, b.y + b.h);
+  var inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  var uni = a.w * a.h + b.w * b.h - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+
+function nms(boxes, thresh) {
+  var sorted = boxes.slice().sort(function (a, b) { return (b.w * b.h) - (a.w * a.h); });
+  var keep = [];
+  while (sorted.length) {
+    var best = sorted.shift();
+    keep.push(best);
+    for (var i = sorted.length - 1; i >= 0; i--) {
+      if (iou(best, sorted[i]) >= thresh) sorted.splice(i, 1);
+    }
+  }
+  return keep;
+}
+
+function detectTiled(sourceCanvas) {
+  var W = sourceCanvas.width, H = sourceCanvas.height;
+  var tile = 512, overlap = 0.25, step = Math.floor(tile * (1 - overlap));
+  var all = [];
+  var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.25 });
+  var tasks = [];
+  for (var y = 0; y < H; y += step) {
+    for (var x = 0; x < W; x += step) {
+      (function (x, y) {
+        var tw = Math.min(tile, W - x);
+        var th = Math.min(tile, H - y);
+        if (tw < 80 || th < 80) return;
+        var c = document.createElement('canvas');
+        c.width = tw; c.height = th;
+        c.getContext('2d').drawImage(sourceCanvas, x, y, tw, th, 0, 0, tw, th);
+        tasks.push(
+          faceapi.detectAllFaces(c, opts).then(function (dets) {
+            for (var i = 0; i < dets.length; i++) {
+              var d = dets[i];
+              all.push({
+                x: x + d.box.x, y: y + d.box.y,
+                w: d.box.width, h: d.box.height
+              });
+            }
+          }, function () {})
+        );
+      })(x, y);
+    }
+  }
+  return Promise.all(tasks).then(function () { return nms(all, 0.35); });
+}
+
+function detectFaces() {
+  if (!state.img) return;
+  els.btnDetect.disabled = true;
+  var log = [];
+  function pushLog(line) { log.push(line); setStatus(log.join('\n'), 'busy'); }
+  pushLog('▶ Detection started');
+
+  var W = state.natW, H = state.natH;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(state.img, 0, 0, W, H);
+
+  var tainted = false;
+  try { ctx.getImageData(0, 0, 1, 1); } catch (_) { tainted = true; }
+
+  if (tainted) {
+    els.btnDetect.disabled = false;
+    setStatus('✖ This image blocks pixel access (CORS).\nUse a local file or draw regions manually.', 'err');
+    return;
+  }
+  pushLog('• pixel access ok');
+
+  pushLog('• loading face-api.js…');
+  loadFaceApi().then(function (ok) {
+    if (!ok) {
+      els.btnDetect.disabled = false;
+      pushLog('✖ face-api.js could not be loaded (check network / ad-blocker)');
+      setStatus(log.join('\n'), 'err');
+      return;
+    }
+    pushLog('• face-api.js loaded');
+    pushLog('• loading models…');
+    return ensureModels().then(function () {
+      pushLog('• models loaded');
+      pushLog('• running detection…');
+      var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.30 });
+      return faceapi.detectAllFaces(canvas, opts).then(function (found) {
+        pushLog('• full-image detection: ' + found.length + ' face(s)');
+        var boxes = found.map(function (d) {
+          return { x: d.box.x, y: d.box.y, w: d.box.width, h: d.box.height };
+        });
+        var engine = 'face-api.js';
+        if (boxes.length) return { boxes: boxes, engine: engine };
+        if (Math.max(W, H) <= 500) return { boxes: boxes, engine: engine };
+        pushLog('• running tiled detection…');
+        return detectTiled(canvas).then(function (tiled) {
+          pushLog('• tiled detection: ' + tiled.length + ' face(s)');
+          return { boxes: tiled, engine: 'face-api.js (tiled)' };
+        });
+      });
+    });
+  }).then(function (result) {
+    if (!result) return;
+    els.btnDetect.disabled = false;
+    if (!result.boxes.length) {
+      pushLog('✖ No faces found.');
+      pushLog('Tip: zoom in and use "Add region", or try a sharper photo.');
+      setStatus(log.join('\n'), 'warn');
+      return;
+    }
+    state.faces = result.boxes.map(function (b) {
+      var c = clampBox(b, W, H);
+      c.shape = 'rect'; c.name = ''; c.surname = ''; c.link = '';
+      return c;
+    });
+    state.selected = -1;
+    renderOverlay(); renderList(); renderEditor();
+    pushLog('✔ ' + state.faces.length + ' face(s) detected — ' + result.engine);
+    setStatus(log.join('\n'), 'ok');
+  }).catch(function (err) {
+    els.btnDetect.disabled = false;
+    pushLog('✖ Detection error — ' + (err && err.message ? err.message : err));
+    setStatus(log.join('\n'), 'err');
+  });
+}
+
+/* ------------------------------------------------------------ add-mode UI */
+function setAddMode(on) {
+  addMode = on;
+  els.btnAdd.classList.toggle('active', on);
+  els.overlay.classList.toggle('add-mode', on);
+  if (on) setStatus('Drag on the photo to draw a face region.', 'busy');
+}
+
+/* ------------------------------------------------------------ SVG export  */
+function getImageDataUri() {
+  if (state.dataUri) return Promise.resolve(state.dataUri);
+  if (state.blob) {
+    return blobToDataURL(state.blob).then(function (uri) {
+      state.dataUri = uri;
+      return uri;
+    });
+  }
+  return fetch(state.src, { mode: 'cors' }).then(function (res) {
+    if (!res.ok) throw new Error('fetch failed');
+    return res.blob();
+  }).then(blobToDataURL).then(function (uri) {
+    state.dataUri = uri;
+    return uri;
+  }).catch(function () {
+    state.dataUri = state.src;
+    return state.dataUri;
+  });
+}
+
+function shapeMarkup(f) {
+  var shape = f.shape || 'rect';
+  var rx = (Math.min(f.w, f.h) * 0.06).toFixed(2);
+  if (shape === 'circle') {
+    var r = (Math.min(f.w, f.h) / 2).toFixed(2);
+    return '<circle class="face" cx="' + (f.x + f.w/2).toFixed(2) +
+           '" cy="' + (f.y + f.h/2).toFixed(2) + '" r="' + r + '"/>';
+  }
+  if (shape === 'ellipse') {
+    return '<ellipse class="face" cx="' + (f.x + f.w/2).toFixed(2) +
+           '" cy="' + (f.y + f.h/2).toFixed(2) +
+           '" rx="' + (f.w/2).toFixed(2) + '" ry="' + (f.h/2).toFixed(2) + '"/>';
+  }
+  return '<rect class="face" x="' + f.x.toFixed(2) + '" y="' + f.y.toFixed(2) +
+         '" width="' + f.w.toFixed(2) + '" height="' + f.h.toFixed(2) + '" rx="' + rx + '"/>';
+}
+
+function downloadSvg() {
+  if (!state.natW || !state.natH) return;
+  els.btnSvg.disabled = true;
+  setStatus('Building SVG…', 'busy');
+
+  var W = state.natW, H = state.natH;
+
+  getImageDataUri().then(function (uri) {
+    var sw = Math.max(W, H) / 400;
+    var fs = Math.max(W, H) / 50;
+
+    var payload = {
+      app: 'Face Recognition Studio',
+      version: 4,
+      imageSrc: uri,
+      imageName: state.fileName,
+      width: W, height: H,
+      faces: state.faces.map(function (f, i) {
+        return {
+          index: i + 1,
+          x: f.x, y: f.y, w: f.w, h: f.h,
+          shape: f.shape || 'rect',
+          name: f.name || '',
+          surname: f.surname || '',
+          link: f.link || ''
+        };
+      })
+    };
+    var b64 = b64encode(JSON.stringify(payload));
+
+    var out = [];
+    out.push('<?xml version="1.0" encoding="UTF-8"?>');
+    out.push('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+             'width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
+    out.push('  <title>Image with clickable face regions</title>');
+    out.push('  <desc>Exported by Face Recognition Studio. Re-import into the app to edit regions.</desc>');
+    out.push('  <metadata id="face-studio-data" data-version="4">' + b64 + '</metadata>');
+    out.push('  <style>');
+    out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) + 'px;cursor:pointer}');
+    out.push('    a:hover .face{fill:rgba(0,229,160,0.38)}');
+    out.push('    .label{font-family:system-ui,-apple-system,sans-serif;font-weight:700;fill:#00e5a0;stroke:rgba(0,0,0,0.8);stroke-width:.3em;paint-order:stroke fill;pointer-events:none}');
+    out.push('    .label-name{display:none}');
+    out.push('    svg.show-names .label-id{display:none}');
+    out.push('    svg.show-names .label-name{display:inline}');
+    out.push('    svg.hide-faces .face,svg.hide-faces .label{display:none}');
+    out.push('  </style>');
+    out.push('  <image x="0" y="0" width="' + W + '" height="' + H +
+             '" xlink:href="' + escapeAttr(uri) + '" href="' + escapeAttr(uri) + '"/>');
+
+    state.faces.forEach(function (f, i) {
+      var label = [f.name, f.surname].filter(Boolean).join(' ');
+      var titleText = label || ('Face ' + (i + 1));
+      var href = f.link || '#';
+      var tx = (f.x + fs * 0.35).toFixed(2);
+      var ty = (f.y + fs * 1.15).toFixed(2);
+      out.push('  <a xlink:href="' + escapeAttr(href) + '" href="' + escapeAttr(href) + '" target="_blank" rel="noopener">');
+      out.push('    <title>' + escapeAttr(titleText) + '</title>');
+      out.push('    ' + shapeMarkup(f));
+      out.push('    <text class="label label-id" x="' + tx + '" y="' + ty + '" font-size="' + fs.toFixed(2) + '">' + (i + 1) + '</text>');
+      out.push('    <text class="label label-name" x="' + tx + '" y="' + ty + '" font-size="' + fs.toFixed(2) + '">' + escapeAttr(titleText) + '</text>');
+      out.push('  </a>');
+    });
+
+    var pf = Math.max(11, Math.min(W, H) / 40);
+    var pad = pf * 0.55;
+    var px = pf * 0.6, py = pf * 0.6;
+    var pw = pf * 14, ph = pf * 4.4;
+
+    out.push('  <foreignObject id="fs-ui" x="' + px.toFixed(2) + '" y="' + py.toFixed(2) +
+             '" width="' + pw.toFixed(2) + '" height="' + ph.toFixed(2) + '">');
+    out.push('    <div xmlns="http://www.w3.org/1999/xhtml" ' +
+             'style="box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;' +
+             'gap:' + (pad*0.5).toFixed(2) + 'px;padding:' + pad.toFixed(2) + 'px;' +
+             'background:rgba(10,13,18,0.88);border:1px solid rgba(255,255,255,0.18);' +
+             'border-radius:' + (pad*0.7).toFixed(2) + 'px;' +
+             'font-family:system-ui,-apple-system,sans-serif;font-size:' + pf.toFixed(2) + 'px;' +
+             'color:#e7eef7;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,0.4)">' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="checkbox" id="fs-show-faces" checked="checked" style="accent-color:#00e5a0"/>' +
+             'Show regions</label>' +
+             '<div style="display:flex;align-items:center;gap:' + pad.toFixed(2) + 'px;flex-wrap:wrap">' +
+             '<span style="opacity:.65">Label:</span>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.35).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="radio" name="fs-lbl" value="id" checked="checked" style="accent-color:#00e5a0"/> ID</label>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.35).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="radio" name="fs-lbl" value="name" style="accent-color:#00e5a0"/> Name</label>' +
+             '</div></div>');
+    out.push('  </foreignObject>');
+
+    /* The next line writes the literal closing tag for the exported SVG's
+       internal script — split the string so the outer HTML parser doesn't
+       see it as a closer. */
+    var ST = '<' + 'script type="text/javascript"><![CDATA[';
+    var END = ']]>' + '<' + '/script' + '>';
+
+    out.push('  ' + ST);
+    out.push('    (function(){');
+    out.push('      function boot(){');
+    out.push('        var svg = document.documentElement;');
+    out.push('        if (!svg) return;');
+    out.push('        var chk = document.getElementById("fs-show-faces");');
+    out.push('        if (chk) chk.addEventListener("change", function(){');
+    out.push('          if (chk.checked) svg.classList.remove("hide-faces");');
+    out.push('          else svg.classList.add("hide-faces");');
+    out.push('        });');
+    out.push('        var rs = document.querySelectorAll(\'input[name="fs-lbl"]\');');
+    out.push('        for (var k = 0; k < rs.length; k++) {');
+    out.push('          rs[k].addEventListener("change", function(ev){');
+    out.push('            if (!ev.target.checked) return;');
+    out.push('            if (ev.target.value === "name") svg.classList.add("show-names");');
+    out.push('            else svg.classList.remove("show-names");');
+    out.push('          });');
+    out.push('        }');
+    out.push('      }');
+    out.push('      setTimeout(boot, 0);');
+    out.push('    })();');
+    out.push('  ' + END);
+    out.push('</svg>');
+
+    var blob = new Blob([out.join('\n')], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.svg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+
+    els.btnSvg.disabled = false;
+    var embedded = uri.indexOf('data:') === 0;
+    setStatus(
+      (embedded ? '✔ SVG saved — ' + state.faces.length + ' region(s), image embedded.'
+                : '✔ SVG saved — ' + state.faces.length + ' region(s), image linked remotely.') +
+      '\nOpen the .svg in a browser: use the top-left panel to show/hide regions and switch labels.',
+      embedded ? 'ok' : 'warn'
+    );
+  }).catch(function (err) {
+    els.btnSvg.disabled = false;
+    setStatus('✖ SVG export failed — ' + (err && err.message ? err.message : err), 'err');
+  });
+}
+
+/* ------------------------------------------------------------ SVG import */
+function importSvg(file) {
+  return file.text().then(function (text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    if (doc.querySelector('parsererror')) {
+      setStatus('✖ Could not parse that SVG.', 'err');
+      return;
+    }
+    var metaEl = doc.querySelector('metadata#face-studio-data');
+    var payload = null;
+    if (metaEl) {
+      try { payload = JSON.parse(b64decode(metaEl.textContent.trim())); }
+      catch (e) { console.warn('metadata decode failed', e); }
+    }
+
+    var src = null, faces = [], name = file.name.replace(/\.svg$/i, '');
+
+    if (payload && payload.imageSrc) {
+      src = payload.imageSrc;
+      name = payload.imageName || name;
+      faces = (payload.faces || []).map(function (f) {
+        return {
+          x: Number(f.x) || 0, y: Number(f.y) || 0,
+          w: Number(f.w) || 0, h: Number(f.h) || 0,
+          shape: f.shape || 'rect',
+          name: f.name || '',
+          surname: f.surname || '',
+          link: f.link || ''
+        };
+      });
+    } else {
+      var imgEl = doc.querySelector('image');
+      var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
+      if (!href) {
+        setStatus('✖ This SVG contains no image and no Face Studio metadata.', 'err');
+        return;
+      }
+      src = href;
+      var shapes = doc.querySelectorAll('rect.face, circle.face, ellipse.face');
+      for (var i = 0; i < shapes.length; i++) {
+        var el = shapes[i];
+        var a = el.closest('a');
+        var x, y, w, h, shape;
+        var tag = el.tagName.toLowerCase();
+        if (tag === 'circle') {
+          var cx = Number(el.getAttribute('cx')) || 0;
+          var cy = Number(el.getAttribute('cy')) || 0;
+          var r = Number(el.getAttribute('r')) || 0;
+          x = cx - r; y = cy - r; w = 2 * r; h = 2 * r; shape = 'circle';
+        } else if (tag === 'ellipse') {
+          var ecx = Number(el.getAttribute('cx')) || 0;
+          var ecy = Number(el.getAttribute('cy')) || 0;
+          var erx = Number(el.getAttribute('rx')) || 0;
+          var ery = Number(el.getAttribute('ry')) || 0;
+          x = ecx - erx; y = ecy - ery; w = 2 * erx; h = 2 * ery; shape = 'ellipse';
+        } else {
+          x = Number(el.getAttribute('x')) || 0;
+          y = Number(el.getAttribute('y')) || 0;
+          w = Number(el.getAttribute('width')) || 0;
+          h = Number(el.getAttribute('height')) || 0;
+          shape = 'rect';
+        }
+        faces.push({
+          x: x, y: y, w: w, h: h, shape: shape,
+          name: '', surname: '',
+          link: a ? (a.getAttribute('href') || a.getAttribute('xlink:href') || '') : ''
+        });
+      }
+    }
+
+    return setImage(src, name, null, faces).then(function () {
+      setStatus('✔ Imported "' + file.name + '" with ' + faces.length + ' editable region(s).', 'ok');
+    });
+  });
+}
+
+/* ------------------------------------------------------------ image input */
+function setImage(src, fileName, blob, faces) {
+  setStatus('Loading image…', 'busy');
+  var isRemote = /^https?:/i.test(src);
+  return loadImage(src, isRemote).then(function (loaded) {
+    state.src = src;
+    state.img = loaded.img;
+    state.natW = loaded.img.naturalWidth;
+    state.natH = loaded.img.naturalHeight;
+    state.faces = faces ? faces.slice() : [];
+    state.selected = state.faces.length ? 0 : -1;
+    state.dataUri = null;
+    state.blob = blob || null;
+    state.corsOk = loaded.corsOk;
+    state.fileName = (fileName || 'image').split('?')[0];
+
+    if (!state.natW || !state.natH) {
+      setStatus('✖ That file is not a valid image.', 'err');
+      return;
+    }
+
+    /* Swap the <img> in the DOM */
+    var oldImg = els.zoomLayer.querySelector('img.photo');
+    if (oldImg && oldImg !== loaded.img) oldImg.remove();
+    loaded.img.id = 'photo';
+    loaded.img.className = 'photo';
+    loaded.img.alt = 'Loaded image';
+    els.zoomLayer.insertBefore(loaded.img, els.overlay);
+
+    els.overlay.setAttribute('viewBox', '0 0 ' + state.natW + ' ' + state.natH);
+    els.overlay.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    els.drop.hidden = true;
+    els.viewer.hidden = false;
+
+    resetZoom();
+    setAddMode(false);
+    renderOverlay();
+    renderList();
+    renderEditor();
+
+    els.btnDetect.disabled = false;
+    els.btnAdd.disabled = false;
+    els.btnSvg.disabled = false;
+    els.btnClear.disabled = false;
+
+    requestAnimationFrame(fitStage);
+
+    if (faces && faces.length) {
+      setStatus('✔ Re-imported — ' + faces.length + ' editable region(s). Image ' +
+                state.natW + '×' + state.natH + '.', 'ok');
+    } else {
+      setStatus(
+        '✔ Image loaded (' + state.natW + '×' + state.natH + '). Press "Detect faces".' +
+        (loaded.corsOk ? '' : '\n⚠ Cross-origin image: pixel analysis may be blocked.'),
+        loaded.corsOk ? 'ok' : 'warn'
+      );
+    }
+  }).catch(function (e) {
+    console.error(e);
+    setStatus('✖ Could not load that image. Check the URL or try a local file.', 'err');
+  });
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)) { importSvg(file); return; }
+  if (!file.type || file.type.indexOf('image/') !== 0) {
+    setStatus('✖ That is not an image file.', 'err');
+    return;
+  }
+  var url = URL.createObjectURL(file);
+  setImage(url, file.name, file, null);
+}
+
+function handleUrl(url) {
+  var u = String(url || '').trim();
+  if (!u) return;
+  if (!/^(https?:\/\/|data:image\/|blob:)/i.test(u)) {
+    setStatus('✖ That does not look like an image URL.', 'err');
+    return;
+  }
+  var name = u.indexOf('data:') === 0 ? 'image' : (u.split('/').pop().split('?')[0] || 'image');
+  setImage(u, name, null, null);
+}
+
+/* ------------------------------------------------------------ drag & drop */
+['dragenter', 'dragover'].forEach(function (t) {
+  document.addEventListener(t, function (e) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    document.body.classList.add('dragging');
+  });
+});
+document.addEventListener('dragleave', function (e) {
+  if (e.relatedTarget === null || e.relatedTarget === document.documentElement) {
+    document.body.classList.remove('dragging');
+  }
+});
+document.addEventListener('drop', function (e) {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  var dt = e.dataTransfer;
+  if (!dt) return;
+
+  if (dt.files && dt.files.length) {
+    var files = Array.prototype.slice.call(dt.files);
+    var f = null;
+    for (var i = 0; i < files.length; i++) {
+      if ((files[i].type && files[i].type.indexOf('image/') === 0) || /\.svg$/i.test(files[i].name)) {
+        f = files[i]; break;
+      }
+    }
+    if (f) { handleFile(f); return; }
+  }
+  if (dt.items && dt.items.length) {
+    for (var j = 0; j < dt.items.length; j++) {
+      var it = dt.items[j];
+      if (it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+        var ff = it.getAsFile();
+        if (ff) { handleFile(ff); return; }
+      }
+    }
+  }
+  var html = dt.getData('text/html');
+  if (html) {
+    var m = /<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i.exec(html);
+    if (m) { handleUrl(m[1]); return; }
+  }
+  var uri = dt.getData('text/uri-list') || dt.getData('text/plain');
+  if (uri) {
+    var lines = uri.split(/\r?\n/);
+    for (var k = 0; k < lines.length; k++) {
+      var line = lines[k].trim();
+      if (line && line.charAt(0) !== '#') { handleUrl(line); return; }
+    }
+  }
+  setStatus('✖ Nothing usable was dropped.', 'err');
+});
+
+/* ----------------------------------------------------------------- paste */
+document.addEventListener('paste', function (e) {
+  var t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+  var cd = e.clipboardData;
+  if (!cd) return;
+  var items = Array.prototype.slice.call(cd.items || []);
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type && items[i].type.indexOf('image/') === 0) {
+      var f = items[i].getAsFile();
+      if (f) { e.preventDefault(); handleFile(f); return; }
+    }
+  }
+  var text = cd.getData('text');
+  if (text && /^(https?:\/\/|data:image\/)/i.test(text.trim())) {
+    e.preventDefault();
+    handleUrl(text.trim());
+  }
+});
+
+/* ---------------------------------------------------------------- sizing */
+function fitStage() {
+  if (els.viewer.hidden) return;
+  var ar = state.orientation === 'portrait' ? 3 / 4 : 4 / 3;
+  var box = els.viewerBody.getBoundingClientRect();
+  var availW = Math.max(60, box.width - 32);
+  var availH = Math.max(60, box.height - 32);
+  var w = availW, h = w / ar;
+  if (h > availH) { h = availH; w = h * ar; }
+  els.stagebox.style.width = Math.round(w) + 'px';
+  els.stagebox.style.height = Math.round(h) + 'px';
+}
+window.addEventListener('resize', fitStage);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(fitStage).observe(els.viewerBody);
+}
+
+/* ---------------------------------------------------------------- events */
+var orientRadios = document.querySelectorAll('input[name="orient"]');
+for (var oi = 0; oi < orientRadios.length; oi++) {
+  orientRadios[oi].addEventListener('change', function () {
+    var c = document.querySelector('input[name="orient"]:checked');
+    state.orientation = c ? c.value : 'portrait';
+    fitStage();
+  });
+}
+
+els.btnDetect.addEventListener('click', detectFaces);
+els.btnAdd.addEventListener('click', function () { setAddMode(!addMode); });
+els.btnSvg.addEventListener('click', downloadSvg);
+
+els.showRegions.addEventListener('change', function () {
+  els.overlay.classList.toggle('hidden-regions', !els.showRegions.checked);
+});
+
+els.btnClear.addEventListener('click', function () {
+  state.src = null; state.img = null;
+  state.faces = []; state.selected = -1;
+  state.dataUri = null; state.blob = null;
+  var oldImg = els.zoomLayer.querySelector('img.photo');
+  if (oldImg) oldImg.remove();
+  while (els.overlay.firstChild) els.overlay.removeChild(els.overlay.firstChild);
+  els.viewer.hidden = true;
+  els.drop.hidden = false;
+  els.btnDetect.disabled = true;
+  els.btnAdd.disabled = true;
+  els.btnSvg.disabled = true;
+  els.btnClear.disabled = true;
+  setAddMode(false);
+  resetZoom();
+  renderList(); renderEditor();
+  setStatus('No image loaded.');
+});
+
+els.btnDel.addEventListener('click', function () {
+  if (state.selected < 0) return;
+  state.faces.splice(state.selected, 1);
+  state.selected = Math.min(state.selected, state.faces.length - 1);
+  renderOverlay(); renderList(); renderEditor();
+  setStatus(state.faces.length + ' region(s).', 'ok');
+});
+
+els.inName.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.name = els.inName.value; renderList();
+});
+els.inSurname.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.surname = els.inSurname.value; renderList();
+});
+els.inLink.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.link = els.inLink.value.trim(); renderList();
+});
+els.inShape.addEventListener('change', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.shape = els.inShape.value; renderOverlay();
+});
+
+els.fileInput.addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (f) handleFile(f);
+  e.target.value = '';
+});
+els.svgInput.addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (f) importSvg(f);
+  e.target.value = '';
+});
+
+els.urlGo.addEventListener('click', function () { handleUrl(els.urlInput.value); });
+els.urlInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); handleUrl(els.urlInput.value); }
+});
+
+var sampleBtns = document.querySelectorAll('[data-sample]');
+for (var si = 0; si < sampleBtns.length; si++) {
+  (function (btn) {
+    btn.addEventListener('click', function () { handleUrl(btn.getAttribute('data-sample')); });
+  })(sampleBtns[si]);
+}
+
+window.addEventListener('dragover', function (e) { e.preventDefault(); });
+window.addEventListener('drop',     function (e) { e.preventDefault(); });
+
+/* ------------------------------------------------------------------ init */
+bindOverlay();
+renderList();
+renderEditor();
+
+})();
+</script>
+</body>
+</html>
