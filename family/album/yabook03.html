@@ -214,6 +214,7 @@
   }
   .editor input:focus, .editor select:focus{outline:none; border-color:var(--accent)}
 
+  /* Label style controls */
   .style-grid{display:flex; flex-direction:column; gap:10px}
   .style-row{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted)}
   .style-row > span:first-child{flex:none; width:58px}
@@ -357,7 +358,7 @@
         </div>
         <div class="style-row">
           <span>Opacity</span>
-          <input type="range" id="lblOpacity" min="0" max="1" step="0.05" value="1">
+          <input type="range" id="lblOpacity" min="0.1" max="1" step="0.05" value="1">
           <span class="val" id="lblOpacityVal">1.00</span>
         </div>
         <div class="style-row">
@@ -515,7 +516,6 @@ function download(filename, blob) {
   a.remove();
   setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 }
-function round2(n) { return Number((Number(n) || 0).toFixed(2)); }
 
 /* ---------------------------------------------------------------- zoom/pan */
 function applyZoom() {
@@ -612,7 +612,7 @@ function renderOverlay() {
     t.setAttribute('font-size', fs);
     t.setAttribute('class', 'lbl');
     t.style.fill = labelStyle.color;
-    t.style.opacity = String(labelStyle.opacity);
+    t.style.fillOpacity = String(labelStyle.opacity);
     t.textContent = String(i + 1);
     frag.appendChild(t);
 
@@ -1015,7 +1015,11 @@ function setAddMode(on) {
   if (on) setStatus('Drag on the photo to draw a face region.', 'busy');
 }
 
-/* =========================================================== SVG EXPORT */
+/* =========================================================== SVG EXPORT
+   buildSvg(opts):
+     opts.includeImage — embed <image> (full SVG) or omit (regions-only)
+     opts.includeUi    — include the interactive foreignObject + script
+   ==================================================================== */
 
 function shapeMarkup(f) {
   var shape = f.shape || 'rect';
@@ -1034,65 +1038,6 @@ function shapeMarkup(f) {
          '" width="' + f.w.toFixed(2) + '" height="' + f.h.toFixed(2) + '" rx="' + rx + '"/>';
 }
 
-/* Serialize the current state into a portable payload object.
-   Used by both SVG export (metadata) and the JSON download. */
-function buildPayload(includeImageSrc) {
-  var payload = {
-    app: 'Face Recognition Studio',
-    version: 6,
-    imageName: state.fileName,
-    width: state.natW,
-    height: state.natH,
-    labelStyle: {
-      color: labelStyle.color,
-      opacity: Number(labelStyle.opacity.toFixed(3)),
-      size: Number(labelStyle.size.toFixed(3))
-    },
-    faces: state.faces.map(function (f, i) {
-      return {
-        index: i + 1,
-        region: {
-          x: round2(f.x),
-          y: round2(f.y),
-          w: round2(f.w),
-          h: round2(f.h),
-          shape: f.shape || 'rect'
-        },
-        name: f.name || '',
-        surname: f.surname || '',
-        link: f.link || ''
-      };
-    })
-  };
-  if (includeImageSrc && state.dataUri) payload.imageSrc = state.dataUri;
-  return payload;
-}
-
-/* Thumbnail: draw the current image on a small canvas, wrap the resulting
-   PNG data URI in a tiny SVG document, return that SVG as a string. */
-function makeThumbnailSvg(maxPx) {
-  maxPx = maxPx || 200;
-  var W = state.natW, H = state.natH;
-  if (!W || !H || !state.img) return '';
-  var scale = Math.min(1, maxPx / Math.max(W, H));
-  var tw = Math.max(1, Math.round(W * scale));
-  var th = Math.max(1, Math.round(H * scale));
-  var canvas = document.createElement('canvas');
-  canvas.width = tw; canvas.height = th;
-  var ctx = canvas.getContext('2d');
-  try { ctx.drawImage(state.img, 0, 0, tw, th); }
-  catch (_) { return ''; }
-  var dataUrl;
-  try { dataUrl = canvas.toDataURL('image/png'); }
-  catch (_) { return ''; }
-  return '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-    'width="' + tw + '" height="' + th + '" viewBox="0 0 ' + tw + ' ' + th + '">' +
-    '<image x="0" y="0" width="' + tw + '" height="' + th + '" ' +
-    'xlink:href="' + dataUrl + '" href="' + dataUrl + '"/>' +
-    '</svg>';
-}
-
 function buildSvg(opts) {
   opts = opts || {};
   var includeImage = opts.includeImage !== false;
@@ -1105,7 +1050,23 @@ function buildSvg(opts) {
   var color = labelStyle.color;
   var opacity = labelStyle.opacity;
 
-  var payload = buildPayload(includeImage);
+  var payload = {
+    app: 'Face Recognition Studio',
+    version: 5,
+    imageName: state.fileName,
+    width: W, height: H,
+    labelStyle: { color: color, opacity: opacity, size: labelStyle.size },
+    faces: state.faces.map(function (f, i) {
+      return {
+        index: i + 1,
+        x: f.x, y: f.y, w: f.w, h: f.h,
+        shape: f.shape || 'rect',
+        name: f.name || '',
+        surname: f.surname || '',
+        link: f.link || ''
+      };
+    })
+  };
 
   var out = [];
   out.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -1113,8 +1074,18 @@ function buildSvg(opts) {
            'width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
   out.push('  <title>' + (includeImage ? 'Image with clickable face regions' : 'Clickable face regions') + '</title>');
   out.push('  <desc>Exported by Face Recognition Studio. Re-import into the app to edit regions.</desc>');
-  out.push('  <metadata id="face-studio-data" data-version="6">' +
-           b64encode(JSON.stringify(payload)) + '</metadata>');
+
+  if (includeImage) {
+    // embed the image data URI into the metadata (self-contained file)
+    if (state.dataUri) {
+      payload.imageSrc = state.dataUri;
+    }
+    out.push('  <metadata id="face-studio-data" data-version="5">' +
+             b64encode(JSON.stringify(payload)) + '</metadata>');
+  } else {
+    out.push('  <metadata id="face-studio-data" data-version="5">' +
+             b64encode(JSON.stringify(payload)) + '</metadata>');
+  }
 
   out.push('  <style>');
   out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) + 'px;cursor:pointer;transition:fill .15s}');
@@ -1139,20 +1110,26 @@ function buildSvg(opts) {
     if (!nameLine && !surnameLine) { nameLine = fallback; }
 
     var titleText = [f.name, f.surname].filter(Boolean).join(' ') || fallback;
-    var href = f.link || '#';
+    var href = f.link || '#';  /* '#' keeps the region clickable without navigating */
 
+    /* ID label — top-left inside region */
     var idX = (f.x + baseFs * 0.35).toFixed(2);
     var idY = (f.y + fs * 1.15).toFixed(2);
+
+    /* Name label — below the region (2 lines: name above surname) */
     var nameX = (f.x + baseFs * 0.35).toFixed(2);
     var nameBaseY = (f.y + f.h + fs * 1.15);
 
     out.push('  <a xlink:href="' + escapeAttr(href) + '" href="' + escapeAttr(href) + '" target="_blank" rel="noopener">');
     out.push('    <title>' + escapeAttr(titleText) + '</title>');
     out.push('    ' + shapeMarkup(f));
+
+    // ID label
     out.push('    <text class="label" data-role="id" x="' + idX + '" y="' + idY +
              '" font-size="' + fs.toFixed(2) + '" fill="' + colorAttr +
-             '" opacity="' + opacityAttr + '">' + (i + 1) + '</text>');
+             '" fill-opacity="' + opacityAttr + '">' + (i + 1) + '</text>');
 
+    // Name label — tspans, two lines
     if (nameLine || surnameLine) {
       var tspans = '';
       if (nameLine) {
@@ -1164,9 +1141,10 @@ function buildSvg(opts) {
       }
       out.push('    <text class="label" data-role="name" x="' + nameX + '" y="' +
                nameBaseY.toFixed(2) + '" font-size="' + fs.toFixed(2) +
-               '" fill="' + colorAttr + '" opacity="' + opacityAttr + '">' +
+               '" fill="' + colorAttr + '" fill-opacity="' + opacityAttr + '">' +
                tspans + '</text>');
     }
+
     out.push('  </a>');
   });
 
@@ -1330,24 +1308,36 @@ function downloadSvgRegions() {
 /* ----------------------------------------------------- Download JSON data */
 function downloadJson() {
   if (!state.natW || !state.natH) return;
-
-  var payload = buildPayload(false);
-
-  /* Insert photo (thumbnail SVG) right after the dimensions */
-  var thumb = makeThumbnailSvg(200);
-  payload.photo = thumb || '';
-
+  var payload = {
+    app: 'Face Recognition Studio',
+    version: 5,
+    imageName: state.fileName,
+    width: state.natW,
+    height: state.natH,
+    labelStyle: {
+      color: labelStyle.color,
+      opacity: labelStyle.opacity,
+      size: labelStyle.size
+    },
+    faces: state.faces.map(function (f, i) {
+      return {
+        index: i + 1,
+        x: Number(f.x.toFixed(2)),
+        y: Number(f.y.toFixed(2)),
+        w: Number(f.w.toFixed(2)),
+        h: Number(f.h.toFixed(2)),
+        shape: f.shape || 'rect',
+        name: f.name || '',
+        surname: f.surname || '',
+        link: f.link || ''
+      };
+    })
+  };
   var text = JSON.stringify(payload, null, 2);
   var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
   download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.json', blob);
-
-  setStatus(
-    '✔ JSON saved — ' + state.faces.length + ' region(s), ' + text.length + ' bytes.' +
-    (thumb ? '\n"photo" contains a ' + (function () {
-      var m = /width="(\d+)"/.exec(thumb); return m ? m[1] + 'px' : 'small';
-    })() + ' thumbnail as an SVG document.' : '\n(No thumbnail — image is CORS-tainted.)'),
-    thumb ? 'ok' : 'warn'
-  );
+  setStatus('✔ JSON saved — ' + state.faces.length + ' region(s), ' +
+            text.length + ' bytes.', 'ok');
 }
 
 /* ------------------------------------------------------------ SVG import */
@@ -1372,19 +1362,17 @@ function parseSvgText(text, fileName) {
     name = payload.imageName || name;
     if (payload.labelStyle) importedStyle = payload.labelStyle;
     faces = (payload.faces || []).map(function (f) {
-      /* Support both v5 (flat) and v6 (nested under "region") layouts */
-      var reg = (f && f.region) ? f.region : f;
       return {
-        x: Number(reg.x) || 0, y: Number(reg.y) || 0,
-        w: Number(reg.w) || 0, h: Number(reg.h) || 0,
-        shape: reg.shape || 'rect',
+        x: Number(f.x) || 0, y: Number(f.y) || 0,
+        w: Number(f.w) || 0, h: Number(f.h) || 0,
+        shape: f.shape || 'rect',
         name: f.name || '',
         surname: f.surname || '',
         link: f.link || ''
       };
     });
   } else {
-    /* Fallback — reconstruct from the DOM */
+    // Fallback — reconstruct from the DOM
     var imgEl = doc.querySelector('image');
     var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
     src = href || null;
@@ -1421,13 +1409,13 @@ function parseSvgText(text, fileName) {
   }
 
   if (importedStyle) {
-    if (importedStyle.color)             setLabelColor(importedStyle.color);
-    if (importedStyle.opacity != null)   setLabelOpacity(importedStyle.opacity);
-    if (importedStyle.size    != null)   setLabelSize(importedStyle.size);
+    if (importedStyle.color)   setLabelColor(importedStyle.color);
+    if (importedStyle.opacity != null) setLabelOpacity(importedStyle.opacity);
+    if (importedStyle.size    != null) setLabelSize(importedStyle.size);
   }
 
   if (!src) {
-    /* Regions-only SVG — create a blank canvas at the declared size */
+    // Regions-only SVG — create a blank white canvas at the declared size
     var rootSvg = doc.querySelector('svg');
     var vb = rootSvg && rootSvg.getAttribute('viewBox');
     var W = state.natW || 800, H = state.natH || 600;
@@ -1674,18 +1662,14 @@ function setLabelColor(hex) {
   renderOverlay();
 }
 function setLabelOpacity(v) {
-  v = Number(v);
-  if (!isFinite(v)) v = 1;
-  v = Math.max(0, Math.min(1, v));
+  v = Math.max(0.1, Math.min(1, Number(v) || 1));
   labelStyle.opacity = v;
   els.lblOpacity.value = String(v);
   els.lblOpacityVal.textContent = v.toFixed(2);
   renderOverlay();
 }
 function setLabelSize(v) {
-  v = Number(v);
-  if (!isFinite(v)) v = 1;
-  v = Math.max(0.5, Math.min(3, v));
+  v = Math.max(0.5, Math.min(3, Number(v) || 1));
   labelStyle.size = v;
   els.lblSize.value = String(v);
   els.lblSizeVal.textContent = v.toFixed(1) + '×';

@@ -51,8 +51,6 @@
   .btn.danger{border-color:#5a2730; color:#ffb3bb; background:#2a1418}
   .btn.file{display:inline-flex; align-items:center; position:relative; overflow:hidden}
   .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
-  .btn.block{display:block; width:100%; text-align:center; margin-bottom:8px}
-  .btn.block:last-child{margin-bottom:0}
 
   main{flex:1; min-height:0; display:flex}
   .canvas-area{flex:1; min-width:0; display:flex; flex-direction:column; position:relative}
@@ -126,8 +124,8 @@
   .zoom-layer svg.overlay .lbl{
     pointer-events:none;
     font-family:system-ui,sans-serif; font-weight:700;
+    fill:#00e5a0; stroke:rgba(0,0,0,0.8); stroke-width:.3em;
     paint-order:stroke fill;
-    stroke:rgba(0,0,0,0.8); stroke-width:.3em;
   }
   .zoom-layer svg.overlay .handle{
     fill:#ffb400; stroke:#000; stroke-width:1;
@@ -214,25 +212,6 @@
   }
   .editor input:focus, .editor select:focus{outline:none; border-color:var(--accent)}
 
-  .style-grid{display:flex; flex-direction:column; gap:10px}
-  .style-row{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted)}
-  .style-row > span:first-child{flex:none; width:58px}
-  .style-row input[type=color]{
-    width:44px; height:28px; padding:0; border:1px solid var(--line);
-    border-radius:6px; background:#0c1119; cursor:pointer;
-  }
-  .style-row input[type=range]{
-    flex:1; accent-color: var(--accent); height:4px;
-  }
-  .style-row .val{
-    flex:none; min-width:44px; text-align:right;
-    font-variant-numeric:tabular-nums;
-  }
-  .style-row .swatch{
-    flex:none; display:inline-block; width:14px; height:14px; border-radius:3px;
-    border:1px solid var(--line);
-  }
-
   @media (max-width:860px){
     main{flex-direction:column}
     .side{width:auto; border-left:0; border-top:1px solid var(--line); max-height:46%}
@@ -267,13 +246,14 @@
         <h2>Drop a photo or an exported .svg here</h2>
         <p>
           Drag a file from Explorer&nbsp;/&nbsp;Finder, drag an image straight out of another web page,
-          paste a copied image, an image link or an <b>.svg</b> URL (<kbd>Ctrl</kbd>+<kbd>V</kbd>).
+          paste a copied image or an image link (<kbd>Ctrl</kbd>+<kbd>V</kbd>), or use the fields below.
+          <br>Paste or drop a <b>.svg</b> URL — it will be re-imported with its editable regions.
         </p>
         <div class="row">
           <label class="btn file">Choose image
             <input type="file" id="fileInput" accept="image/*">
           </label>
-          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg or .svg" spellcheck="false">
+          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg  or  .svg" spellcheck="false">
           <button id="urlGo" class="btn">Load URL</button>
         </div>
         <div class="samples">
@@ -345,38 +325,6 @@
       </label>
       <button id="btnDel" class="btn danger">Delete this region</button>
     </div>
-
-    <div class="side-block">
-      <h3>Label style</h3>
-      <div class="style-grid">
-        <div class="style-row">
-          <span>Color</span>
-          <input type="color" id="lblColor" value="#00e5a0">
-          <span class="swatch" id="lblColorSwatch" style="background:#00e5a0"></span>
-          <span class="val" id="lblColorVal">#00e5a0</span>
-        </div>
-        <div class="style-row">
-          <span>Opacity</span>
-          <input type="range" id="lblOpacity" min="0" max="1" step="0.05" value="1">
-          <span class="val" id="lblOpacityVal">1.00</span>
-        </div>
-        <div class="style-row">
-          <span>Size</span>
-          <input type="range" id="lblSize" min="0.5" max="3" step="0.1" value="1">
-          <span class="val" id="lblSizeVal">1.0×</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-block">
-      <h3>Export</h3>
-      <button id="btnSvgRegions" class="btn block" disabled>Download regions-only SVG</button>
-      <button id="btnJson" class="btn block" disabled>Download data JSON</button>
-      <label class="btn file block" style="display:flex;justify-content:center">
-        Import SVG to extract regions
-        <input type="file" id="svgExtractInput" accept=".svg,image/svg+xml">
-      </label>
-    </div>
   </aside>
 </main>
 
@@ -393,48 +341,39 @@ window.addEventListener('error', function (ev) {
 'use strict';
 
 var NS = 'http://www.w3.org/2000/svg';
+
 function $(sel) { return document.querySelector(sel); }
 
 var els = {
-  drop:        $('#drop'),
-  viewer:      $('#viewer'),
-  viewerBody:  $('#viewerBody'),
-  stagebox:    $('#stagebox'),
-  zoomLayer:   $('#zoomLayer'),
-  overlay:     $('#overlay'),
-  status:      $('#status'),
-  faceList:    $('#faceList'),
-  listEmpty:   $('#listEmpty'),
-  faceCount:   $('#faceCount'),
-  editor:      $('#editor'),
-  selNo:       $('#selNo'),
-  inIndex:     $('#inIndex'),
-  inName:      $('#inName'),
-  inSurname:   $('#inSurname'),
-  inLink:      $('#inLink'),
-  inShape:     $('#inShape'),
-  btnDetect:   $('#btnDetect'),
-  btnAdd:      $('#btnAdd'),
-  btnSvg:      $('#btnSvg'),
-  btnSvgRegions: $('#btnSvgRegions'),
-  btnJson:     $('#btnJson'),
-  btnClear:    $('#btnClear'),
-  btnDel:      $('#btnDel'),
-  fileInput:   $('#fileInput'),
-  svgInput:    $('#svgInput'),
-  svgExtractInput: $('#svgExtractInput'),
-  urlInput:    $('#urlInput'),
-  urlGo:       $('#urlGo'),
-  zoomLabel:   $('#zoomLabel'),
-  zoomControls:$('#zoomControls'),
-  showRegions: $('#showRegions'),
-  lblColor:    $('#lblColor'),
-  lblColorSwatch: $('#lblColorSwatch'),
-  lblColorVal: $('#lblColorVal'),
-  lblOpacity:  $('#lblOpacity'),
-  lblOpacityVal: $('#lblOpacityVal'),
-  lblSize:     $('#lblSize'),
-  lblSizeVal:  $('#lblSizeVal')
+  drop:       $('#drop'),
+  viewer:     $('#viewer'),
+  viewerBody: $('#viewerBody'),
+  stagebox:   $('#stagebox'),
+  zoomLayer:  $('#zoomLayer'),
+  overlay:    $('#overlay'),
+  status:     $('#status'),
+  faceList:   $('#faceList'),
+  listEmpty:  $('#listEmpty'),
+  faceCount:  $('#faceCount'),
+  editor:     $('#editor'),
+  selNo:      $('#selNo'),
+  inIndex:    $('#inIndex'),
+  inName:     $('#inName'),
+  inSurname:  $('#inSurname'),
+  inLink:     $('#inLink'),
+  inShape:    $('#inShape'),
+  btnDetect:  $('#btnDetect'),
+  btnAdd:     $('#btnAdd'),
+  btnSvg:     $('#btnSvg'),
+  btnClear:   $('#btnClear'),
+  btnDel:     $('#btnDel'),
+  fileInput:  $('#fileInput'),
+  svgInput:   $('#svgInput'),
+  urlInput:   $('#urlInput'),
+  urlGo:      $('#urlGo'),
+  zoomLabel:  $('#zoomLabel'),
+  zoomControls: $('#zoomControls'),
+  showRegions:  $('#showRegions')
 };
 
 var state = {
@@ -449,8 +388,6 @@ var state = {
   corsOk: true,
   fileName: 'faces'
 };
-
-var labelStyle = { color: '#00e5a0', opacity: 1, size: 1 };
 
 var zoom = { scale: 1, x: 0, y: 0, min: 0.25, max: 12 };
 var addMode = false;
@@ -505,17 +442,6 @@ function loadImage(src, useCors) {
     attempt(useCors);
   });
 }
-function download(filename, blob) {
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-}
-function round2(n) { return Number((Number(n) || 0).toFixed(2)); }
 
 /* ---------------------------------------------------------------- zoom/pan */
 function applyZoom() {
@@ -537,7 +463,9 @@ function zoomBy(factor, anchorX, anchorY) {
   zoom.scale = newS;
   applyZoom();
 }
-function resetZoom() { zoom.scale = 1; zoom.x = 0; zoom.y = 0; applyZoom(); }
+function resetZoom() {
+  zoom.scale = 1; zoom.x = 0; zoom.y = 0; applyZoom();
+}
 
 els.zoomControls.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
 els.zoomControls.addEventListener('click', function (e) {
@@ -585,11 +513,11 @@ function makeShapeEl(f) {
 function renderOverlay() {
   var svg = els.overlay;
   if (!svg) return;
+
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   if (!state.natW || !state.natH) return;
 
-  var baseFs = Math.max(state.natW, state.natH) / 50;
-  var fs = baseFs * labelStyle.size;
+  var fs = Math.max(state.natW, state.natH) / 50;
   var frag = document.createDocumentFragment();
 
   var bg = document.createElementNS(NS, 'rect');
@@ -607,12 +535,10 @@ function renderOverlay() {
     frag.appendChild(el);
 
     var t = document.createElementNS(NS, 'text');
-    t.setAttribute('x', f.x + baseFs * 0.35);
+    t.setAttribute('x', f.x + fs * 0.35);
     t.setAttribute('y', f.y + fs * 1.15);
     t.setAttribute('font-size', fs);
     t.setAttribute('class', 'lbl');
-    t.style.fill = labelStyle.color;
-    t.style.opacity = String(labelStyle.opacity);
     t.textContent = String(i + 1);
     frag.appendChild(t);
 
@@ -694,16 +620,20 @@ function svgPoint(svg, e) {
   var q = pt.matrixTransform(m.inverse());
   return { x: q.x, y: q.y };
 }
+
 function startEdit(type, faceIdx, handle, e) {
   var f = state.faces[faceIdx];
   if (!f) return;
   editState = {
-    type: type, faceIdx: faceIdx, handle: handle,
+    type: type,
+    faceIdx: faceIdx,
+    handle: handle,
     startPt: svgPoint(els.overlay, e),
     orig: { x: f.x, y: f.y, w: f.w, h: f.h }
   };
   try { els.overlay.setPointerCapture(e.pointerId); } catch (_) {}
 }
+
 function applyEdit(p) {
   var s = editState;
   if (!s) return;
@@ -712,6 +642,7 @@ function applyEdit(p) {
   var dx = p.x - s.startPt.x;
   var dy = p.y - s.startPt.y;
   var o = s.orig;
+
   if (s.type === 'move') {
     f.x = o.x + dx;
     f.y = o.y + dy;
@@ -762,6 +693,7 @@ function bindOverlay() {
       startEdit('resize', parseInt(idxAttr, 10), handle, e);
       return;
     }
+
     if (t.classList && t.classList.contains('face') && !t.classList.contains('draft')) {
       var idx = parseInt(idxAttr, 10);
       if (!isNaN(idx)) {
@@ -784,7 +716,11 @@ function bindOverlay() {
   });
 
   svg.addEventListener('pointermove', function (e) {
-    if (editState) { e.preventDefault(); applyEdit(svgPoint(svg, e)); return; }
+    if (editState) {
+      e.preventDefault();
+      applyEdit(svgPoint(svg, e));
+      return;
+    }
     if (drawing && draft) {
       var p = svgPoint(svg, e);
       var x = Math.min(sx, p.x), y = Math.min(sy, p.y);
@@ -869,6 +805,7 @@ function loadFaceApi() {
   });
   return faceApiLoading;
 }
+
 function ensureModels() {
   if (modelsReady) return Promise.resolve();
   var i = 0;
@@ -877,10 +814,13 @@ function ensureModels() {
     var url = MODEL_URLS[i++];
     return faceapi.nets.tinyFaceDetector.loadFromUri(url).then(function () {
       modelsReady = true;
-    }, function () { return tryNext(); });
+    }, function () {
+      return tryNext();
+    });
   }
   return tryNext();
 }
+
 function clampBox(b, W, H) {
   var x = Math.max(0, Math.min(W - 1, b.x));
   var y = Math.max(0, Math.min(H - 1, b.y));
@@ -888,6 +828,7 @@ function clampBox(b, W, H) {
   var h = Math.max(1, Math.min(H - y, b.h));
   return { x: x, y: y, w: w, h: h };
 }
+
 function iou(a, b) {
   var x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y);
   var x2 = Math.min(a.x + a.w, b.x + b.w);
@@ -896,6 +837,7 @@ function iou(a, b) {
   var uni = a.w * a.h + b.w * b.h - inter;
   return uni > 0 ? inter / uni : 0;
 }
+
 function nms(boxes, thresh) {
   var sorted = boxes.slice().sort(function (a, b) { return (b.w * b.h) - (a.w * a.h); });
   var keep = [];
@@ -908,6 +850,7 @@ function nms(boxes, thresh) {
   }
   return keep;
 }
+
 function detectTiled(sourceCanvas) {
   var W = sourceCanvas.width, H = sourceCanvas.height;
   var tile = 512, overlap = 0.25, step = Math.floor(tile * (1 - overlap));
@@ -923,12 +866,17 @@ function detectTiled(sourceCanvas) {
         var c = document.createElement('canvas');
         c.width = tw; c.height = th;
         c.getContext('2d').drawImage(sourceCanvas, x, y, tw, th, 0, 0, tw, th);
-        tasks.push(faceapi.detectAllFaces(c, opts).then(function (dets) {
-          for (var i = 0; i < dets.length; i++) {
-            var d = dets[i];
-            all.push({ x: x + d.box.x, y: y + d.box.y, w: d.box.width, h: d.box.height });
-          }
-        }, function () {}));
+        tasks.push(
+          faceapi.detectAllFaces(c, opts).then(function (dets) {
+            for (var i = 0; i < dets.length; i++) {
+              var d = dets[i];
+              all.push({
+                x: x + d.box.x, y: y + d.box.y,
+                w: d.box.width, h: d.box.height
+              });
+            }
+          }, function () {})
+        );
       })(x, y);
     }
   }
@@ -950,17 +898,19 @@ function detectFaces() {
 
   var tainted = false;
   try { ctx.getImageData(0, 0, 1, 1); } catch (_) { tainted = true; }
+
   if (tainted) {
     els.btnDetect.disabled = false;
     setStatus('✖ This image blocks pixel access (CORS).\nUse a local file or draw regions manually.', 'err');
     return;
   }
   pushLog('• pixel access ok');
+
   pushLog('• loading face-api.js…');
   loadFaceApi().then(function (ok) {
     if (!ok) {
       els.btnDetect.disabled = false;
-      pushLog('✖ face-api.js could not be loaded');
+      pushLog('✖ face-api.js could not be loaded (check network / ad-blocker)');
       setStatus(log.join('\n'), 'err');
       return;
     }
@@ -968,15 +918,16 @@ function detectFaces() {
     pushLog('• loading models…');
     return ensureModels().then(function () {
       pushLog('• models loaded');
+      pushLog('• running detection…');
       var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.30 });
       return faceapi.detectAllFaces(canvas, opts).then(function (found) {
         pushLog('• full-image detection: ' + found.length + ' face(s)');
         var boxes = found.map(function (d) {
           return { x: d.box.x, y: d.box.y, w: d.box.width, h: d.box.height };
         });
-        if (boxes.length || Math.max(W, H) <= 500) {
-          return { boxes: boxes, engine: 'face-api.js' };
-        }
+        var engine = 'face-api.js';
+        if (boxes.length) return { boxes: boxes, engine: engine };
+        if (Math.max(W, H) <= 500) return { boxes: boxes, engine: engine };
         pushLog('• running tiled detection…');
         return detectTiled(canvas).then(function (tiled) {
           pushLog('• tiled detection: ' + tiled.length + ' face(s)');
@@ -989,6 +940,7 @@ function detectFaces() {
     els.btnDetect.disabled = false;
     if (!result.boxes.length) {
       pushLog('✖ No faces found.');
+      pushLog('Tip: zoom in and use "Add region", or try a sharper photo.');
       setStatus(log.join('\n'), 'warn');
       return;
     }
@@ -1008,6 +960,7 @@ function detectFaces() {
   });
 }
 
+/* ------------------------------------------------------------ add-mode UI */
 function setAddMode(on) {
   addMode = on;
   els.btnAdd.classList.toggle('active', on);
@@ -1015,286 +968,176 @@ function setAddMode(on) {
   if (on) setStatus('Drag on the photo to draw a face region.', 'busy');
 }
 
-/* =========================================================== SVG EXPORT */
+/* ------------------------------------------------------------ SVG export  */
+function getImageDataUri() {
+  if (state.dataUri) return Promise.resolve(state.dataUri);
+  if (state.blob) {
+    return blobToDataURL(state.blob).then(function (uri) {
+      state.dataUri = uri;
+      return uri;
+    });
+  }
+  return fetch(state.src, { mode: 'cors' }).then(function (res) {
+    if (!res.ok) throw new Error('fetch failed');
+    return res.blob();
+  }).then(blobToDataURL).then(function (uri) {
+    state.dataUri = uri;
+    return uri;
+  }).catch(function () {
+    state.dataUri = state.src;
+    return state.dataUri;
+  });
+}
 
 function shapeMarkup(f) {
   var shape = f.shape || 'rect';
   var rx = (Math.min(f.w, f.h) * 0.06).toFixed(2);
   if (shape === 'circle') {
     var r = (Math.min(f.w, f.h) / 2).toFixed(2);
-    return '<circle class="face" data-role="face" cx="' + (f.x + f.w/2).toFixed(2) +
+    return '<circle class="face" cx="' + (f.x + f.w/2).toFixed(2) +
            '" cy="' + (f.y + f.h/2).toFixed(2) + '" r="' + r + '"/>';
   }
   if (shape === 'ellipse') {
-    return '<ellipse class="face" data-role="face" cx="' + (f.x + f.w/2).toFixed(2) +
+    return '<ellipse class="face" cx="' + (f.x + f.w/2).toFixed(2) +
            '" cy="' + (f.y + f.h/2).toFixed(2) +
            '" rx="' + (f.w/2).toFixed(2) + '" ry="' + (f.h/2).toFixed(2) + '"/>';
   }
-  return '<rect class="face" data-role="face" x="' + f.x.toFixed(2) + '" y="' + f.y.toFixed(2) +
+  return '<rect class="face" x="' + f.x.toFixed(2) + '" y="' + f.y.toFixed(2) +
          '" width="' + f.w.toFixed(2) + '" height="' + f.h.toFixed(2) + '" rx="' + rx + '"/>';
 }
 
-/* Serialize the current state into a portable payload object.
-   Used by both SVG export (metadata) and the JSON download. */
-function buildPayload(includeImageSrc) {
-  var payload = {
-    app: 'Face Recognition Studio',
-    version: 6,
-    imageName: state.fileName,
-    width: state.natW,
-    height: state.natH,
-    labelStyle: {
-      color: labelStyle.color,
-      opacity: Number(labelStyle.opacity.toFixed(3)),
-      size: Number(labelStyle.size.toFixed(3))
-    },
-    faces: state.faces.map(function (f, i) {
-      return {
-        index: i + 1,
-        region: {
-          x: round2(f.x),
-          y: round2(f.y),
-          w: round2(f.w),
-          h: round2(f.h),
-          shape: f.shape || 'rect'
-        },
-        name: f.name || '',
-        surname: f.surname || '',
-        link: f.link || ''
-      };
-    })
-  };
-  if (includeImageSrc && state.dataUri) payload.imageSrc = state.dataUri;
-  return payload;
-}
-
-/* Thumbnail: draw the current image on a small canvas, wrap the resulting
-   PNG data URI in a tiny SVG document, return that SVG as a string. */
-function makeThumbnailSvg(maxPx) {
-  maxPx = maxPx || 200;
-  var W = state.natW, H = state.natH;
-  if (!W || !H || !state.img) return '';
-  var scale = Math.min(1, maxPx / Math.max(W, H));
-  var tw = Math.max(1, Math.round(W * scale));
-  var th = Math.max(1, Math.round(H * scale));
-  var canvas = document.createElement('canvas');
-  canvas.width = tw; canvas.height = th;
-  var ctx = canvas.getContext('2d');
-  try { ctx.drawImage(state.img, 0, 0, tw, th); }
-  catch (_) { return ''; }
-  var dataUrl;
-  try { dataUrl = canvas.toDataURL('image/png'); }
-  catch (_) { return ''; }
-  return '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-    'width="' + tw + '" height="' + th + '" viewBox="0 0 ' + tw + ' ' + th + '">' +
-    '<image x="0" y="0" width="' + tw + '" height="' + th + '" ' +
-    'xlink:href="' + dataUrl + '" href="' + dataUrl + '"/>' +
-    '</svg>';
-}
-
-function buildSvg(opts) {
-  opts = opts || {};
-  var includeImage = opts.includeImage !== false;
-  var includeUi = opts.includeUi !== false;
+function downloadSvg() {
+  if (!state.natW || !state.natH) return;
+  els.btnSvg.disabled = true;
+  setStatus('Building SVG…', 'busy');
 
   var W = state.natW, H = state.natH;
-  var sw = Math.max(W, H) / 400;
-  var baseFs = Math.max(W, H) / 50;
-  var fs = baseFs * labelStyle.size;
-  var color = labelStyle.color;
-  var opacity = labelStyle.opacity;
 
-  var payload = buildPayload(includeImage);
+  getImageDataUri().then(function (uri) {
+    var sw = Math.max(W, H) / 400;
+    var fs = Math.max(W, H) / 50;
 
-  var out = [];
-  out.push('<?xml version="1.0" encoding="UTF-8"?>');
-  out.push('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-           'width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
-  out.push('  <title>' + (includeImage ? 'Image with clickable face regions' : 'Clickable face regions') + '</title>');
-  out.push('  <desc>Exported by Face Recognition Studio. Re-import into the app to edit regions.</desc>');
-  out.push('  <metadata id="face-studio-data" data-version="6">' +
-           b64encode(JSON.stringify(payload)) + '</metadata>');
+    var payload = {
+      app: 'Face Recognition Studio',
+      version: 4,
+      imageSrc: uri,
+      imageName: state.fileName,
+      width: W, height: H,
+      faces: state.faces.map(function (f, i) {
+        return {
+          index: i + 1,
+          x: f.x, y: f.y, w: f.w, h: f.h,
+          shape: f.shape || 'rect',
+          name: f.name || '',
+          surname: f.surname || '',
+          link: f.link || ''
+        };
+      })
+    };
+    var b64 = b64encode(JSON.stringify(payload));
 
-  out.push('  <style>');
-  out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) + 'px;cursor:pointer;transition:fill .15s}');
-  out.push('    a:hover .face{fill:rgba(0,229,160,0.38)}');
-  out.push('    .label{font-family:system-ui,-apple-system,sans-serif;font-weight:700;' +
-           'paint-order:stroke fill;stroke:rgba(0,0,0,0.8);stroke-width:.3em;pointer-events:none}');
-  out.push('  </style>');
-
-  if (includeImage) {
+    var out = [];
+    out.push('<?xml version="1.0" encoding="UTF-8"?>');
+    out.push('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+             'width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
+    out.push('  <title>Image with clickable face regions</title>');
+    out.push('  <desc>Exported by Face Recognition Studio. Re-import into the app to edit regions.</desc>');
+    out.push('  <metadata id="face-studio-data" data-version="4">' + b64 + '</metadata>');
+    out.push('  <style>');
+    out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) + 'px;cursor:pointer}');
+    out.push('    a:hover .face{fill:rgba(0,229,160,0.38)}');
+    out.push('    .label{font-family:system-ui,-apple-system,sans-serif;font-weight:700;fill:#00e5a0;stroke:rgba(0,0,0,0.8);stroke-width:.3em;paint-order:stroke fill;pointer-events:none}');
+    out.push('    .label-name{display:none}');
+    out.push('    svg.show-names .label-id{display:none}');
+    out.push('    svg.show-names .label-name{display:inline}');
+    out.push('    svg.hide-faces .face,svg.hide-faces .label{display:none}');
+    out.push('  </style>');
     out.push('  <image x="0" y="0" width="' + W + '" height="' + H +
-             '" xlink:href="' + escapeAttr(state.dataUri || state.src) + '" href="' +
-             escapeAttr(state.dataUri || state.src) + '"/>');
-  }
+             '" xlink:href="' + escapeAttr(uri) + '" href="' + escapeAttr(uri) + '"/>');
 
-  var colorAttr = escapeAttr(color);
-  var opacityAttr = String(opacity);
+    state.faces.forEach(function (f, i) {
+      var label = [f.name, f.surname].filter(Boolean).join(' ');
+      var titleText = label || ('Face ' + (i + 1));
+      var href = f.link || '#';
+      var tx = (f.x + fs * 0.35).toFixed(2);
+      var ty = (f.y + fs * 1.15).toFixed(2);
+      out.push('  <a xlink:href="' + escapeAttr(href) + '" href="' + escapeAttr(href) + '" target="_blank" rel="noopener">');
+      out.push('    <title>' + escapeAttr(titleText) + '</title>');
+      out.push('    ' + shapeMarkup(f));
+      out.push('    <text class="label label-id" x="' + tx + '" y="' + ty + '" font-size="' + fs.toFixed(2) + '">' + (i + 1) + '</text>');
+      out.push('    <text class="label label-name" x="' + tx + '" y="' + ty + '" font-size="' + fs.toFixed(2) + '">' + escapeAttr(titleText) + '</text>');
+      out.push('  </a>');
+    });
 
-  state.faces.forEach(function (f, i) {
-    var nameLine = f.name || '';
-    var surnameLine = f.surname || '';
-    var fallback = 'Face ' + (i + 1);
-    if (!nameLine && !surnameLine) { nameLine = fallback; }
-
-    var titleText = [f.name, f.surname].filter(Boolean).join(' ') || fallback;
-    var href = f.link || '#';
-
-    var idX = (f.x + baseFs * 0.35).toFixed(2);
-    var idY = (f.y + fs * 1.15).toFixed(2);
-    var nameX = (f.x + baseFs * 0.35).toFixed(2);
-    var nameBaseY = (f.y + f.h + fs * 1.15);
-
-    out.push('  <a xlink:href="' + escapeAttr(href) + '" href="' + escapeAttr(href) + '" target="_blank" rel="noopener">');
-    out.push('    <title>' + escapeAttr(titleText) + '</title>');
-    out.push('    ' + shapeMarkup(f));
-    out.push('    <text class="label" data-role="id" x="' + idX + '" y="' + idY +
-             '" font-size="' + fs.toFixed(2) + '" fill="' + colorAttr +
-             '" opacity="' + opacityAttr + '">' + (i + 1) + '</text>');
-
-    if (nameLine || surnameLine) {
-      var tspans = '';
-      if (nameLine) {
-        tspans += '<tspan x="' + nameX + '" dy="0">' + escapeAttr(nameLine) + '</tspan>';
-      }
-      if (surnameLine) {
-        tspans += '<tspan x="' + nameX + '" dy="' + (nameLine ? '1.2em' : '0') + '">' +
-                  escapeAttr(surnameLine) + '</tspan>';
-      }
-      out.push('    <text class="label" data-role="name" x="' + nameX + '" y="' +
-               nameBaseY.toFixed(2) + '" font-size="' + fs.toFixed(2) +
-               '" fill="' + colorAttr + '" opacity="' + opacityAttr + '">' +
-               tspans + '</text>');
-    }
-    out.push('  </a>');
-  });
-
-  if (includeUi) {
     var pf = Math.max(11, Math.min(W, H) / 40);
     var pad = pf * 0.55;
     var px = pf * 0.6, py = pf * 0.6;
-    var pw = pf * 14.5, ph = pf * 5.8;
+    var pw = pf * 14, ph = pf * 4.4;
 
     out.push('  <foreignObject id="fs-ui" x="' + px.toFixed(2) + '" y="' + py.toFixed(2) +
              '" width="' + pw.toFixed(2) + '" height="' + ph.toFixed(2) + '">');
     out.push('    <div xmlns="http://www.w3.org/1999/xhtml" ' +
              'style="box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;' +
              'gap:' + (pad*0.5).toFixed(2) + 'px;padding:' + pad.toFixed(2) + 'px;' +
-             'background:rgba(10,13,18,0.9);border:1px solid rgba(255,255,255,0.18);' +
+             'background:rgba(10,13,18,0.88);border:1px solid rgba(255,255,255,0.18);' +
              'border-radius:' + (pad*0.7).toFixed(2) + 'px;' +
              'font-family:system-ui,-apple-system,sans-serif;font-size:' + pf.toFixed(2) + 'px;' +
-             'color:#e7eef7;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.4)">' +
-             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
-             'px;cursor:pointer;user-select:none">' +
-             '<input type="checkbox" id="fs-show-regions" checked="checked" style="accent-color:#00e5a0"/>' +
+             'color:#e7eef7;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,0.4)">' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="checkbox" id="fs-show-faces" checked="checked" style="accent-color:#00e5a0"/>' +
              'Show regions</label>' +
-             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
-             'px;cursor:pointer;user-select:none">' +
-             '<input type="checkbox" id="fs-show-id" checked="checked" style="accent-color:#00e5a0"/>' +
-             'Show ID</label>' +
-             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
-             'px;cursor:pointer;user-select:none">' +
-             '<input type="checkbox" id="fs-show-name" checked="checked" style="accent-color:#00e5a0"/>' +
-             'Show name</label>' +
-             '</div>');
+             '<div style="display:flex;align-items:center;gap:' + pad.toFixed(2) + 'px;flex-wrap:wrap">' +
+             '<span style="opacity:.65">Label:</span>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.35).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="radio" name="fs-lbl" value="id" checked="checked" style="accent-color:#00e5a0"/> ID</label>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.35).toFixed(2) + 'px;cursor:pointer;user-select:none">' +
+             '<input type="radio" name="fs-lbl" value="name" style="accent-color:#00e5a0"/> Name</label>' +
+             '</div></div>');
     out.push('  </foreignObject>');
 
     var ST = '<' + 'script type="text/javascript"><![CDATA[';
     var END = ']]>' + '<' + '/script' + '>';
 
     out.push('  ' + ST);
-    out.push('  (function(){');
-    out.push('    function findInputs(){');
-    out.push('      var ids = ["fs-show-regions","fs-show-id","fs-show-name"];');
-    out.push('      var out = {};');
-    out.push('      for (var i = 0; i < ids.length; i++) {');
-    out.push('        var id = ids[i];');
-    out.push('        var el = document.getElementById(id);');
-    out.push('        if (!el && document.querySelector) el = document.querySelector("#" + id);');
-    out.push('        if (!el) {');
-    out.push('          var fos = document.getElementsByTagName("foreignObject");');
-    out.push('          for (var f = 0; f < fos.length && !el; f++) {');
-    out.push('            var nodes = fos[f].getElementsByTagName("*");');
-    out.push('            for (var n = 0; n < nodes.length; n++) {');
-    out.push('              if (nodes[n].id === id) { el = nodes[n]; break; }');
-    out.push('            }');
-    out.push('          }');
-    out.push('        }');
-    out.push('        out[id] = el;');
-    out.push('      }');
-    out.push('      return out;');
-    out.push('    }');
-    out.push('    function apply(){');
-    out.push('      var svg = document.documentElement;');
-    out.push('      var inputs = findInputs();');
-    out.push('      function chk(name){ return inputs[name] ? !!inputs[name].checked : true; }');
-    out.push('      var showRegions = chk("fs-show-regions");');
-    out.push('      var showId      = chk("fs-show-id");');
-    out.push('      var showName    = chk("fs-show-name");');
-    out.push('      function setAll(sel, visible){');
-    out.push('        var list = svg.querySelectorAll(sel);');
-    out.push('        for (var i = 0; i < list.length; i++) {');
-    out.push('          list[i].style.display = visible ? "" : "none";');
+    out.push('    (function(){');
+    out.push('      function boot(){');
+    out.push('        var svg = document.documentElement;');
+    out.push('        if (!svg) return;');
+    out.push('        var chk = document.getElementById("fs-show-faces");');
+    out.push('        if (chk) chk.addEventListener("change", function(){');
+    out.push('          if (chk.checked) svg.classList.remove("hide-faces");');
+    out.push('          else svg.classList.add("hide-faces");');
+    out.push('        });');
+    out.push('        var rs = document.querySelectorAll(\'input[name="fs-lbl"]\');');
+    out.push('        for (var k = 0; k < rs.length; k++) {');
+    out.push('          rs[k].addEventListener("change", function(ev){');
+    out.push('            if (!ev.target.checked) return;');
+    out.push('            if (ev.target.value === "name") svg.classList.add("show-names");');
+    out.push('            else svg.classList.remove("show-names");');
+    out.push('          });');
     out.push('        }');
     out.push('      }');
-    out.push('      setAll(\'[data-role="face"]\', showRegions);');
-    out.push('      setAll(\'[data-role="id"]\',   showRegions && showId);');
-    out.push('      setAll(\'[data-role="name"]\', showRegions && showName);');
-    out.push('    }');
-    out.push('    function boot(){');
-    out.push('      var inputs = findInputs();');
-    out.push('      var names = ["fs-show-regions","fs-show-id","fs-show-name"];');
-    out.push('      for (var i = 0; i < names.length; i++) {');
-    out.push('        var el = inputs[names[i]];');
-    out.push('        if (el) el.addEventListener("change", apply);');
-    out.push('      }');
-    out.push('      apply();');
-    out.push('    }');
-    out.push('    if (document.readyState === "loading") {');
-    out.push('      document.addEventListener("DOMContentLoaded", boot);');
-    out.push('    } else { setTimeout(boot, 0); }');
-    out.push('  })();');
+    out.push('      setTimeout(boot, 0);');
+    out.push('    })();');
     out.push('  ' + END);
-  }
+    out.push('</svg>');
 
-  out.push('</svg>');
-  return out.join('\n');
-}
+    var blob = new Blob([out.join('\n')], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.svg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 
-/* --------------------------------------------------- data URI fetch cache */
-function getImageDataUri() {
-  if (state.dataUri) return Promise.resolve(state.dataUri);
-  if (state.blob) {
-    return blobToDataURL(state.blob).then(function (uri) {
-      state.dataUri = uri; return uri;
-    });
-  }
-  return fetch(state.src, { mode: 'cors' })
-    .then(function (res) { if (!res.ok) throw new Error('fetch failed'); return res.blob(); })
-    .then(blobToDataURL)
-    .then(function (uri) { state.dataUri = uri; return uri; })
-    .catch(function () { state.dataUri = state.src; return state.dataUri; });
-}
-
-/* --------------------------------------------------- Download full SVG  */
-function downloadSvg() {
-  if (!state.natW || !state.natH) return;
-  els.btnSvg.disabled = true;
-  setStatus('Building SVG…', 'busy');
-
-  getImageDataUri().then(function (uri) {
-    state.dataUri = uri;
-    var text = buildSvg({ includeImage: true, includeUi: true });
-    var blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
-    download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.svg', blob);
     els.btnSvg.disabled = false;
-    var embedded = uri && uri.indexOf('data:') === 0;
+    var embedded = uri.indexOf('data:') === 0;
     setStatus(
-      (embedded
-        ? '✔ SVG saved — ' + state.faces.length + ' region(s), image embedded.'
-        : '✔ SVG saved — ' + state.faces.length + ' region(s), image linked remotely.') +
-      '\nOpen the .svg in a browser: use the top-left panel to toggle regions, ID and name labels.',
+      (embedded ? '✔ SVG saved — ' + state.faces.length + ' region(s), image embedded.'
+                : '✔ SVG saved — ' + state.faces.length + ' region(s), image linked remotely.') +
+      '\nOpen the .svg in a browser: use the top-left panel to show/hide regions and switch labels.',
       embedded ? 'ok' : 'warn'
     );
   }).catch(function (err) {
@@ -1303,54 +1146,12 @@ function downloadSvg() {
   });
 }
 
-/* --------------------------------------------- Download regions-only SVG */
-function downloadSvgRegions() {
-  if (!state.natW || !state.natH) return;
-  if (!state.faces.length) {
-    setStatus('⚠ No regions to export.', 'warn');
-    return;
-  }
-  els.btnSvgRegions.disabled = true;
-  setStatus('Building regions-only SVG…', 'busy');
-  try {
-    var text = buildSvg({ includeImage: false, includeUi: true });
-    var blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
-    download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-regions.svg', blob);
-    setStatus(
-      '✔ Regions-only SVG saved — ' + state.faces.length + ' clickable region(s), no image.\n' +
-      'Overlay it on any image of the same size (' + state.natW + '×' + state.natH + ').',
-      'ok'
-    );
-  } catch (err) {
-    setStatus('✖ Regions SVG export failed — ' + (err && err.message ? err.message : err), 'err');
-  }
-  els.btnSvgRegions.disabled = false;
-}
+/* ============================ SVG IMPORT ============================
+   Two paths:
+     • parseSvgText(text, name)   — shared by file input, URL fetch, drag
+     • importSvgFromUrl(url)      — used when the user pastes an .svg URL
+   ==================================================================== */
 
-/* ----------------------------------------------------- Download JSON data */
-function downloadJson() {
-  if (!state.natW || !state.natH) return;
-
-  var payload = buildPayload(false);
-
-  /* Insert photo (thumbnail SVG) right after the dimensions */
-  var thumb = makeThumbnailSvg(200);
-  payload.photo = thumb || '';
-
-  var text = JSON.stringify(payload, null, 2);
-  var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
-  download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.json', blob);
-
-  setStatus(
-    '✔ JSON saved — ' + state.faces.length + ' region(s), ' + text.length + ' bytes.' +
-    (thumb ? '\n"photo" contains a ' + (function () {
-      var m = /width="(\d+)"/.exec(thumb); return m ? m[1] + 'px' : 'small';
-    })() + ' thumbnail as an SVG document.' : '\n(No thumbnail — image is CORS-tainted.)'),
-    thumb ? 'ok' : 'warn'
-  );
-}
-
-/* ------------------------------------------------------------ SVG import */
 function parseSvgText(text, fileName) {
   var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   if (doc.querySelector('parsererror')) {
@@ -1365,29 +1166,28 @@ function parseSvgText(text, fileName) {
   }
 
   var src = null, faces = [], name = (fileName || 'imported.svg').replace(/\.svg$/i, '');
-  var importedStyle = null;
 
-  if (payload && (payload.imageSrc || payload.faces)) {
-    src = payload.imageSrc || null;
+  if (payload && payload.imageSrc) {
+    src = payload.imageSrc;
     name = payload.imageName || name;
-    if (payload.labelStyle) importedStyle = payload.labelStyle;
     faces = (payload.faces || []).map(function (f) {
-      /* Support both v5 (flat) and v6 (nested under "region") layouts */
-      var reg = (f && f.region) ? f.region : f;
       return {
-        x: Number(reg.x) || 0, y: Number(reg.y) || 0,
-        w: Number(reg.w) || 0, h: Number(reg.h) || 0,
-        shape: reg.shape || 'rect',
+        x: Number(f.x) || 0, y: Number(f.y) || 0,
+        w: Number(f.w) || 0, h: Number(f.h) || 0,
+        shape: f.shape || 'rect',
         name: f.name || '',
         surname: f.surname || '',
         link: f.link || ''
       };
     });
   } else {
-    /* Fallback — reconstruct from the DOM */
     var imgEl = doc.querySelector('image');
     var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
-    src = href || null;
+    if (!href) {
+      setStatus('✖ This SVG contains no image and no Face Studio metadata.', 'err');
+      return Promise.resolve();
+    }
+    src = href;
     var shapes = doc.querySelectorAll('rect.face, circle.face, ellipse.face');
     for (var i = 0; i < shapes.length; i++) {
       var el = shapes[i];
@@ -1397,7 +1197,7 @@ function parseSvgText(text, fileName) {
       if (tag === 'circle') {
         var cx = Number(el.getAttribute('cx')) || 0;
         var cy = Number(el.getAttribute('cy')) || 0;
-        var r  = Number(el.getAttribute('r'))  || 0;
+        var r = Number(el.getAttribute('r')) || 0;
         x = cx - r; y = cy - r; w = 2 * r; h = 2 * r; shape = 'circle';
       } else if (tag === 'ellipse') {
         var ecx = Number(el.getAttribute('cx')) || 0;
@@ -1420,51 +1220,15 @@ function parseSvgText(text, fileName) {
     }
   }
 
-  if (importedStyle) {
-    if (importedStyle.color)             setLabelColor(importedStyle.color);
-    if (importedStyle.opacity != null)   setLabelOpacity(importedStyle.opacity);
-    if (importedStyle.size    != null)   setLabelSize(importedStyle.size);
-  }
-
-  if (!src) {
-    /* Regions-only SVG — create a blank canvas at the declared size */
-    var rootSvg = doc.querySelector('svg');
-    var vb = rootSvg && rootSvg.getAttribute('viewBox');
-    var W = state.natW || 800, H = state.natH || 600;
-    if (vb) {
-      var parts = vb.split(/[\s,]+/).map(Number);
-      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) { W = parts[2]; H = parts[3]; }
-    }
-    var canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    var cx2 = canvas.getContext('2d');
-    cx2.fillStyle = '#0a0d12';
-    cx2.fillRect(0, 0, W, H);
-    canvas.toBlob(function (blob) {
-      var url = URL.createObjectURL(blob);
-      setImage(url, name, blob, faces).then(function () {
-        setStatus('✔ Imported regions-only SVG "' + fileName + '" — ' + faces.length +
-                  ' region(s) placed on a ' + W + '×' + H + ' canvas.', 'ok');
-      });
-    }, 'image/png');
-    return Promise.resolve();
-  }
-
   return setImage(src, name, null, faces).then(function () {
-    setStatus('✔ Imported "' + fileName + '" with ' + faces.length + ' editable region(s).', 'ok');
+    setStatus('✔ Imported "' + (fileName || 'SVG') + '" with ' + faces.length + ' editable region(s).', 'ok');
   });
 }
 
 function importSvg(file) {
-  return file.text().then(function (text) { return parseSvgText(text, file.name); });
-}
-
-function looksLikeSvgUrl(u) {
-  if (/^data:image\/svg\+xml/i.test(u)) return true;
-  if (!/^https?:|^file:/i.test(u)) return false;
-  var noHash = u.split('#')[0];
-  var noQuery = noHash.split('?')[0];
-  return /\.svg$/i.test(noQuery);
+  return file.text().then(function (text) {
+    return parseSvgText(text, file.name);
+  });
 }
 
 function importSvgFromUrl(url) {
@@ -1475,7 +1239,10 @@ function importSvgFromUrl(url) {
       return res.text();
     })
     .then(function (text) {
-      if (!/<svg[\s>]/i.test(text)) throw new Error('Response does not look like SVG');
+      // Confirm the payload really is SVG
+      if (!/<svg[\s>]/i.test(text.slice(0, 2000)) && !/<svg[\s>]/i.test(text)) {
+        throw new Error('Response does not look like SVG');
+      }
       var name;
       try { name = decodeURIComponent(url.split('/').pop().split('?')[0]) || 'remote.svg'; }
       catch (_) { name = 'remote.svg'; }
@@ -1483,11 +1250,18 @@ function importSvgFromUrl(url) {
     })
     .catch(function (err) {
       var msg = (err && err.message) ? err.message : String(err);
-      setStatus(
-        '✖ Could not fetch that SVG — ' + msg + '\n' +
-        'Tip: use “Import SVG” to pick the file, or drop the .svg onto the page.',
-        'err'
-      );
+      if (/file:\/\//i.test(url)) {
+        setStatus(
+          '✖ Cannot read ' + url + '\n' +
+          'Browsers block scripts from fetching other file:// URLs.\n' +
+          'Use “Import SVG” to pick the file, or drop the .svg file onto the page.',
+          'err');
+      } else {
+        setStatus(
+          '✖ Could not fetch that SVG — ' + msg + '\n' +
+          'Tip: use “Import SVG” to pick the file, or drop the .svg onto the page.',
+          'err');
+      }
     });
 }
 
@@ -1527,13 +1301,13 @@ function setImage(src, fileName, blob, faces) {
 
     resetZoom();
     setAddMode(false);
-    renderOverlay(); renderList(); renderEditor();
+    renderOverlay();
+    renderList();
+    renderEditor();
 
     els.btnDetect.disabled = false;
     els.btnAdd.disabled = false;
     els.btnSvg.disabled = false;
-    els.btnSvgRegions.disabled = false;
-    els.btnJson.disabled = false;
     els.btnClear.disabled = false;
 
     requestAnimationFrame(fitStage);
@@ -1565,6 +1339,15 @@ function handleFile(file) {
   setImage(url, file.name, file, null);
 }
 
+/* New: detect SVG URLs so we can re-import editable regions */
+function looksLikeSvgUrl(u) {
+  if (/^data:image\/svg\+xml/i.test(u)) return true;
+  if (!/^https?:|^file:/i.test(u)) return false;
+  var noHash = u.split('#')[0];
+  var noQuery = noHash.split('?')[0];
+  return /\.svg$/i.test(noQuery);
+}
+
 function handleUrl(url) {
   var u = String(url || '').trim();
   if (!u) return;
@@ -1572,7 +1355,10 @@ function handleUrl(url) {
     setStatus('✖ That does not look like an image URL.', 'err');
     return;
   }
-  if (looksLikeSvgUrl(u)) { importSvgFromUrl(u); return; }
+  if (looksLikeSvgUrl(u)) {
+    importSvgFromUrl(u);
+    return;
+  }
   var name = u.indexOf('data:') === 0 ? 'image' : (u.split('/').pop().split('?')[0] || 'image');
   setImage(u, name, null, null);
 }
@@ -1586,21 +1372,26 @@ function handleUrl(url) {
   });
 });
 document.addEventListener('dragleave', function (e) {
-  if (e.relatedTarget === null || e.relatedTarget === document.documentElement)
+  if (e.relatedTarget === null || e.relatedTarget === document.documentElement) {
     document.body.classList.remove('dragging');
+  }
 });
 document.addEventListener('drop', function (e) {
   e.preventDefault();
   document.body.classList.remove('dragging');
   var dt = e.dataTransfer;
   if (!dt) return;
+
+  /* 1. Real files (Explorer, desktop, or dragging a file out of a page) */
   if (dt.files && dt.files.length) {
     var files = Array.prototype.slice.call(dt.files);
+    var f = null;
     for (var i = 0; i < files.length; i++) {
       if ((files[i].type && files[i].type.indexOf('image/') === 0) || /\.svg$/i.test(files[i].name)) {
-        handleFile(files[i]); return;
+        f = files[i]; break;
       }
     }
+    if (f) { handleFile(f); return; }
   }
   if (dt.items && dt.items.length) {
     for (var j = 0; j < dt.items.length; j++) {
@@ -1611,6 +1402,9 @@ document.addEventListener('drop', function (e) {
       }
     }
   }
+
+  /* 2. Inline SVG markup (some browsers put the actual SVG source in
+        text/html when you drag an SVG image element). */
   var html = dt.getData('text/html');
   if (html) {
     var svgMatch = /(<svg[\s\S]*?<\/svg>)/i.exec(html);
@@ -1618,6 +1412,8 @@ document.addEventListener('drop', function (e) {
     var m = /<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i.exec(html);
     if (m) { handleUrl(m[1]); return; }
   }
+
+  /* 3. URI list / plain text (dragging a link or the browser's URL bar) */
   var uri = dt.getData('text/uri-list') || dt.getData('text/plain');
   if (uri) {
     var lines = uri.split(/\r?\n/);
@@ -1635,6 +1431,8 @@ document.addEventListener('paste', function (e) {
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
   var cd = e.clipboardData;
   if (!cd) return;
+
+  /* Image bytes */
   var items = Array.prototype.slice.call(cd.items || []);
   for (var i = 0; i < items.length; i++) {
     if (items[i].type && items[i].type.indexOf('image/') === 0) {
@@ -1642,11 +1440,20 @@ document.addEventListener('paste', function (e) {
       if (f) { e.preventDefault(); handleFile(f); return; }
     }
   }
+
+  /* Text — could be an image URL, an SVG URL, or an inline <svg> */
   var text = cd.getData('text');
   if (text) {
     var trimmed = text.trim();
-    if (/<svg[\s>]/i.test(trimmed)) { e.preventDefault(); parseSvgText(trimmed, 'pasted.svg'); return; }
-    if (/^(https?:\/\/|data:|blob:|file:)/i.test(trimmed)) { e.preventDefault(); handleUrl(trimmed); }
+    if (/<svg[\s>]/i.test(trimmed)) {
+      e.preventDefault();
+      parseSvgText(trimmed, 'pasted.svg');
+      return;
+    }
+    if (/^(https?:\/\/|data:|blob:|file:)/i.test(trimmed)) {
+      e.preventDefault();
+      handleUrl(trimmed);
+    }
   }
 });
 
@@ -1663,37 +1470,9 @@ function fitStage() {
   els.stagebox.style.height = Math.round(h) + 'px';
 }
 window.addEventListener('resize', fitStage);
-if ('ResizeObserver' in window) new ResizeObserver(fitStage).observe(els.viewerBody);
-
-/* ---------------------------------------------------- label style setters */
-function setLabelColor(hex) {
-  labelStyle.color = hex;
-  els.lblColor.value = hex;
-  els.lblColorSwatch.style.background = hex;
-  els.lblColorVal.textContent = hex;
-  renderOverlay();
+if ('ResizeObserver' in window) {
+  new ResizeObserver(fitStage).observe(els.viewerBody);
 }
-function setLabelOpacity(v) {
-  v = Number(v);
-  if (!isFinite(v)) v = 1;
-  v = Math.max(0, Math.min(1, v));
-  labelStyle.opacity = v;
-  els.lblOpacity.value = String(v);
-  els.lblOpacityVal.textContent = v.toFixed(2);
-  renderOverlay();
-}
-function setLabelSize(v) {
-  v = Number(v);
-  if (!isFinite(v)) v = 1;
-  v = Math.max(0.5, Math.min(3, v));
-  labelStyle.size = v;
-  els.lblSize.value = String(v);
-  els.lblSizeVal.textContent = v.toFixed(1) + '×';
-  renderOverlay();
-}
-els.lblColor.addEventListener('input', function () { setLabelColor(els.lblColor.value); });
-els.lblOpacity.addEventListener('input', function () { setLabelOpacity(els.lblOpacity.value); });
-els.lblSize.addEventListener('input', function () { setLabelSize(els.lblSize.value); });
 
 /* ---------------------------------------------------------------- events */
 var orientRadios = document.querySelectorAll('input[name="orient"]');
@@ -1708,8 +1487,6 @@ for (var oi = 0; oi < orientRadios.length; oi++) {
 els.btnDetect.addEventListener('click', detectFaces);
 els.btnAdd.addEventListener('click', function () { setAddMode(!addMode); });
 els.btnSvg.addEventListener('click', downloadSvg);
-els.btnSvgRegions.addEventListener('click', downloadSvgRegions);
-els.btnJson.addEventListener('click', downloadJson);
 
 els.showRegions.addEventListener('change', function () {
   els.overlay.classList.toggle('hidden-regions', !els.showRegions.checked);
@@ -1727,8 +1504,6 @@ els.btnClear.addEventListener('click', function () {
   els.btnDetect.disabled = true;
   els.btnAdd.disabled = true;
   els.btnSvg.disabled = true;
-  els.btnSvgRegions.disabled = true;
-  els.btnJson.disabled = true;
   els.btnClear.disabled = true;
   setAddMode(false);
   resetZoom();
@@ -1771,11 +1546,6 @@ els.svgInput.addEventListener('change', function (e) {
   if (f) importSvg(f);
   e.target.value = '';
 });
-els.svgExtractInput.addEventListener('change', function (e) {
-  var f = e.target.files && e.target.files[0];
-  if (f) importSvg(f);
-  e.target.value = '';
-});
 
 els.urlGo.addEventListener('click', function () { handleUrl(els.urlInput.value); });
 els.urlInput.addEventListener('keydown', function (e) {
@@ -1796,9 +1566,6 @@ window.addEventListener('drop',     function (e) { e.preventDefault(); });
 bindOverlay();
 renderList();
 renderEditor();
-setLabelColor('#00e5a0');
-setLabelOpacity(1);
-setLabelSize(1);
 
 })();
 </script>
