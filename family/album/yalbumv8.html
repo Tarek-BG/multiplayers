@@ -1,0 +1,2157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Face Recognition Studio</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111721; --panel-2:#161d29; --panel-3:#1d2637;
+    --line:#232c3a; --txt:#e7eef7; --muted:#8b99ad;
+    --accent:#00e5a0; --accent-2:#ffb400; --danger:#ff5c6c;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  body.no-select{user-select:none}
+
+  .top{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:11px 18px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#121924,#0d131c);
+  }
+  .brand{font-weight:700; letter-spacing:.3px; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 12px var(--accent)}
+  .tools{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+
+  .seg{display:flex; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:3px; gap:3px}
+  .seg label{cursor:pointer}
+  .seg input{position:absolute; opacity:0; pointer-events:none}
+  .seg span{display:block; padding:6px 14px; border-radius:7px; font-size:13px;
+    color:var(--muted); transition:.15s; user-select:none}
+  .seg input:checked + span{background:var(--accent); color:#04120d; font-weight:700}
+
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--panel-2);
+    color:var(--txt); padding:9px 16px; border-radius:10px; font:inherit;
+    font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s;
+    white-space:nowrap;
+  }
+  .btn:hover:not(:disabled){border-color:#3a475c; background:var(--panel-3)}
+  .btn:disabled{opacity:.35; cursor:not-allowed}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#04120d}
+  .btn.primary:hover:not(:disabled){background:#2bf3b4}
+  .btn.active{outline:2px solid var(--accent-2); outline-offset:1px}
+  .btn.danger{border-color:#5a2730; color:#ffb3bb; background:#2a1418}
+  .btn.file{display:inline-flex; align-items:center; position:relative; overflow:hidden}
+  .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
+  .btn.block{display:block; width:100%; text-align:center; margin-bottom:8px}
+  .btn.block:last-child{margin-bottom:0}
+
+  main{flex:1; min-height:0; display:flex}
+  .canvas-area{flex:1; min-width:0; display:flex; flex-direction:column; position:relative}
+
+  .drop{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:26px; margin:18px; border:2px dashed #2b3648; border-radius:18px;
+    background:radial-gradient(120% 120% at 50% 0%,#121a26,#0b0f16);
+    transition:.2s; overflow:auto;
+  }
+  body.dragging .drop{border-color:var(--accent);
+    background:radial-gradient(120% 120% at 50% 0%,#13251f,#0b0f16)}
+  .drop-inner{max-width:640px; text-align:center}
+  .drop .ico{font-size:46px; margin-bottom:4px}
+  .drop h2{margin:.2em 0; font-size:21px}
+  .drop p{color:var(--muted); font-size:13.5px; margin:.4em 0 1.2em}
+  .row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .row input[type=url]{
+    flex:1; min-width:220px; background:#0c1119; border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; color:var(--txt); font:inherit; font-size:13.5px;
+  }
+  .row input[type=url]:focus{outline:none; border-color:var(--accent)}
+  .samples{margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  .samples .btn{padding:6px 12px; font-size:12.5px}
+
+  .viewer{flex:1; min-height:0; display:flex; flex-direction:column}
+  .viewer-body{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:16px}
+
+  .stagebox{
+    position:relative; background:#05070a; border-radius:14px; overflow:hidden;
+    border:1px solid var(--line); box-shadow:0 24px 70px rgba(0,0,0,.65);
+    width:320px; height:420px; touch-action:none;
+  }
+
+  .zoom-layer{
+    position:absolute; inset:0;
+    transform-origin:50% 50%;
+    will-change:transform;
+  }
+  .zoom-layer img.photo{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:contain; display:block;
+    user-select:none; -webkit-user-drag:none;
+    pointer-events:none;
+  }
+  .zoom-layer svg.overlay{
+    position:absolute; inset:0; width:100%; height:100%;
+    touch-action:none; cursor:grab; user-select:none;
+    background:transparent;
+  }
+  .zoom-layer svg.overlay.grabbing{cursor:grabbing;}
+  .zoom-layer svg.overlay.add-mode{cursor:crosshair;}
+
+  .zoom-layer svg.overlay .bg-hit{
+    fill:#000; fill-opacity:0.001; pointer-events:all;
+  }
+  .zoom-layer svg.overlay .face{
+    cursor:pointer;
+    fill:rgba(0,229,160,0.12); stroke:#00e5a0; stroke-width:2.5;
+    vector-effect:non-scaling-stroke;
+    transition:fill .12s, stroke .12s;
+    pointer-events:all;
+  }
+  .zoom-layer svg.overlay .face:hover{fill:rgba(0,229,160,0.30)}
+  .zoom-layer svg.overlay .face.sel{
+    fill:rgba(255,180,0,0.30); stroke:#ffb400; cursor:move;
+  }
+  .zoom-layer svg.overlay .face.draft{
+    fill:rgba(0,229,160,0.20); stroke-dasharray:7 5;
+  }
+  .zoom-layer svg.overlay .lbl{
+    pointer-events:none;
+    font-family:system-ui,sans-serif; font-weight:700;
+    paint-order:stroke fill;
+    stroke:rgba(0,0,0,0.8); stroke-width:.3em;
+  }
+  .zoom-layer svg.overlay .handle{
+    fill:#ffb400; stroke:#000; stroke-width:1;
+    vector-effect:non-scaling-stroke;
+    pointer-events:all;
+  }
+  .zoom-layer svg.overlay .handle[data-handle="nw"],
+  .zoom-layer svg.overlay .handle[data-handle="se"]{cursor:nwse-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="ne"],
+  .zoom-layer svg.overlay .handle[data-handle="sw"]{cursor:nesw-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="n"],
+  .zoom-layer svg.overlay .handle[data-handle="s"]{cursor:ns-resize;}
+  .zoom-layer svg.overlay .handle[data-handle="e"],
+  .zoom-layer svg.overlay .handle[data-handle="w"]{cursor:ew-resize;}
+
+  .zoom-layer svg.overlay.hidden-regions .face,
+  .zoom-layer svg.overlay.hidden-regions .handle,
+  .zoom-layer svg.overlay.hidden-regions .lbl{display:none;}
+
+  .zoom-controls{
+    position:absolute; right:10px; bottom:10px; z-index:5;
+    display:flex; align-items:center; gap:4px;
+    background:rgba(10,13,18,.82);
+    border:1px solid var(--line); border-radius:10px; padding:3px;
+    font-size:12px;
+  }
+  .zoom-controls button{
+    appearance:none; border:0; background:transparent; color:var(--txt);
+    width:26px; height:26px; border-radius:6px; cursor:pointer;
+    font:inherit; font-size:15px; line-height:1; display:grid; place-items:center;
+  }
+  .zoom-controls button:hover{background:var(--panel-3)}
+  .zoom-controls .zoom-label{
+    min-width:42px; text-align:center; color:var(--muted);
+    font-variant-numeric:tabular-nums; user-select:none;
+  }
+
+  .hint{text-align:center; color:var(--muted); font-size:12.5px; padding:0 0 12px}
+
+  /* ============================================================
+     RIGHT SIDEBAR — collapsible
+     ============================================================ */
+  .side{
+    position: relative;
+    width: 340px; flex: none;
+    border-left: 1px solid var(--line); background: var(--panel);
+    transition: width .18s ease;
+    overflow: visible;         /* so the tab can stick out */
+  }
+  .side-inner{
+    display: flex; flex-direction: column;
+    height: 100%; overflow-y: auto;
+  }
+  .side.collapsed{ width: 0; border-left-color: transparent; }
+  .side.collapsed .side-inner{ display: none; }
+
+  .side-tab{
+    position: absolute;
+    top: 12px; left: -14px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--txt);
+    display: grid; place-items: center;
+    cursor: pointer; padding: 0;
+    font: inherit; font-size: 16px; line-height: 1;
+    z-index: 50;
+    transition: left .18s ease, background .15s;
+    box-shadow: 0 4px 12px rgba(0,0,0,.45);
+  }
+  .side-tab:hover{ background: var(--panel-3); }
+  .side.collapsed .side-tab{ left: -28px; }
+
+  .side-block{padding:14px 16px; border-bottom:1px solid var(--line)}
+  .side-block h3{
+    margin:0 0 10px; font-size:11.5px; text-transform:uppercase; letter-spacing:.9px;
+    color:var(--muted); display:flex; align-items:center; gap:8px;
+  }
+  .pill{background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+    padding:1px 9px; font-size:11px; color:var(--txt)}
+  .status{padding:14px 16px; font-size:12.5px; color:var(--muted);
+    border-bottom:1px solid var(--line); min-height:54px;
+    white-space:pre-line; font-family:ui-monospace,Menlo,Consolas,monospace; line-height:1.5}
+  .status.busy{color:var(--accent-2)}
+  .status.err{color:var(--danger)}
+  .status.ok{color:var(--accent)}
+  .status.warn{color:var(--accent-2)}
+
+  .check-row{
+    display:flex; gap:8px; align-items:center; cursor:pointer;
+    font-size:13px; color:var(--txt); user-select:none;
+  }
+  .check-row input{ accent-color: var(--accent); width:15px; height:15px; }
+
+  .face-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+    gap:6px; max-height:280px; overflow:auto}
+  .face-item{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    background:var(--panel-2); border:1px solid transparent; cursor:pointer; font-size:13px;
+  }
+  .face-item:hover{border-color:#33415a}
+  .face-item.sel{border-color:var(--accent-2); background:#241d0e}
+  .face-item .num{
+    width:22px; height:22px; flex:none; display:grid; place-items:center;
+    border-radius:6px; background:#0d131d; font-size:11.5px; font-weight:700; color:var(--accent);
+  }
+  .face-item .meta{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .empty{color:var(--muted); font-size:12.5px; font-style:italic}
+
+  .style-grid{display:flex; flex-direction:column; gap:10px}
+  .style-row{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted)}
+  .style-row > span:first-child{flex:none; width:58px}
+  .style-row input[type=color]{
+    width:44px; height:28px; padding:0; border:1px solid var(--line);
+    border-radius:6px; background:#0c1119; cursor:pointer;
+  }
+  .style-row input[type=range]{
+    flex:1; accent-color: var(--accent); height:4px;
+  }
+  .style-row .val{
+    flex:none; min-width:44px; text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .style-row .swatch{
+    flex:none; display:inline-block; width:14px; height:14px; border-radius:3px;
+    border:1px solid var(--line);
+  }
+
+  /* ============================================================
+     FLOATING EDIT PANEL — collapsible
+     ============================================================ */
+  .edit-panel{
+    position:fixed; z-index:200;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 24px 70px rgba(0,0,0,.72);
+    display:flex; flex-direction:column;
+    min-width:260px; min-height:200px;
+    overflow:hidden;
+  }
+  .edit-panel-header{
+    display:flex; align-items:center; gap:8px;
+    padding:9px 8px 9px 12px;
+    background:linear-gradient(180deg,#1a2434,#141c29);
+    border-bottom:1px solid var(--line);
+    cursor:move; user-select:none;
+    font-size:13px; font-weight:600;
+    touch-action:none;
+  }
+  .edit-panel-header .title{
+    display:flex; align-items:center; gap:8px;
+    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .edit-panel-header .grip{
+    color:var(--muted); letter-spacing:2px; font-size:11px;
+  }
+  .edit-panel-btn{
+    appearance:none; border:0; background:transparent;
+    color:var(--muted); cursor:pointer; font:inherit;
+    width:26px; height:26px; display:grid; place-items:center;
+    border-radius:6px; padding:0;
+    line-height:1; font-size:14px;
+  }
+  .edit-panel-btn:hover{background:var(--panel-3); color:var(--txt)}
+  .edit-panel-close{font-size:18px;}
+
+  .edit-panel-body{
+    flex:1; overflow-y:auto;
+    padding:14px 16px;
+    font-size:13px;
+  }
+  .edit-panel-body .editor label{
+    display:block; font-size:12px; color:var(--muted); margin-bottom:10px;
+  }
+  .edit-panel-body .editor input,
+  .edit-panel-body .editor select{
+    width:100%; margin-top:4px; background:#0c1119;
+    border:1px solid var(--line); border-radius:8px;
+    padding:8px 11px; color:var(--txt); font:inherit; font-size:13px;
+  }
+  .edit-panel-body .editor input:focus,
+  .edit-panel-body .editor select:focus{outline:none; border-color:var(--accent)}
+
+  /* Collapsed state of the popup: only the header bar remains */
+  .edit-panel.collapsed{
+    height: auto !important;
+    min-height: 0;
+  }
+  .edit-panel.collapsed .edit-panel-body,
+  .edit-panel.collapsed .edit-panel-resize{ display: none; }
+
+  .edit-panel-resize{
+    position:absolute; right:0; bottom:0;
+    width:18px; height:18px;
+    cursor:nwse-resize;
+    touch-action:none;
+    background:
+      linear-gradient(135deg,
+        transparent 0 45%,
+        rgba(139,153,173,.55) 45% 55%,
+        transparent 55% 65%,
+        rgba(139,153,173,.55) 65% 75%,
+        transparent 75%);
+  }
+  .edit-panel-resize:hover{
+    background:
+      linear-gradient(135deg,
+        transparent 0 45%,
+        var(--accent) 45% 55%,
+        transparent 55% 65%,
+        var(--accent) 65% 75%,
+        transparent 75%);
+  }
+
+  @media (max-width:860px){
+    main{flex-direction:column}
+    .side{width:auto; border-left:0; border-top:1px solid var(--line); max-height:46%}
+    .side.collapsed{ width:auto; max-height: 34px; }
+    .side-tab{ top:-14px; left:auto; right:12px; }
+    .side.collapsed .side-tab{ left:auto; right:12px; top:-14px; }
+    .edit-panel{max-width:calc(100vw - 16px)}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="dot"></span> Face Recognition Studio</div>
+  <div class="tools">
+    <div class="seg" role="radiogroup" aria-label="Orientation">
+      <label><input type="radio" name="orient" value="portrait" checked><span>Portrait</span></label>
+      <label><input type="radio" name="orient" value="landscape"><span>Landscape</span></label>
+    </div>
+    <button id="btnDetect" class="btn primary" disabled>Detect faces</button>
+    <button id="btnAdd" class="btn" disabled>Add region</button>
+    <button id="btnSvg" class="btn" disabled>Download SVG</button>
+    <label class="btn file">Import SVG
+      <input type="file" id="svgInput" accept=".svg,image/svg+xml">
+    </label>
+    <button id="btnEditPanel" class="btn active" title="Show / hide the region editor panel">Hide edit panel</button>
+    <button id="btnClear" class="btn" disabled>Clear</button>
+  </div>
+</header>
+
+<main>
+  <section class="canvas-area">
+
+    <div id="drop" class="drop">
+      <div class="drop-inner">
+        <div class="ico">🖼️</div>
+        <h2>Drop a photo or an exported .svg here</h2>
+        <p>
+          Drag a file from Explorer&nbsp;/&nbsp;Finder, drag an image straight out of another web page,
+          paste a copied image, an image link or an <b>.svg</b> URL (<kbd>Ctrl</kbd>+<kbd>V</kbd>).
+        </p>
+        <div class="row">
+          <label class="btn file">Choose image
+            <input type="file" id="fileInput" accept="image/*">
+          </label>
+          <input id="urlInput" type="url" placeholder="https://example.com/photo.jpg or .svg" spellcheck="false">
+          <button id="urlGo" class="btn">Load URL</button>
+        </div>
+        <div class="samples">
+          <button class="btn" data-sample="https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg">Sample: Lena (CORS ✓)</button>
+          <button class="btn" data-sample="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80">Sample: Unsplash portrait</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewer" class="viewer" hidden>
+      <div class="viewer-body" id="viewerBody">
+        <div id="stagebox" class="stagebox">
+          <div id="zoomLayer" class="zoom-layer">
+            <img id="photo" class="photo" alt="Loaded image">
+            <svg id="overlay" class="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="zoom-controls" id="zoomControls">
+            <button type="button" data-zoom="out" title="Zoom out">−</button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button type="button" data-zoom="in" title="Zoom in">+</button>
+            <button type="button" data-zoom="reset" title="Reset view">⟲</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint">
+        Wheel = zoom &nbsp;•&nbsp; Drag empty area = pan &nbsp;•&nbsp; Click a region to select &nbsp;•&nbsp;
+        Drag body to move, handles to resize
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="side" id="side">
+    <button class="side-tab" id="sideToggle" title="Collapse sidebar" aria-label="Collapse sidebar">
+      <span id="sideToggleIcon">›</span>
+    </button>
+    <div class="side-inner">
+
+      <div id="status" class="status">No image loaded.</div>
+
+      <div class="side-block" style="padding:10px 16px">
+        <label class="check-row">
+          <input type="checkbox" id="showRegions" checked>
+          <span>Show face regions</span>
+        </label>
+      </div>
+
+      <div class="side-block">
+        <h3>Detected faces <span id="faceCount" class="pill">0</span></h3>
+        <ul id="faceList" class="face-list"></ul>
+        <div id="listEmpty" class="empty">Nothing detected yet.</div>
+      </div>
+
+      <div class="side-block">
+        <h3>Label style</h3>
+        <div class="style-grid">
+          <div class="style-row">
+            <span>Color</span>
+            <input type="color" id="lblColor" value="#00e5a0">
+            <span class="swatch" id="lblColorSwatch" style="background:#00e5a0"></span>
+            <span class="val" id="lblColorVal">#00e5a0</span>
+          </div>
+          <div class="style-row">
+            <span>Opacity</span>
+            <input type="range" id="lblOpacity" min="0" max="1" step="0.05" value="1">
+            <span class="val" id="lblOpacityVal">1.00</span>
+          </div>
+          <div class="style-row">
+            <span>Size</span>
+            <input type="range" id="lblSize" min="0.5" max="3" step="0.1" value="1">
+            <span class="val" id="lblSizeVal">1.0×</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-block">
+        <h3>Export</h3>
+        <button id="btnSvgRegions" class="btn block" disabled>Download regions-only SVG</button>
+        <button id="btnJson" class="btn block" disabled>Download data JSON</button>
+        <label class="btn file block" style="display:flex;justify-content:center">
+          Import SVG to extract regions
+          <input type="file" id="svgExtractInput" accept=".svg,image/svg+xml">
+        </label>
+      </div>
+
+    </div>
+  </aside>
+</main>
+
+<div id="editPanel" class="edit-panel" hidden>
+  <div class="edit-panel-header" id="editPanelHeader">
+    <span class="grip">⋮⋮</span>
+    <span class="title">Region editor <span id="selNo" class="pill">–</span></span>
+    <button class="edit-panel-btn" id="editPanelCollapse" title="Collapse panel" aria-label="Collapse panel">▾</button>
+    <button class="edit-panel-btn edit-panel-close" id="editPanelClose" title="Hide panel" aria-label="Hide panel">×</button>
+  </div>
+  <div class="edit-panel-body">
+    <div id="editor" class="editor" hidden>
+      <label>Index
+        <input id="inIndex" type="text" readonly>
+      </label>
+      <label>Face name
+        <input id="inName" type="text" placeholder="e.g. Ada" spellcheck="false">
+      </label>
+      <label>Surname
+        <input id="inSurname" type="text" placeholder="e.g. Lovelace" spellcheck="false">
+      </label>
+      <label>Link (URL opened when this region is clicked)
+        <input id="inLink" type="url" placeholder="https://example.com/profile" spellcheck="false">
+      </label>
+      <label>Shape
+        <select id="inShape">
+          <option value="rect">Rectangle</option>
+          <option value="circle">Circle</option>
+          <option value="ellipse">Ellipse</option>
+        </select>
+      </label>
+      <button id="btnDel" class="btn danger">Delete this region</button>
+    </div>
+    <div id="editEmpty" class="empty">Select a region to edit its fields.</div>
+  </div>
+  <div class="edit-panel-resize" id="editPanelResize" title="Resize"></div>
+</div>
+
+<script>
+window.addEventListener('error', function (ev) {
+  var box = document.getElementById('status');
+  if (box) {
+    box.textContent = 'JS error: ' + (ev.message || 'unknown');
+    box.className = 'status err';
+  }
+});
+
+(function () {
+'use strict';
+
+var NS = 'http://www.w3.org/2000/svg';
+function $(sel) { return document.querySelector(sel); }
+
+var els = {
+  drop:        $('#drop'),
+  viewer:      $('#viewer'),
+  viewerBody:  $('#viewerBody'),
+  stagebox:    $('#stagebox'),
+  zoomLayer:   $('#zoomLayer'),
+  overlay:     $('#overlay'),
+  status:      $('#status'),
+  faceList:    $('#faceList'),
+  listEmpty:   $('#listEmpty'),
+  faceCount:   $('#faceCount'),
+  editor:      $('#editor'),
+  editEmpty:   $('#editEmpty'),
+  selNo:       $('#selNo'),
+  inIndex:     $('#inIndex'),
+  inName:      $('#inName'),
+  inSurname:   $('#inSurname'),
+  inLink:      $('#inLink'),
+  inShape:     $('#inShape'),
+  btnDetect:   $('#btnDetect'),
+  btnAdd:      $('#btnAdd'),
+  btnSvg:      $('#btnSvg'),
+  btnSvgRegions: $('#btnSvgRegions'),
+  btnJson:     $('#btnJson'),
+  btnClear:    $('#btnClear'),
+  btnDel:      $('#btnDel'),
+  btnEditPanel:$('#btnEditPanel'),
+  fileInput:   $('#fileInput'),
+  svgInput:    $('#svgInput'),
+  svgExtractInput: $('#svgExtractInput'),
+  urlInput:    $('#urlInput'),
+  urlGo:       $('#urlGo'),
+  zoomLabel:   $('#zoomLabel'),
+  zoomControls:$('#zoomControls'),
+  showRegions: $('#showRegions'),
+  lblColor:    $('#lblColor'),
+  lblColorSwatch: $('#lblColorSwatch'),
+  lblColorVal: $('#lblColorVal'),
+  lblOpacity:  $('#lblOpacity'),
+  lblOpacityVal: $('#lblOpacityVal'),
+  lblSize:     $('#lblSize'),
+  lblSizeVal:  $('#lblSizeVal'),
+  side:        $('#side'),
+  sideToggle:  $('#sideToggle'),
+  sideToggleIcon: $('#sideToggleIcon'),
+  editPanel:   $('#editPanel'),
+  editPanelHeader: $('#editPanelHeader'),
+  editPanelClose:  $('#editPanelClose'),
+  editPanelCollapse: $('#editPanelCollapse'),
+  editPanelResize: $('#editPanelResize')
+};
+
+var state = {
+  src: null,
+  img: null,
+  natW: 0, natH: 0,
+  faces: [],
+  selected: -1,
+  orientation: 'portrait',
+  dataUri: null,
+  blob: null,
+  corsOk: true,
+  fileName: 'faces'
+};
+
+var labelStyle = { color: '#00e5a0', opacity: 1, size: 1 };
+
+var zoom = { scale: 1, x: 0, y: 0, min: 0.25, max: 12 };
+var addMode = false;
+var editState = null;
+var panState = null;
+
+/* ------------------------------------------------------------------ utils */
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;');
+}
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function setStatus(msg, kind) {
+  els.status.textContent = msg;
+  els.status.className = 'status ' + (kind || '');
+}
+function blobToDataURL(blob) {
+  return new Promise(function (resolve, reject) {
+    var fr = new FileReader();
+    fr.onload = function () { resolve(fr.result); };
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+function b64encode(str) {
+  var bytes = new TextEncoder().encode(str);
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function b64decode(b64) {
+  var bin = atob(b64);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function loadImage(src, useCors) {
+  return new Promise(function (resolve, reject) {
+    function attempt(cors) {
+      var img = new Image();
+      if (cors) img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve({ img: img, corsOk: cors }); };
+      img.onerror = function () {
+        if (cors) attempt(false);
+        else reject(new Error('Image failed to load'));
+      };
+      img.src = src;
+    }
+    attempt(useCors);
+  });
+}
+function round2(n) { return Number((Number(n) || 0).toFixed(2)); }
+
+function download(filename, blob) {
+  var url;
+  try { url = URL.createObjectURL(blob); }
+  catch (e) {
+    console.error('createObjectURL failed', e);
+    setStatus('✖ Could not create download URL: ' + e.message, 'err');
+    return false;
+  }
+
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  a.target = '_self';
+  a.style.position = 'absolute';
+  a.style.left = '-9999px';
+  a.style.top = '-9999px';
+  document.body.appendChild(a);
+
+  var clicked = false;
+  try { a.click(); clicked = true; }
+  catch (e1) { console.warn('a.click() failed', e1); }
+
+  if (!clicked) {
+    try {
+      var ev = new MouseEvent('click', { bubbles: false, cancelable: true, view: window });
+      a.dispatchEvent(ev);
+      clicked = true;
+    } catch (e2) { console.warn('dispatchEvent failed', e2); }
+  }
+
+  if (!clicked) {
+    try { window.open(url, '_blank'); } catch (_) {}
+  }
+
+  setTimeout(function () {
+    try { URL.revokeObjectURL(url); } catch (_) {}
+    try { if (a.parentNode) a.parentNode.removeChild(a); } catch (_) {}
+  }, 6000);
+
+  return clicked;
+}
+
+/* ============================================================
+   COLLAPSIBLE SIDEBAR
+   ============================================================ */
+function saveSideCollapsed(v) {
+  try { localStorage.setItem('frs.sideCollapsed', v ? '1' : '0'); } catch (_) {}
+}
+function loadSideCollapsed() {
+  try { return localStorage.getItem('frs.sideCollapsed') === '1'; }
+  catch (_) { return false; }
+}
+function setSideCollapsed(v) {
+  els.side.classList.toggle('collapsed', !!v);
+  els.sideToggleIcon.textContent = v ? '‹' : '›';
+  els.sideToggle.title = v ? 'Expand sidebar' : 'Collapse sidebar';
+  els.sideToggle.setAttribute('aria-label', els.sideToggle.title);
+  saveSideCollapsed(v);
+}
+function bindSidebar() {
+  els.sideToggle.addEventListener('click', function () {
+    setSideCollapsed(!els.side.classList.contains('collapsed'));
+  });
+}
+
+/* ============================================================
+   COLLAPSIBLE EDIT PANEL (drag / resize)
+   ============================================================ */
+var panelDrag = null;
+var panelResize = null;
+
+function savePanelState() {
+  if (!els.editPanel) return;
+  var r = els.editPanel.getBoundingClientRect();
+  var data = {
+    x: Math.round(r.left),
+    y: Math.round(r.top),
+    w: Math.round(r.width),
+    h: Math.round(r.height),
+    visible: !els.editPanel.hidden,
+    collapsed: els.editPanel.classList.contains('collapsed')
+  };
+  try { localStorage.setItem('frs.editPanel', JSON.stringify(data)); } catch (_) {}
+}
+function loadPanelState() {
+  try {
+    var raw = localStorage.getItem('frs.editPanel');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_) { return null; }
+}
+function applyPanelRect(x, y, w, h) {
+  var p = els.editPanel;
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+  p.style.width = w + 'px';
+  p.style.height = h + 'px';
+  p.style.right = 'auto';
+  p.style.bottom = 'auto';
+}
+function clampPanel() {
+  var p = els.editPanel;
+  var r = p.getBoundingClientRect();
+  var W = window.innerWidth;
+  var H = window.innerHeight;
+  var x = Math.max(8, Math.min(W - r.width - 8, r.left));
+  var y = Math.max(8, Math.min(H - 60, r.top));
+  applyPanelRect(x, y, r.width, r.height);
+}
+function setPanelCollapsed(v) {
+  els.editPanel.classList.toggle('collapsed', !!v);
+  els.editPanelCollapse.textContent = v ? '▸' : '▾';
+  els.editPanelCollapse.title = v ? 'Expand panel' : 'Collapse panel';
+  els.editPanelCollapse.setAttribute('aria-label', els.editPanelCollapse.title);
+  savePanelState();
+}
+function setPanelVisible(v) {
+  if (!els.editPanel) return;
+  els.editPanel.hidden = !v;
+  els.btnEditPanel.classList.toggle('active', v);
+  els.btnEditPanel.textContent = v ? 'Hide edit panel' : 'Show edit panel';
+  if (v) {
+    var saved = loadPanelState();
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+    if (saved && saved.w && saved.h && saved.x != null && saved.y != null) {
+      applyPanelRect(saved.x, saved.y, saved.w, saved.h);
+      setPanelCollapsed(!!saved.collapsed);
+    } else {
+      var defW = 320;
+      var defH = Math.min(420, H - 160);
+      var defX = Math.max(16, W - defW - 380);
+      var defY = 100;
+      applyPanelRect(defX, defY, defW, defH);
+    }
+    clampPanel();
+  }
+  savePanelState();
+}
+function bindPanel() {
+  var header = els.editPanelHeader;
+  var resize = els.editPanelResize;
+  if (!header || !resize) return;
+
+  header.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.edit-panel-btn')) return;
+    if (e.button !== 0) return;
+    var r = els.editPanel.getBoundingClientRect();
+    panelDrag = {
+      pointerId: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      startLeft: r.left, startTop: r.top,
+      w: r.width, h: r.height
+    };
+    document.body.classList.add('no-select');
+    try { header.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  header.addEventListener('pointermove', function (e) {
+    if (!panelDrag || e.pointerId !== panelDrag.pointerId) return;
+    var dx = e.clientX - panelDrag.startX;
+    var dy = e.clientY - panelDrag.startY;
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+    var x = panelDrag.startLeft + dx;
+    var y = panelDrag.startTop + dy;
+    x = Math.max(-(panelDrag.w - 80), Math.min(W - 80, x));
+    y = Math.max(0, Math.min(H - 40, y));
+    applyPanelRect(x, y, panelDrag.w, panelDrag.h);
+  });
+  function endDrag(e) {
+    if (!panelDrag) return;
+    panelDrag = null;
+    document.body.classList.remove('no-select');
+    try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+    savePanelState();
+  }
+  header.addEventListener('pointerup', endDrag);
+  header.addEventListener('pointercancel', endDrag);
+
+  resize.addEventListener('pointerdown', function (e) {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    var r = els.editPanel.getBoundingClientRect();
+    panelResize = {
+      pointerId: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      startLeft: r.left, startTop: r.top,
+      startW: r.width, startH: r.height
+    };
+    document.body.classList.add('no-select');
+    try { resize.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  resize.addEventListener('pointermove', function (e) {
+    if (!panelResize || e.pointerId !== panelResize.pointerId) return;
+    var dx = e.clientX - panelResize.startX;
+    var dy = e.clientY - panelResize.startY;
+    var w = Math.max(240, panelResize.startW + dx);
+    var h = Math.max(180, panelResize.startH + dy);
+    applyPanelRect(panelResize.startLeft, panelResize.startTop, w, h);
+  });
+  function endResize(e) {
+    if (!panelResize) return;
+    panelResize = null;
+    document.body.classList.remove('no-select');
+    try { resize.releasePointerCapture(e.pointerId); } catch (_) {}
+    savePanelState();
+  }
+  resize.addEventListener('pointerup', endResize);
+  resize.addEventListener('pointercancel', endResize);
+
+  els.editPanelClose.addEventListener('click', function () {
+    setPanelVisible(false);
+  });
+  els.editPanelCollapse.addEventListener('click', function () {
+    setPanelCollapsed(!els.editPanel.classList.contains('collapsed'));
+  });
+  els.btnEditPanel.addEventListener('click', function () {
+    setPanelVisible(els.editPanel.hidden);
+  });
+  window.addEventListener('resize', function () {
+    if (!els.editPanel.hidden) clampPanel();
+  });
+}
+
+/* ---------------------------------------------------------------- zoom/pan */
+function applyZoom() {
+  els.zoomLayer.style.transform =
+    'translate(' + zoom.x + 'px, ' + zoom.y + 'px) scale(' + zoom.scale + ')';
+  els.zoomLabel.textContent = Math.round(zoom.scale * 100) + '%';
+}
+function zoomBy(factor, anchorX, anchorY) {
+  var oldS = zoom.scale;
+  var newS = Math.min(zoom.max, Math.max(zoom.min, oldS * factor));
+  if (newS === oldS) return;
+  var rect = els.stagebox.getBoundingClientRect();
+  var cx = (anchorX != null) ? anchorX : rect.width / 2;
+  var cy = (anchorY != null) ? anchorY : rect.height / 2;
+  var Dx = cx - rect.width / 2;
+  var Dy = cy - rect.height / 2;
+  zoom.x = Dx - (Dx - zoom.x) * newS / oldS;
+  zoom.y = Dy - (Dy - zoom.y) * newS / oldS;
+  zoom.scale = newS;
+  applyZoom();
+}
+function resetZoom() { zoom.scale = 1; zoom.x = 0; zoom.y = 0; applyZoom(); }
+
+els.zoomControls.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+els.zoomControls.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-zoom]');
+  if (!t) return;
+  var act = t.getAttribute('data-zoom');
+  if (act === 'in')    zoomBy(1.25);
+  if (act === 'out')   zoomBy(1 / 1.25);
+  if (act === 'reset') resetZoom();
+});
+
+els.stagebox.addEventListener('wheel', function (e) {
+  if (els.viewer.hidden) return;
+  e.preventDefault();
+  var rect = els.stagebox.getBoundingClientRect();
+  zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+/* --------------------------------------------------------------- rendering */
+function makeShapeEl(f) {
+  var shape = f.shape || 'rect';
+  var el;
+  if (shape === 'circle') {
+    el = document.createElementNS(NS, 'circle');
+    el.setAttribute('cx', f.x + f.w / 2);
+    el.setAttribute('cy', f.y + f.h / 2);
+    el.setAttribute('r', Math.max(1, Math.min(f.w, f.h) / 2));
+  } else if (shape === 'ellipse') {
+    el = document.createElementNS(NS, 'ellipse');
+    el.setAttribute('cx', f.x + f.w / 2);
+    el.setAttribute('cy', f.y + f.h / 2);
+    el.setAttribute('rx', Math.max(1, f.w / 2));
+    el.setAttribute('ry', Math.max(1, f.h / 2));
+  } else {
+    el = document.createElementNS(NS, 'rect');
+    el.setAttribute('x', f.x);
+    el.setAttribute('y', f.y);
+    el.setAttribute('width', f.w);
+    el.setAttribute('height', f.h);
+    el.setAttribute('rx', Math.min(f.w, f.h) * 0.06);
+  }
+  return el;
+}
+
+function renderOverlay() {
+  var svg = els.overlay;
+  if (!svg) return;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (!state.natW || !state.natH) return;
+
+  var baseFs = Math.max(state.natW, state.natH) / 50;
+  var fs = baseFs * labelStyle.size;
+  var frag = document.createDocumentFragment();
+
+  var bg = document.createElementNS(NS, 'rect');
+  bg.setAttribute('x', 0);
+  bg.setAttribute('y', 0);
+  bg.setAttribute('width', state.natW);
+  bg.setAttribute('height', state.natH);
+  bg.setAttribute('class', 'bg-hit');
+  frag.appendChild(bg);
+
+  state.faces.forEach(function (f, i) {
+    var el = makeShapeEl(f);
+    el.setAttribute('class', 'face' + (i === state.selected ? ' sel' : ''));
+    el.setAttribute('data-idx', String(i));
+    frag.appendChild(el);
+
+    var t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', f.x + baseFs * 0.35);
+    t.setAttribute('y', f.y + fs * 1.15);
+    t.setAttribute('font-size', fs);
+    t.setAttribute('class', 'lbl');
+    t.style.fill = labelStyle.color;
+    t.style.opacity = String(labelStyle.opacity);
+    t.textContent = String(i + 1);
+    frag.appendChild(t);
+
+    if (i === state.selected) {
+      var hs = Math.max(state.natW, state.natH) / 120;
+      var half = hs / 2;
+      var handles = [
+        ['nw', f.x,         f.y        ],
+        ['n',  f.x + f.w/2, f.y        ],
+        ['ne', f.x + f.w,   f.y        ],
+        ['e',  f.x + f.w,   f.y + f.h/2],
+        ['se', f.x + f.w,   f.y + f.h  ],
+        ['s',  f.x + f.w/2, f.y + f.h  ],
+        ['sw', f.x,         f.y + f.h  ],
+        ['w',  f.x,         f.y + f.h/2]
+      ];
+      for (var k = 0; k < handles.length; k++) {
+        var hh = handles[k];
+        var h = document.createElementNS(NS, 'rect');
+        h.setAttribute('x', hh[1] - half);
+        h.setAttribute('y', hh[2] - half);
+        h.setAttribute('width', hs);
+        h.setAttribute('height', hs);
+        h.setAttribute('class', 'handle');
+        h.setAttribute('data-handle', hh[0]);
+        h.setAttribute('data-idx', String(i));
+        frag.appendChild(h);
+      }
+    }
+  });
+
+  svg.appendChild(frag);
+}
+
+function renderList() {
+  els.faceCount.textContent = state.faces.length;
+  while (els.faceList.firstChild) els.faceList.removeChild(els.faceList.firstChild);
+  els.listEmpty.hidden = state.faces.length > 0;
+
+  state.faces.forEach(function (f, i) {
+    var li = document.createElement('li');
+    li.className = 'face-item' + (i === state.selected ? ' sel' : '');
+    var name = [f.name, f.surname].filter(Boolean).join(' ') || ('Face ' + (i + 1));
+    li.innerHTML =
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<span class="meta">' + escapeHtml(name) + (f.link ? ' 🔗' : '') + '</span>';
+    (function (idx) {
+      li.addEventListener('click', function () { selectFace(idx); });
+    })(i);
+    els.faceList.appendChild(li);
+  });
+}
+
+function renderEditor() {
+  var f = state.faces[state.selected];
+  if (!f) {
+    els.editor.hidden = true;
+    if (els.editEmpty) els.editEmpty.hidden = false;
+    els.selNo.textContent = '–';
+    return;
+  }
+  els.editor.hidden = false;
+  if (els.editEmpty) els.editEmpty.hidden = true;
+  els.selNo.textContent = String(state.selected + 1);
+  els.inIndex.value = String(state.selected + 1);
+  els.inName.value = f.name || '';
+  els.inSurname.value = f.surname || '';
+  els.inLink.value = f.link || '';
+  els.inShape.value = f.shape || 'rect';
+}
+
+function selectFace(i) {
+  state.selected = i;
+  renderOverlay();
+  renderList();
+  renderEditor();
+}
+
+/* ----------------------------------------------------------- overlay logic */
+function svgPoint(svg, e) {
+  var pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  var m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  var q = pt.matrixTransform(m.inverse());
+  return { x: q.x, y: q.y };
+}
+function startEdit(type, faceIdx, handle, e) {
+  var f = state.faces[faceIdx];
+  if (!f) return;
+  editState = {
+    type: type, faceIdx: faceIdx, handle: handle,
+    startPt: svgPoint(els.overlay, e),
+    orig: { x: f.x, y: f.y, w: f.w, h: f.h }
+  };
+  try { els.overlay.setPointerCapture(e.pointerId); } catch (_) {}
+}
+function applyEdit(p) {
+  var s = editState;
+  if (!s) return;
+  var f = state.faces[s.faceIdx];
+  if (!f) { editState = null; return; }
+  var dx = p.x - s.startPt.x;
+  var dy = p.y - s.startPt.y;
+  var o = s.orig;
+  if (s.type === 'move') {
+    f.x = o.x + dx;
+    f.y = o.y + dy;
+  } else {
+    var nx = o.x, ny = o.y, nw = o.w, nh = o.h;
+    var h = s.handle;
+    if (h.indexOf('n') !== -1) { ny = o.y + dy; nh = o.h - dy; }
+    if (h.indexOf('s') !== -1) { nh = o.h + dy; }
+    if (h.indexOf('w') !== -1) { nx = o.x + dx; nw = o.w - dx; }
+    if (h.indexOf('e') !== -1) { nw = o.w + dx; }
+    var min = 8;
+    if (nw < min) { nw = min; if (h.indexOf('w') !== -1) nx = o.x + o.w - min; }
+    if (nh < min) { nh = min; if (h.indexOf('n') !== -1) ny = o.y + o.h - min; }
+    f.x = nx; f.y = ny; f.w = nw; f.h = nh;
+  }
+  renderOverlay();
+}
+
+function bindOverlay() {
+  var svg = els.overlay;
+  var drawing = false, sx = 0, sy = 0, draft = null;
+
+  svg.addEventListener('pointerdown', function (e) {
+    if (e.button !== 0 && e.button !== 1) return;
+    var t = e.target;
+
+    if (addMode) {
+      e.preventDefault();
+      drawing = true;
+      var pt = svgPoint(svg, e);
+      sx = pt.x; sy = pt.y;
+      draft = document.createElementNS(NS, 'rect');
+      draft.setAttribute('class', 'face draft');
+      draft.setAttribute('x', sx);
+      draft.setAttribute('y', sy);
+      draft.setAttribute('width', 0);
+      draft.setAttribute('height', 0);
+      svg.appendChild(draft);
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+
+    var handle = t.getAttribute ? t.getAttribute('data-handle') : null;
+    var idxAttr = t.getAttribute ? t.getAttribute('data-idx') : null;
+
+    if (handle && idxAttr != null) {
+      e.preventDefault();
+      startEdit('resize', parseInt(idxAttr, 10), handle, e);
+      return;
+    }
+    if (t.classList && t.classList.contains('face') && !t.classList.contains('draft')) {
+      var idx = parseInt(idxAttr, 10);
+      if (!isNaN(idx)) {
+        if (state.selected !== idx) selectFace(idx);
+        e.preventDefault();
+        startEdit('move', idx, null, e);
+        return;
+      }
+    }
+
+    e.preventDefault();
+    panState = {
+      pointerId: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      startZoomX: zoom.x, startZoomY: zoom.y,
+      moved: false
+    };
+    svg.classList.add('grabbing');
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  svg.addEventListener('pointermove', function (e) {
+    if (editState) { e.preventDefault(); applyEdit(svgPoint(svg, e)); return; }
+    if (drawing && draft) {
+      var p = svgPoint(svg, e);
+      var x = Math.min(sx, p.x), y = Math.min(sy, p.y);
+      var w = Math.abs(p.x - sx), h = Math.abs(p.y - sy);
+      draft.setAttribute('x', x);
+      draft.setAttribute('y', y);
+      draft.setAttribute('width', w);
+      draft.setAttribute('height', h);
+      return;
+    }
+    if (panState && e.pointerId === panState.pointerId) {
+      var dx = e.clientX - panState.startX;
+      var dy = e.clientY - panState.startY;
+      if (!panState.moved && Math.sqrt(dx*dx + dy*dy) >= 4) panState.moved = true;
+      if (panState.moved) {
+        zoom.x = panState.startZoomX + dx;
+        zoom.y = panState.startZoomY + dy;
+        applyZoom();
+      }
+    }
+  });
+
+  function onUp(e) {
+    if (editState) {
+      editState = null;
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    if (drawing) {
+      drawing = false;
+      if (draft) {
+        var r = {
+          x: parseFloat(draft.getAttribute('x')) || 0,
+          y: parseFloat(draft.getAttribute('y')) || 0,
+          w: parseFloat(draft.getAttribute('width')) || 0,
+          h: parseFloat(draft.getAttribute('height')) || 0
+        };
+        svg.removeChild(draft);
+        draft = null;
+        if (r.w > 8 && r.h > 8) {
+          state.faces.push({
+            x: r.x, y: r.y, w: r.w, h: r.h,
+            shape: 'rect', name: '', surname: '', link: ''
+          });
+          state.selected = state.faces.length - 1;
+          renderOverlay(); renderList(); renderEditor();
+          setStatus('Region added — ' + state.faces.length + ' region(s).', 'ok');
+        }
+        setAddMode(false);
+      }
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    if (panState && e.pointerId === panState.pointerId) {
+      panState = null;
+      svg.classList.remove('grabbing');
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
+  }
+  svg.addEventListener('pointerup', onUp);
+  svg.addEventListener('pointercancel', onUp);
+}
+
+/* ---------------------------------------------------------------- detection */
+var MODEL_URLS = [
+  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+  'https://justadudewhohacks.github.io/face-api.js/models',
+  'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+];
+var faceApiLoading = null;
+var modelsReady = false;
+
+function loadFaceApi() {
+  if (window.faceapi) return Promise.resolve(true);
+  if (faceApiLoading) return faceApiLoading;
+  faceApiLoading = new Promise(function (resolve) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.onload = function () { resolve(!!window.faceapi); };
+    s.onerror = function () { resolve(false); };
+    document.head.appendChild(s);
+  });
+  return faceApiLoading;
+}
+function ensureModels() {
+  if (modelsReady) return Promise.resolve();
+  var i = 0;
+  function tryNext() {
+    if (i >= MODEL_URLS.length) return Promise.reject(new Error('Could not load models'));
+    var url = MODEL_URLS[i++];
+    return faceapi.nets.tinyFaceDetector.loadFromUri(url).then(function () {
+      modelsReady = true;
+    }, function () { return tryNext(); });
+  }
+  return tryNext();
+}
+function clampBox(b, W, H) {
+  var x = Math.max(0, Math.min(W - 1, b.x));
+  var y = Math.max(0, Math.min(H - 1, b.y));
+  var w = Math.max(1, Math.min(W - x, b.w));
+  var h = Math.max(1, Math.min(H - y, b.h));
+  return { x: x, y: y, w: w, h: h };
+}
+function iou(a, b) {
+  var x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y);
+  var x2 = Math.min(a.x + a.w, b.x + b.w);
+  var y2 = Math.min(a.y + a.h, b.y + b.h);
+  var inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  var uni = a.w * a.h + b.w * b.h - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+function nms(boxes, thresh) {
+  var sorted = boxes.slice().sort(function (a, b) { return (b.w * b.h) - (a.w * a.h); });
+  var keep = [];
+  while (sorted.length) {
+    var best = sorted.shift();
+    keep.push(best);
+    for (var i = sorted.length - 1; i >= 0; i--) {
+      if (iou(best, sorted[i]) >= thresh) sorted.splice(i, 1);
+    }
+  }
+  return keep;
+}
+function detectTiled(sourceCanvas) {
+  var W = sourceCanvas.width, H = sourceCanvas.height;
+  var tile = 512, overlap = 0.25, step = Math.floor(tile * (1 - overlap));
+  var all = [];
+  var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.25 });
+  var tasks = [];
+  for (var y = 0; y < H; y += step) {
+    for (var x = 0; x < W; x += step) {
+      (function (x, y) {
+        var tw = Math.min(tile, W - x);
+        var th = Math.min(tile, H - y);
+        if (tw < 80 || th < 80) return;
+        var c = document.createElement('canvas');
+        c.width = tw; c.height = th;
+        c.getContext('2d').drawImage(sourceCanvas, x, y, tw, th, 0, 0, tw, th);
+        tasks.push(faceapi.detectAllFaces(c, opts).then(function (dets) {
+          for (var i = 0; i < dets.length; i++) {
+            var d = dets[i];
+            all.push({ x: x + d.box.x, y: y + d.box.y, w: d.box.width, h: d.box.height });
+          }
+        }, function () {}));
+      })(x, y);
+    }
+  }
+  return Promise.all(tasks).then(function () { return nms(all, 0.35); });
+}
+
+function detectFaces() {
+  if (!state.img) return;
+  els.btnDetect.disabled = true;
+  var log = [];
+  function pushLog(line) { log.push(line); setStatus(log.join('\n'), 'busy'); }
+  pushLog('▶ Detection started');
+
+  var W = state.natW, H = state.natH;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(state.img, 0, 0, W, H);
+
+  var tainted = false;
+  try { ctx.getImageData(0, 0, 1, 1); } catch (_) { tainted = true; }
+  if (tainted) {
+    els.btnDetect.disabled = false;
+    setStatus('✖ This image blocks pixel access (CORS).\nUse a local file or draw regions manually.', 'err');
+    return;
+  }
+  pushLog('• pixel access ok');
+  pushLog('• loading face-api.js…');
+  loadFaceApi().then(function (ok) {
+    if (!ok) {
+      els.btnDetect.disabled = false;
+      pushLog('✖ face-api.js could not be loaded');
+      setStatus(log.join('\n'), 'err');
+      return;
+    }
+    pushLog('• face-api.js loaded');
+    pushLog('• loading models…');
+    return ensureModels().then(function () {
+      pushLog('• models loaded');
+      var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.30 });
+      return faceapi.detectAllFaces(canvas, opts).then(function (found) {
+        pushLog('• full-image detection: ' + found.length + ' face(s)');
+        var boxes = found.map(function (d) {
+          return { x: d.box.x, y: d.box.y, w: d.box.width, h: d.box.height };
+        });
+        if (boxes.length || Math.max(W, H) <= 500) {
+          return { boxes: boxes, engine: 'face-api.js' };
+        }
+        pushLog('• running tiled detection…');
+        return detectTiled(canvas).then(function (tiled) {
+          pushLog('• tiled detection: ' + tiled.length + ' face(s)');
+          return { boxes: tiled, engine: 'face-api.js (tiled)' };
+        });
+      });
+    });
+  }).then(function (result) {
+    if (!result) return;
+    els.btnDetect.disabled = false;
+    if (!result.boxes.length) {
+      pushLog('✖ No faces found.');
+      setStatus(log.join('\n'), 'warn');
+      return;
+    }
+    state.faces = result.boxes.map(function (b) {
+      var c = clampBox(b, W, H);
+      c.shape = 'rect'; c.name = ''; c.surname = ''; c.link = '';
+      return c;
+    });
+    state.selected = -1;
+    renderOverlay(); renderList(); renderEditor();
+    pushLog('✔ ' + state.faces.length + ' face(s) detected — ' + result.engine);
+    setStatus(log.join('\n'), 'ok');
+  }).catch(function (err) {
+    els.btnDetect.disabled = false;
+    pushLog('✖ Detection error — ' + (err && err.message ? err.message : err));
+    setStatus(log.join('\n'), 'err');
+  });
+}
+
+function setAddMode(on) {
+  addMode = on;
+  els.btnAdd.classList.toggle('active', on);
+  els.overlay.classList.toggle('add-mode', on);
+  if (on) setStatus('Drag on the photo to draw a face region.', 'busy');
+}
+
+/* =========================================================== SVG EXPORT
+   The export uses only CSS rules (no inline code) so nothing produced here
+   can terminate this page's own script block.
+   ===================================================================== */
+
+function shapeMarkup(f) {
+  var shape = f.shape || 'rect';
+  var rx = (Math.min(f.w, f.h) * 0.06).toFixed(2);
+  if (shape === 'circle') {
+    var r = (Math.min(f.w, f.h) / 2).toFixed(2);
+    return '<circle class="face" data-role="face" cx="' + (f.x + f.w/2).toFixed(2) +
+           '" cy="' + (f.y + f.h/2).toFixed(2) + '" r="' + r + '"/>';
+  }
+  if (shape === 'ellipse') {
+    return '<ellipse class="face" data-role="face" cx="' + (f.x + f.w/2).toFixed(2) +
+           '" cy="' + (f.y + f.h/2).toFixed(2) +
+           '" rx="' + (f.w/2).toFixed(2) + '" ry="' + (f.h/2).toFixed(2) + '"/>';
+  }
+  return '<rect class="face" data-role="face" x="' + f.x.toFixed(2) + '" y="' + f.y.toFixed(2) +
+         '" width="' + f.w.toFixed(2) + '" height="' + f.h.toFixed(2) + '" rx="' + rx + '"/>';
+}
+
+function makeRegionThumbnail(f, maxPx) {
+  maxPx = maxPx || 200;
+  var W = state.natW, H = state.natH;
+  if (!W || !H || !state.img) return '';
+  var x = Math.max(0, Math.floor(f.x));
+  var y = Math.max(0, Math.floor(f.y));
+  var w = Math.min(W - x, Math.ceil(f.w));
+  var h = Math.min(H - y, Math.ceil(f.h));
+  if (w <= 0 || h <= 0) return '';
+  var scale = Math.min(1, maxPx / Math.max(w, h));
+  var tw = Math.max(1, Math.round(w * scale));
+  var th = Math.max(1, Math.round(h * scale));
+  var canvas = document.createElement('canvas');
+  canvas.width = tw; canvas.height = th;
+  var ctx = canvas.getContext('2d');
+  try { ctx.drawImage(state.img, x, y, w, h, 0, 0, tw, th); }
+  catch (_) { return ''; }
+  var dataUrl;
+  try { dataUrl = canvas.toDataURL('image/png'); }
+  catch (_) { return ''; }
+  return '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+    'width="' + tw + '" height="' + th + '" viewBox="0 0 ' + tw + ' ' + th + '">' +
+    '<image x="0" y="0" width="' + tw + '" height="' + th + '" ' +
+    'xlink:href="' + dataUrl + '" href="' + dataUrl + '"/>' +
+    '</svg>';
+}
+
+function buildPayload(opts) {
+  opts = opts || {};
+  var payload = {
+    app: 'Face Recognition Studio',
+    version: 7,
+    imageName: state.fileName,
+    width: state.natW,
+    height: state.natH,
+    labelStyle: {
+      color: labelStyle.color,
+      opacity: Number(labelStyle.opacity.toFixed(3)),
+      size: Number(labelStyle.size.toFixed(3))
+    },
+    faces: state.faces.map(function (f, i) {
+      var face = {
+        index: i + 1,
+        region: {
+          x: round2(f.x), y: round2(f.y),
+          w: round2(f.w), h: round2(f.h),
+          shape: f.shape || 'rect'
+        },
+        name: f.name || '',
+        surname: f.surname || '',
+        link: f.link || ''
+      };
+      if (opts.regionThumbs) {
+        var t = makeRegionThumbnail(f, 200);
+        if (t) {
+          face.photo = t;
+          face.photoFormat = 'image/svg+xml';
+          var mW = /width="(\d+)"/.exec(t);
+          var mH = /height="(\d+)"/.exec(t);
+          if (mW) face.photoW = Number(mW[1]);
+          if (mH) face.photoH = Number(mH[1]);
+        } else {
+          face.photo = '';
+        }
+      }
+      return face;
+    })
+  };
+  if (state.src && /^https?:\/\//i.test(state.src)) {
+    payload.imageSrc = state.src;
+  }
+  if (opts.embedImage && state.dataUri) {
+    payload.imageDataUri = state.dataUri;
+  }
+  return payload;
+}
+
+function buildSvg(opts) {
+  opts = opts || {};
+  var includeImage = opts.includeImage !== false;
+  var includeUi = opts.includeUi !== false;
+
+  var W = state.natW, H = state.natH;
+  var sw = Math.max(W, H) / 400;
+  var baseFs = Math.max(W, H) / 50;
+  var fs = baseFs * labelStyle.size;
+  var color = labelStyle.color;
+  var opacity = labelStyle.opacity;
+
+  var payload = buildPayload({ embedImage: includeImage });
+
+  var out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+           'width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
+  out.push('  <title>' + (includeImage ? 'Image with clickable face regions' : 'Clickable face regions') + '</title>');
+  out.push('  <desc>Exported by Face Recognition Studio. Re-import into the app to edit regions.</desc>');
+  out.push('  <metadata id="face-studio-data" data-version="7">' +
+           b64encode(JSON.stringify(payload)) + '</metadata>');
+
+  out.push('  <style>');
+  out.push('    .face{fill:rgba(0,229,160,0.14);stroke:#00e5a0;' + sw.toFixed(2) + 'px;cursor:pointer;transition:fill .15s}');
+  out.push('    a:hover .face{fill:rgba(0,229,160,0.38)}');
+  out.push('    .label{font-family:system-ui,-apple-system,sans-serif;font-weight:700;' +
+           'paint-order:stroke fill;stroke:rgba(0,0,0,0.8);stroke-width:.3em;pointer-events:none}');
+  out.push('    svg:has(#fs-show-regions:not(:checked)) [data-role="face"],');
+  out.push('    svg:has(#fs-show-regions:not(:checked)) [data-role="id"],');
+  out.push('    svg:has(#fs-show-regions:not(:checked)) [data-role="name"]{display:none}');
+  out.push('    svg:has(#fs-show-id:not(:checked)) [data-role="id"]{display:none}');
+  out.push('    svg:has(#fs-show-name:not(:checked)) [data-role="name"]{display:none}');
+  out.push('  </style>');
+
+  if (includeImage) {
+    out.push('  <image x="0" y="0" width="' + W + '" height="' + H +
+             '" xlink:href="' + escapeAttr(state.dataUri || state.src) + '" href="' +
+             escapeAttr(state.dataUri || state.src) + '"/>');
+  }
+
+  var colorAttr = escapeAttr(color);
+  var opacityAttr = String(opacity);
+
+  state.faces.forEach(function (f, i) {
+    var nameLine = f.name || '';
+    var surnameLine = f.surname || '';
+    var fallback = 'Face ' + (i + 1);
+    if (!nameLine && !surnameLine) { nameLine = fallback; }
+
+    var titleText = [f.name, f.surname].filter(Boolean).join(' ') || fallback;
+    var href = f.link || '#';
+
+    var idX = (f.x + baseFs * 0.35).toFixed(2);
+    var idY = (f.y + fs * 1.15).toFixed(2);
+    var nameX = (f.x + baseFs * 0.35).toFixed(2);
+    var nameBaseY = (f.y + f.h + fs * 1.15);
+
+    out.push('  <a xlink:href="' + escapeAttr(href) + '" href="' + escapeAttr(href) +
+             '" target="_blank" rel="noopener">');
+    out.push('    <title>' + escapeAttr(titleText) + '</title>');
+    out.push('    ' + shapeMarkup(f));
+    out.push('    <text class="label" data-role="id" x="' + idX + '" y="' + idY +
+             '" font-size="' + fs.toFixed(2) + '" fill="' + colorAttr +
+             '" opacity="' + opacityAttr + '">' + (i + 1) + '</text>');
+
+    if (nameLine || surnameLine) {
+      var tspans = '';
+      if (nameLine) {
+        tspans += '<tspan x="' + nameX + '" dy="0">' + escapeAttr(nameLine) + '</tspan>';
+      }
+      if (surnameLine) {
+        tspans += '<tspan x="' + nameX + '" dy="' + (nameLine ? '1.2em' : '0') + '">' +
+                  escapeAttr(surnameLine) + '</tspan>';
+      }
+      out.push('    <text class="label" data-role="name" x="' + nameX + '" y="' +
+               nameBaseY.toFixed(2) + '" font-size="' + fs.toFixed(2) +
+               '" fill="' + colorAttr + '" opacity="' + opacityAttr + '">' +
+               tspans + '</text>');
+    }
+    out.push('  </a>');
+  });
+
+  if (includeUi) {
+    var pf = Math.max(11, Math.min(W, H) / 40);
+    var pad = pf * 0.55;
+    var px = pf * 0.6, py = pf * 0.6;
+    var pw = pf * 14.5, ph = pf * 5.8;
+
+    out.push('  <foreignObject id="fs-ui" x="' + px.toFixed(2) + '" y="' + py.toFixed(2) +
+             '" width="' + pw.toFixed(2) + '" height="' + ph.toFixed(2) + '">');
+    out.push('    <div xmlns="http://www.w3.org/1999/xhtml" ' +
+             'style="box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;' +
+             'gap:' + (pad*0.5).toFixed(2) + 'px;padding:' + pad.toFixed(2) + 'px;' +
+             'background:rgba(10,13,18,0.9);border:1px solid rgba(255,255,255,0.18);' +
+             'border-radius:' + (pad*0.7).toFixed(2) + 'px;' +
+             'font-family:system-ui,-apple-system,sans-serif;font-size:' + pf.toFixed(2) + 'px;' +
+             'color:#e7eef7;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.4)">' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
+             'px;cursor:pointer;user-select:none">' +
+             '<input type="checkbox" id="fs-show-regions" checked="checked" style="accent-color:#00e5a0"/>' +
+             'Show regions</label>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
+             'px;cursor:pointer;user-select:none">' +
+             '<input type="checkbox" id="fs-show-id" checked="checked" style="accent-color:#00e5a0"/>' +
+             'Show ID</label>' +
+             '<label style="display:flex;align-items:center;gap:' + (pad*0.5).toFixed(2) +
+             'px;cursor:pointer;user-select:none">' +
+             '<input type="checkbox" id="fs-show-name" checked="checked" style="accent-color:#00e5a0"/>' +
+             'Show name</label>' +
+             '</div>');
+    out.push('  </foreignObject>');
+  }
+
+  out.push('</svg>');
+  return out.join('\n');
+}
+
+/* --------------------------------------------------- data URI fetch cache */
+function getImageDataUri() {
+  if (state.dataUri) return Promise.resolve(state.dataUri);
+  if (state.blob) {
+    return blobToDataURL(state.blob).then(function (uri) {
+      state.dataUri = uri; return uri;
+    });
+  }
+  return fetch(state.src, { mode: 'cors' })
+    .then(function (res) { if (!res.ok) throw new Error('fetch failed'); return res.blob(); })
+    .then(blobToDataURL)
+    .then(function (uri) { state.dataUri = uri; return uri; })
+    .catch(function () { state.dataUri = state.src; return state.dataUri; });
+}
+
+/* --------------------------------------------------- Download full SVG  */
+function downloadSvg() {
+  if (!state.natW || !state.natH) {
+    setStatus('⚠ No image loaded.', 'warn');
+    return;
+  }
+  els.btnSvg.disabled = true;
+  setStatus('Building SVG…', 'busy');
+
+  getImageDataUri().then(function (uri) {
+    state.dataUri = uri;
+    var text = buildSvg({ includeImage: true, includeUi: true });
+    var blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+    var ok = download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.svg', blob);
+    els.btnSvg.disabled = false;
+    var embedded = uri && uri.indexOf('data:') === 0;
+    setStatus(
+      (ok ? '✔ ' : '⚠ ') + 'SVG export — ' + state.faces.length + ' region(s), ' +
+      (embedded ? 'image embedded.' : 'image linked remotely.') +
+      '\nOpen the .svg in a browser: use the top-left panel to toggle regions, ID and name labels.',
+      ok ? (embedded ? 'ok' : 'warn') : 'warn'
+    );
+  }).catch(function (err) {
+    els.btnSvg.disabled = false;
+    setStatus('✖ SVG export failed — ' + (err && err.message ? err.message : err), 'err');
+  });
+}
+
+/* --------------------------------------------- Download regions-only SVG */
+function downloadSvgRegions() {
+  if (!state.natW || !state.natH) {
+    setStatus('⚠ No image loaded.', 'warn');
+    return;
+  }
+  if (!state.faces.length) {
+    setStatus('⚠ No regions to export.', 'warn');
+    return;
+  }
+  els.btnSvgRegions.disabled = true;
+  setStatus('Building regions-only SVG…', 'busy');
+  try {
+    var text = buildSvg({ includeImage: false, includeUi: true });
+    var blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+    var ok = download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-regions.svg', blob);
+    setStatus(
+      (ok ? '✔ ' : '⚠ ') + 'Regions-only SVG — ' + state.faces.length + ' clickable region(s), no image.\n' +
+      'Overlay it on any image of the same size (' + state.natW + '×' + state.natH + ').',
+      ok ? 'ok' : 'warn'
+    );
+  } catch (err) {
+    setStatus('✖ Regions SVG export failed — ' + (err && err.message ? err.message : err), 'err');
+  }
+  els.btnSvgRegions.disabled = false;
+}
+
+/* ----------------------------------------------------- Download JSON data */
+function downloadJson() {
+  if (!state.natW || !state.natH) {
+    setStatus('⚠ No image loaded.', 'warn');
+    return;
+  }
+  els.btnJson.disabled = true;
+  setStatus('Building JSON…', 'busy');
+  try {
+    var payload = buildPayload({ embedImage: false, regionThumbs: true });
+    var text = JSON.stringify(payload, null, 2);
+    var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+    var ok = download((state.fileName || 'faces').replace(/\.[^.]+$/, '') + '-faces.json', blob);
+
+    var withThumb = payload.faces.filter(function (f) { return f.photo; }).length;
+    setStatus(
+      (ok ? '✔ ' : '⚠ ') + 'JSON — ' + state.faces.length + ' region(s), ' + text.length + ' bytes.' +
+      (withThumb
+        ? '\n' + withThumb + ' region(s) carry a "photo" crop (SVG-wrapped PNG).'
+        : '\n(No region crops — image is CORS-tainted or regions are empty.)') +
+      (payload.imageSrc ? '\nOriginal image URL kept as "imageSrc".' : ''),
+      ok ? (withThumb ? 'ok' : 'warn') : 'warn'
+    );
+  } catch (err) {
+    setStatus('✖ JSON export failed — ' + (err && err.message ? err.message : err), 'err');
+  }
+  els.btnJson.disabled = false;
+}
+
+/* ------------------------------------------------------------ SVG import */
+function parseSvgText(text, fileName) {
+  var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  if (doc.querySelector('parsererror')) {
+    setStatus('✖ Could not parse that SVG.', 'err');
+    return Promise.resolve();
+  }
+  var metaEl = doc.querySelector('metadata#face-studio-data');
+  var payload = null;
+  if (metaEl) {
+    try { payload = JSON.parse(b64decode(metaEl.textContent.trim())); }
+    catch (e) { console.warn('metadata decode failed', e); }
+  }
+
+  var src = null, faces = [], name = (fileName || 'imported.svg').replace(/\.svg$/i, '');
+  var importedStyle = null;
+
+  if (payload && (payload.imageDataUri || payload.imageSrc || payload.faces)) {
+    src = payload.imageDataUri || payload.imageSrc || null;
+    name = payload.imageName || name;
+    if (payload.labelStyle) importedStyle = payload.labelStyle;
+    faces = (payload.faces || []).map(function (f) {
+      var reg = (f && f.region) ? f.region : f;
+      return {
+        x: Number(reg.x) || 0, y: Number(reg.y) || 0,
+        w: Number(reg.w) || 0, h: Number(reg.h) || 0,
+        shape: reg.shape || 'rect',
+        name: f.name || '',
+        surname: f.surname || '',
+        link: f.link || ''
+      };
+    });
+  } else {
+    var imgEl = doc.querySelector('image');
+    var href = imgEl && (imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href'));
+    src = href || null;
+    var shapes = doc.querySelectorAll('rect.face, circle.face, ellipse.face');
+    for (var i = 0; i < shapes.length; i++) {
+      var el = shapes[i];
+      var a = el.closest('a');
+      var x, y, w, h, shape;
+      var tag = el.tagName.toLowerCase();
+      if (tag === 'circle') {
+        var cx = Number(el.getAttribute('cx')) || 0;
+        var cy = Number(el.getAttribute('cy')) || 0;
+        var r  = Number(el.getAttribute('r'))  || 0;
+        x = cx - r; y = cy - r; w = 2 * r; h = 2 * r; shape = 'circle';
+      } else if (tag === 'ellipse') {
+        var ecx = Number(el.getAttribute('cx')) || 0;
+        var ecy = Number(el.getAttribute('cy')) || 0;
+        var erx = Number(el.getAttribute('rx')) || 0;
+        var ery = Number(el.getAttribute('ry')) || 0;
+        x = ecx - erx; y = ecy - ery; w = 2 * erx; h = 2 * ery; shape = 'ellipse';
+      } else {
+        x = Number(el.getAttribute('x')) || 0;
+        y = Number(el.getAttribute('y')) || 0;
+        w = Number(el.getAttribute('width')) || 0;
+        h = Number(el.getAttribute('height')) || 0;
+        shape = 'rect';
+      }
+      faces.push({
+        x: x, y: y, w: w, h: h, shape: shape,
+        name: '', surname: '',
+        link: a ? (a.getAttribute('href') || a.getAttribute('xlink:href') || '') : ''
+      });
+    }
+  }
+
+  if (importedStyle) {
+    if (importedStyle.color)           setLabelColor(importedStyle.color);
+    if (importedStyle.opacity != null) setLabelOpacity(importedStyle.opacity);
+    if (importedStyle.size    != null) setLabelSize(importedStyle.size);
+  }
+
+  if (!src) {
+    var rootSvg = doc.querySelector('svg');
+    var vb = rootSvg && rootSvg.getAttribute('viewBox');
+    var W = state.natW || 800, H = state.natH || 600;
+    if (vb) {
+      var parts = vb.split(/[\s,]+/).map(Number);
+      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) { W = parts[2]; H = parts[3]; }
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var cx2 = canvas.getContext('2d');
+    cx2.fillStyle = '#0a0d12';
+    cx2.fillRect(0, 0, W, H);
+    canvas.toBlob(function (blob) {
+      var url = URL.createObjectURL(blob);
+      setImage(url, name, blob, faces).then(function () {
+        setStatus('✔ Imported regions-only SVG "' + fileName + '" — ' + faces.length +
+                  ' region(s) placed on a ' + W + '×' + H + ' canvas.', 'ok');
+      });
+    }, 'image/png');
+    return Promise.resolve();
+  }
+
+  return setImage(src, name, null, faces).then(function () {
+    setStatus('✔ Imported "' + fileName + '" with ' + faces.length + ' editable region(s).', 'ok');
+  });
+}
+
+function importSvg(file) {
+  return file.text().then(function (text) { return parseSvgText(text, file.name); });
+}
+
+function looksLikeSvgUrl(u) {
+  if (/^data:image\/svg\+xml/i.test(u)) return true;
+  if (!/^https?:|^file:/i.test(u)) return false;
+  var noHash = u.split('#')[0];
+  var noQuery = noHash.split('?')[0];
+  return /\.svg$/i.test(noQuery);
+}
+
+function importSvgFromUrl(url) {
+  setStatus('Fetching SVG from URL…', 'busy');
+  return fetch(url, { mode: 'cors' })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(function (text) {
+      if (!/<svg[\s>]/i.test(text)) throw new Error('Response does not look like SVG');
+      var name;
+      try { name = decodeURIComponent(url.split('/').pop().split('?')[0]) || 'remote.svg'; }
+      catch (_) { name = 'remote.svg'; }
+      return parseSvgText(text, name);
+    })
+    .catch(function (err) {
+      var msg = (err && err.message) ? err.message : String(err);
+      setStatus(
+        '✖ Could not fetch that SVG — ' + msg + '\n' +
+        'Tip: use “Import SVG” to pick the file, or drop the .svg onto the page.',
+        'err'
+      );
+    });
+}
+
+/* ------------------------------------------------------------ image input */
+function setImage(src, fileName, blob, faces) {
+  setStatus('Loading image…', 'busy');
+  var isRemote = /^https?:/i.test(src);
+  return loadImage(src, isRemote).then(function (loaded) {
+    state.src = src;
+    state.img = loaded.img;
+    state.natW = loaded.img.naturalWidth;
+    state.natH = loaded.img.naturalHeight;
+    state.faces = faces ? faces.slice() : [];
+    state.selected = state.faces.length ? 0 : -1;
+    state.dataUri = null;
+    state.blob = blob || null;
+    state.corsOk = loaded.corsOk;
+    state.fileName = (fileName || 'image').split('?')[0];
+
+    if (!state.natW || !state.natH) {
+      setStatus('✖ That file is not a valid image.', 'err');
+      return;
+    }
+
+    var oldImg = els.zoomLayer.querySelector('img.photo');
+    if (oldImg && oldImg !== loaded.img) oldImg.remove();
+    loaded.img.id = 'photo';
+    loaded.img.className = 'photo';
+    loaded.img.alt = 'Loaded image';
+    els.zoomLayer.insertBefore(loaded.img, els.overlay);
+
+    els.overlay.setAttribute('viewBox', '0 0 ' + state.natW + ' ' + state.natH);
+    els.overlay.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    els.drop.hidden = true;
+    els.viewer.hidden = false;
+
+    resetZoom();
+    setAddMode(false);
+    renderOverlay(); renderList(); renderEditor();
+
+    els.btnDetect.disabled = false;
+    els.btnAdd.disabled = false;
+    els.btnSvg.disabled = false;
+    els.btnSvgRegions.disabled = false;
+    els.btnJson.disabled = false;
+    els.btnClear.disabled = false;
+
+    requestAnimationFrame(fitStage);
+
+    if (faces && faces.length) {
+      setStatus('✔ Re-imported — ' + faces.length + ' editable region(s). Image ' +
+                state.natW + '×' + state.natH + '.', 'ok');
+    } else {
+      setStatus(
+        '✔ Image loaded (' + state.natW + '×' + state.natH + '). Press "Detect faces".' +
+        (loaded.corsOk ? '' : '\n⚠ Cross-origin image: pixel analysis may be blocked.'),
+        loaded.corsOk ? 'ok' : 'warn'
+      );
+    }
+  }).catch(function (e) {
+    console.error(e);
+    setStatus('✖ Could not load that image. Check the URL or try a local file.', 'err');
+  });
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)) { importSvg(file); return; }
+  if (!file.type || file.type.indexOf('image/') !== 0) {
+    setStatus('✖ That is not an image file.', 'err');
+    return;
+  }
+  var url = URL.createObjectURL(file);
+  setImage(url, file.name, file, null);
+}
+
+function handleUrl(url) {
+  var u = String(url || '').trim();
+  if (!u) return;
+  if (!/^(https?:\/\/|data:|blob:|file:)/i.test(u)) {
+    setStatus('✖ That does not look like an image URL.', 'err');
+    return;
+  }
+  if (looksLikeSvgUrl(u)) { importSvgFromUrl(u); return; }
+  var name = u.indexOf('data:') === 0 ? 'image' : (u.split('/').pop().split('?')[0] || 'image');
+  setImage(u, name, null, null);
+}
+
+/* ------------------------------------------------------------ drag & drop */
+['dragenter', 'dragover'].forEach(function (t) {
+  document.addEventListener(t, function (e) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    document.body.classList.add('dragging');
+  });
+});
+document.addEventListener('dragleave', function (e) {
+  if (e.relatedTarget === null || e.relatedTarget === document.documentElement)
+    document.body.classList.remove('dragging');
+});
+document.addEventListener('drop', function (e) {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  var dt = e.dataTransfer;
+  if (!dt) return;
+  if (dt.files && dt.files.length) {
+    var files = Array.prototype.slice.call(dt.files);
+    for (var i = 0; i < files.length; i++) {
+      if ((files[i].type && files[i].type.indexOf('image/') === 0) || /\.svg$/i.test(files[i].name)) {
+        handleFile(files[i]); return;
+      }
+    }
+  }
+  if (dt.items && dt.items.length) {
+    for (var j = 0; j < dt.items.length; j++) {
+      var it = dt.items[j];
+      if (it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+        var ff = it.getAsFile();
+        if (ff) { handleFile(ff); return; }
+      }
+    }
+  }
+  var html = dt.getData('text/html');
+  if (html) {
+    var svgMatch = /(<svg[\s\S]*?<\/svg>)/i.exec(html);
+    if (svgMatch) { parseSvgText(svgMatch[1], 'dropped.svg'); return; }
+    var m = /<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i.exec(html);
+    if (m) { handleUrl(m[1]); return; }
+  }
+  var uri = dt.getData('text/uri-list') || dt.getData('text/plain');
+  if (uri) {
+    var lines = uri.split(/\r?\n/);
+    for (var k = 0; k < lines.length; k++) {
+      var line = lines[k].trim();
+      if (line && line.charAt(0) !== '#') { handleUrl(line); return; }
+    }
+  }
+  setStatus('✖ Nothing usable was dropped.', 'err');
+});
+
+/* ----------------------------------------------------------------- paste */
+document.addEventListener('paste', function (e) {
+  var t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+  var cd = e.clipboardData;
+  if (!cd) return;
+  var items = Array.prototype.slice.call(cd.items || []);
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type && items[i].type.indexOf('image/') === 0) {
+      var f = items[i].getAsFile();
+      if (f) { e.preventDefault(); handleFile(f); return; }
+    }
+  }
+  var text = cd.getData('text');
+  if (text) {
+    var trimmed = text.trim();
+    if (/<svg[\s>]/i.test(trimmed)) { e.preventDefault(); parseSvgText(trimmed, 'pasted.svg'); return; }
+    if (/^(https?:\/\/|data:|blob:|file:)/i.test(trimmed)) { e.preventDefault(); handleUrl(trimmed); }
+  }
+});
+
+/* ---------------------------------------------------------------- sizing */
+function fitStage() {
+  if (els.viewer.hidden) return;
+  var ar = state.orientation === 'portrait' ? 3 / 4 : 4 / 3;
+  var box = els.viewerBody.getBoundingClientRect();
+  var availW = Math.max(60, box.width - 32);
+  var availH = Math.max(60, box.height - 32);
+  var w = availW, h = w / ar;
+  if (h > availH) { h = availH; w = h * ar; }
+  els.stagebox.style.width = Math.round(w) + 'px';
+  els.stagebox.style.height = Math.round(h) + 'px';
+}
+window.addEventListener('resize', fitStage);
+if ('ResizeObserver' in window) new ResizeObserver(fitStage).observe(els.viewerBody);
+
+/* ---------------------------------------------------- label style setters */
+function setLabelColor(hex) {
+  labelStyle.color = hex;
+  els.lblColor.value = hex;
+  els.lblColorSwatch.style.background = hex;
+  els.lblColorVal.textContent = hex;
+  renderOverlay();
+}
+function setLabelOpacity(v) {
+  v = Number(v);
+  if (!isFinite(v)) v = 1;
+  v = Math.max(0, Math.min(1, v));
+  labelStyle.opacity = v;
+  els.lblOpacity.value = String(v);
+  els.lblOpacityVal.textContent = v.toFixed(2);
+  renderOverlay();
+}
+function setLabelSize(v) {
+  v = Number(v);
+  if (!isFinite(v)) v = 1;
+  v = Math.max(0.5, Math.min(3, v));
+  labelStyle.size = v;
+  els.lblSize.value = String(v);
+  els.lblSizeVal.textContent = v.toFixed(1) + '×';
+  renderOverlay();
+}
+els.lblColor.addEventListener('input', function () { setLabelColor(els.lblColor.value); });
+els.lblOpacity.addEventListener('input', function () { setLabelOpacity(els.lblOpacity.value); });
+els.lblSize.addEventListener('input', function () { setLabelSize(els.lblSize.value); });
+
+/* ---------------------------------------------------------------- events */
+var orientRadios = document.querySelectorAll('input[name="orient"]');
+for (var oi = 0; oi < orientRadios.length; oi++) {
+  orientRadios[oi].addEventListener('change', function () {
+    var c = document.querySelector('input[name="orient"]:checked');
+    state.orientation = c ? c.value : 'portrait';
+    fitStage();
+  });
+}
+
+els.btnDetect.addEventListener('click', detectFaces);
+els.btnAdd.addEventListener('click', function () { setAddMode(!addMode); });
+els.btnSvg.addEventListener('click', downloadSvg);
+els.btnSvgRegions.addEventListener('click', downloadSvgRegions);
+els.btnJson.addEventListener('click', downloadJson);
+
+els.showRegions.addEventListener('change', function () {
+  els.overlay.classList.toggle('hidden-regions', !els.showRegions.checked);
+});
+
+els.btnClear.addEventListener('click', function () {
+  state.src = null; state.img = null;
+  state.faces = []; state.selected = -1;
+  state.dataUri = null; state.blob = null;
+  var oldImg = els.zoomLayer.querySelector('img.photo');
+  if (oldImg) oldImg.remove();
+  while (els.overlay.firstChild) els.overlay.removeChild(els.overlay.firstChild);
+  els.viewer.hidden = true;
+  els.drop.hidden = false;
+  els.btnDetect.disabled = true;
+  els.btnAdd.disabled = true;
+  els.btnSvg.disabled = true;
+  els.btnSvgRegions.disabled = true;
+  els.btnJson.disabled = true;
+  els.btnClear.disabled = true;
+  setAddMode(false);
+  resetZoom();
+  renderList(); renderEditor();
+  setStatus('No image loaded.');
+});
+
+els.btnDel.addEventListener('click', function () {
+  if (state.selected < 0) return;
+  state.faces.splice(state.selected, 1);
+  state.selected = Math.min(state.selected, state.faces.length - 1);
+  renderOverlay(); renderList(); renderEditor();
+  setStatus(state.faces.length + ' region(s).', 'ok');
+});
+
+els.inName.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.name = els.inName.value; renderList();
+});
+els.inSurname.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.surname = els.inSurname.value; renderList();
+});
+els.inLink.addEventListener('input', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.link = els.inLink.value.trim(); renderList();
+});
+els.inShape.addEventListener('change', function () {
+  var f = state.faces[state.selected]; if (!f) return;
+  f.shape = els.inShape.value; renderOverlay();
+});
+
+els.fileInput.addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (f) handleFile(f);
+  e.target.value = '';
+});
+els.svgInput.addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (f) importSvg(f);
+  e.target.value = '';
+});
+els.svgExtractInput.addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (f) importSvg(f);
+  e.target.value = '';
+});
+
+els.urlGo.addEventListener('click', function () { handleUrl(els.urlInput.value); });
+els.urlInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); handleUrl(els.urlInput.value); }
+});
+
+var sampleBtns = document.querySelectorAll('[data-sample]');
+for (var si = 0; si < sampleBtns.length; si++) {
+  (function (btn) {
+    btn.addEventListener('click', function () { handleUrl(btn.getAttribute('data-sample')); });
+  })(sampleBtns[si]);
+}
+
+window.addEventListener('dragover', function (e) { e.preventDefault(); });
+window.addEventListener('drop',     function (e) { e.preventDefault(); });
+
+/* ------------------------------------------------------------------ init */
+bindOverlay();
+bindSidebar();
+bindPanel();
+renderList();
+renderEditor();
+setLabelColor('#00e5a0');
+setLabelOpacity(1);
+setLabelSize(1);
+
+setSideCollapsed(loadSideCollapsed());
+var savedPanel = loadPanelState();
+setPanelVisible(savedPanel ? savedPanel.visible !== false : true);
+
+})();
+</script>
+</body>
+</html>
