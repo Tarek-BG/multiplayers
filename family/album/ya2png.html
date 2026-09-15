@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Face Recognition Studio — Album Viewer</title>
+<style>
+  :root{
+    --bg:#0e1116;
+    --panel:#161b23;
+    --panel-2:#1d242e;
+    --line:#2a323d;
+    --text:#e7edf3;
+    --muted:#8b98a8;
+    --accent:#00e5a0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 600px at 15% -10%, #172231 0%, var(--bg) 55%);
+    color:var(--text);
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:26px 28px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+    background:rgba(14,17,22,.7);
+    backdrop-filter:blur(8px);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#0ea5e9);
+    display:grid;place-items:center;font-weight:800;color:#04120d;font-size:18px;
+    box-shadow:0 8px 24px rgba(0,229,160,.25);
+  }
+  h1{font-size:19px;margin:0;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button,.filebtn{
+    background:var(--panel-2);color:var(--text);
+    border:1px solid var(--line);border-radius:10px;
+    padding:9px 14px;font-size:13.5px;cursor:pointer;
+    transition:.18s border-color,.18s background,.18s transform;
+  }
+  button:hover,.filebtn:hover{border-color:var(--accent);background:#202a35}
+  button:active,.filebtn:active{transform:translateY(1px)}
+  .filebtn{display:inline-block}
+  input[type=file]{display:none}
+  input[type=search]{
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:9px 13px;font-size:13.5px;min-width:230px;outline:none;
+  }
+  input[type=search]:focus{border-color:var(--accent)}
+  main{padding:24px 28px 70px;max-width:1500px;margin:0 auto}
+
+  #dropzone{
+    border:2px dashed var(--line);border-radius:var(--radius);
+    padding:54px 24px;text-align:center;color:var(--muted);
+    background:rgba(22,27,35,.5);transition:.2s;
+  }
+  #dropzone.hover{border-color:var(--accent);background:rgba(0,229,160,.06);color:var(--text)}
+  #dropzone strong{color:var(--text);display:block;font-size:17px;margin-bottom:6px}
+
+  .meta{
+    display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    margin-bottom:22px;
+  }
+  .meta .item{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+  }
+  .meta .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .meta .v{font-size:16px;font-weight:600;margin-top:3px;word-break:break-word}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+  .stage{
+    position:relative;display:inline-block;max-width:100%;
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    background:#0a0d11;margin-bottom:24px;
+  }
+  .stage img{display:block;max-width:100%;height:auto;cursor:zoom-in}
+  .box{
+    position:absolute;border:2px solid var(--accent);
+    box-shadow:0 0 0 1px rgba(0,0,0,.45) inset;
+    border-radius:4px;pointer-events:none;
+  }
+  .box span{
+    position:absolute;top:-24px;left:-2px;
+    background:var(--accent);color:#04120d;font-size:11px;font-weight:700;
+    padding:2px 7px;border-radius:5px;white-space:nowrap;
+  }
+
+  .grid{
+    display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fill,minmax(215px,1fr));
+  }
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;
+    transition:.2s transform,.2s border-color,.2s box-shadow;
+  }
+  .card:hover{transform:translateY(-3px);border-color:rgba(0,229,160,.55);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+  .thumb{
+    position:relative;background:#0a0d11;aspect-ratio:1/1;
+    display:grid;place-items:center;cursor:zoom-in;overflow:hidden;
+  }
+  .thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  .thumb .noimg{color:var(--muted);font-size:12px}
+  .badge{
+    position:absolute;top:9px;left:9px;
+    background:rgba(0,0,0,.65);border:1px solid var(--line);
+    color:var(--accent);font-size:11.5px;font-weight:700;
+    padding:2px 8px;border-radius:999px;backdrop-filter:blur(4px);
+  }
+  .png-pill{
+    position:absolute;bottom:9px;right:9px;
+    background:rgba(0,0,0,.65);border:1px solid var(--line);
+    color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    padding:2px 7px;border-radius:999px;backdrop-filter:blur(4px);
+    opacity:0;transition:.2s opacity;pointer-events:none;
+  }
+  .thumb:hover .png-pill{opacity:1}
+  .card .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:7px}
+  .name{font-size:15px;font-weight:650;margin:0}
+  .name .unnamed{color:var(--muted);font-weight:500;font-style:italic}
+  .surname{font-size:13.5px;color:var(--muted);margin:0}
+  .coords{
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:var(--muted);margin:2px 0 0;
+    background:var(--panel-2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;white-space:pre-line;
+  }
+  a.link{color:var(--accent);font-size:12.5px;text-decoration:none}
+  a.link:hover{text-decoration:underline}
+
+  #rawPanel{margin-top:34px;display:none}
+  #rawPanel.show{display:block}
+  .raw-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .raw-head h2{font-size:15px;margin:0;color:var(--muted);font-weight:600;letter-spacing:.03em}
+  pre{
+    background:#0b0f14;border:1px solid var(--line);border-radius:12px;
+    padding:16px;max-height:560px;overflow:auto;
+    font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#b7c4d4;margin:0;
+  }
+  .err{
+    background:#2a1414;border:1px solid #6b2b2b;color:#ffb4b4;
+    padding:12px 15px;border-radius:12px;margin-bottom:18px;font-size:13.5px;
+  }
+  .count{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .count b{color:var(--text)}
+
+  #lightbox{
+    position:fixed;inset:0;background:rgba(5,8,11,.92);
+    display:none;place-items:center;z-index:60;padding:28px;
+    backdrop-filter:blur(4px);
+  }
+  #lightbox.show{display:grid}
+  #lightbox figure{margin:0;text-align:center;max-width:min(760px,92vw)}
+  #lightbox img{max-width:100%;max-height:74vh;background:#0a0d11;border:1px solid var(--line);border-radius:14px;cursor:zoom-out}
+  #lightbox figcaption{color:var(--muted);font-size:13.5px;margin-top:12px}
+  #lightbox figcaption b{color:var(--text)}
+  .lb-close{position:fixed;top:18px;right:18px;z-index:2}
+
+  .icon-btn{
+    background:rgba(22,27,35,.9);border:1px solid var(--line);
+    border-radius:10px;width:38px;height:38px;display:grid;place-items:center;
+    color:var(--muted);cursor:pointer;font-size:16px;line-height:1;
+    transition:.18s color,.18s border-color,.18s background;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--accent);background:var(--panel-2)}
+
+  #pngModal{
+    position:fixed;inset:0;background:rgba(5,8,11,.94);
+    display:none;place-items:center;z-index:80;padding:24px;
+    backdrop-filter:blur(6px);
+  }
+  #pngModal.show{display:grid}
+  .png-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    width:min(660px,94vw);max-height:92vh;display:flex;flex-direction:column;
+    overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.65);
+  }
+  .png-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:13px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);
+  }
+  .png-head h3{margin:0;font-size:15px;letter-spacing:.02em}
+  .png-body{padding:16px;overflow:auto;display:grid;gap:13px}
+  .png-preview{
+    background:#0a0d11;border:1px solid var(--line);border-radius:12px;
+    padding:10px;display:grid;place-items:center;min-height:190px;
+  }
+  .png-preview img{max-width:100%;max-height:44vh;display:block;border-radius:8px}
+  .png-meta{
+    font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:var(--muted);word-break:break-all;
+  }
+  .png-meta b{color:var(--text)}
+  .png-actions{
+    display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+    padding:14px 16px;border-top:1px solid var(--line);background:var(--panel-2);
+    position:relative;z-index:2;
+  }
+  .btn-primary{
+    background:var(--accent);color:#04120d;border:1px solid var(--accent);
+    font-weight:750;text-decoration:none;padding:10px 20px;border-radius:10px;
+    font-size:14px;display:inline-block;cursor:pointer;
+    transition:.18s filter,.18s transform;
+    pointer-events:auto;
+  }
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-primary:active{transform:translateY(1px)}
+  .btn-primary[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none}
+  .spinner{
+    width:24px;height:24px;border-radius:50%;
+    border:2px solid var(--line);border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .png-error{color:#ffb4b4;font-size:13.5px;text-align:center;padding:10px}
+  .status-line{font-size:12.5px;color:var(--muted)}
+  .status-line.ok{color:var(--accent)}
+  .status-line.bad{color:#ffb4b4}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">FR</div>
+    <div>
+      <h1 id="appName">Face Recognition Studio</h1>
+      <div class="sub" id="appSub">Load an album.json file to begin</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Search name, surname, index…" disabled>
+    <label class="filebtn" for="jsonInput">Open JSON…</label>
+    <input type="file" id="jsonInput" accept=".json,application/json">
+    <label class="filebtn" for="imgInput">Load source image…</label>
+    <input type="file" id="imgInput" accept="image/*">
+    <button id="toggleRaw" disabled>Raw JSON</button>
+  </div>
+</header>
+
+<main>
+  <div id="dropzone">
+    <strong>Drop album.json here</strong>
+    …or use “Open JSON…”. (If <code>album.json</code> sits next to this page, it loads automatically.)
+  </div>
+
+  <div id="error" class="err" style="display:none"></div>
+
+  <section id="meta" class="meta" style="display:none"></section>
+  <div id="stageWrap"></div>
+  <div id="count" class="count" style="display:none"></div>
+  <section id="faces" class="grid"></section>
+
+  <section id="rawPanel">
+    <div class="raw-head">
+      <h2>RAW JSON</h2>
+      <label class="sub"><input type="checkbox" id="trimPhotos" checked> trim base64 photo data</label>
+    </div>
+    <pre id="rawOut"></pre>
+  </section>
+</main>
+
+<div id="lightbox">
+  <button class="icon-btn lb-close" id="lbClose" title="Close (Esc)">✕</button>
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+</div>
+
+<div id="pngModal" role="dialog" aria-modal="true" aria-labelledby="pngTitle">
+  <div class="png-card">
+    <div class="png-head">
+      <h3 id="pngTitle">PNG export</h3>
+      <button class="icon-btn" id="pngClose" title="Close (Esc)">✕</button>
+    </div>
+    <div class="png-body">
+      <div class="png-preview" id="pngPreview"><div class="spinner"></div></div>
+      <div class="png-meta" id="pngMeta"></div>
+    </div>
+    <div class="png-actions">
+      <button class="btn-primary" id="pngDownload" type="button" disabled>⬇ Download PNG</button>
+      <span class="status-line" id="pngHint">Tip: double-click any photo to export it as PNG.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (s, r = document) => r.querySelector(s);
+
+  const els = {
+    appName: $("#appName"),
+    appSub: $("#appSub"),
+    dropzone: $("#dropzone"),
+    error: $("#error"),
+    meta: $("#meta"),
+    stageWrap: $("#stageWrap"),
+    count: $("#count"),
+    faces: $("#faces"),
+    rawPanel: $("#rawPanel"),
+    rawOut: $("#rawOut"),
+    trimPhotos: $("#trimPhotos"),
+    search: $("#search"),
+    jsonInput: $("#jsonInput"),
+    imgInput: $("#imgInput"),
+    toggleRaw: $("#toggleRaw"),
+    lightbox: $("#lightbox"),
+    lbImg: $("#lbImg"),
+    lbCap: $("#lbCap"),
+    lbClose: $("#lbClose"),
+    pngModal: $("#pngModal"),
+    pngPreview: $("#pngPreview"),
+    pngMeta: $("#pngMeta"),
+    pngDownload: $("#pngDownload"),
+    pngHint: $("#pngHint"),
+    pngClose: $("#pngClose")
+  };
+
+  const state = {
+    data: null,
+    rawText: "",
+    fileName: "",
+    objectURLs: [],
+    sourceImageURL: null,
+    lightboxFace: null
+  };
+
+  /* Holds the actual Blob produced by the last export, plus a preview URL
+     used only for the on-screen preview. The download uses the Blob directly. */
+  const pngState = {
+    blob: null,
+    previewUrl: null,
+    filename: ""
+  };
+
+  /* ------------------------------------------------------------------ *
+   *  Small helpers
+   * ------------------------------------------------------------------ */
+
+  const esc = s => String(s ?? "").replace(/[&<>"]/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const num = v => (typeof v === "number" && isFinite(v)) ? v : null;
+  const fmt = (v, d = 1) => num(v) === null ? "—" : num(v).toFixed(d);
+
+  function formatBytes(n) {
+    if (!n && n !== 0) return "—";
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+    return (n / (1024 * 1024)).toFixed(2) + " MB";
+  }
+
+  function sanitizeFile(s) {
+    return String(s || "")
+      .trim()
+      .replace(/[^\w\-.]+/g, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) || "image";
+  }
+
+  function clearObjectURLs() {
+    state.objectURLs.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+    state.objectURLs = [];
+  }
+
+  function photoURL(face) {
+    const p = face && face.photo;
+    if (typeof p !== "string" || !p.trim()) return null;
+    const t = p.trim();
+    if (/^(data:|https?:|blob:|\/|\.\/|\.\.\/)/i.test(t)) return t;
+    if (t.startsWith("<")) {
+      try {
+        const url = URL.createObjectURL(new Blob([t], { type: "image/svg+xml" }));
+        state.objectURLs.push(url);
+        return url;
+      } catch (e) { return null; }
+    }
+    return t;
+  }
+
+  function displayName(f) {
+    const n = (f.name || "").trim(), s = (f.surname || "").trim();
+    return [n, s].filter(Boolean).join(" ") || null;
+  }
+
+  function baseNameForFace(f) {
+    const n = displayName(f);
+    const idx = f.index ?? "x";
+    return sanitizeFile(n ? `${n}-${idx}` : `face-${idx}`);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Download: File System Access API → hidden anchor with blob URL
+   * ------------------------------------------------------------------ */
+
+  async function saveBlob(blob, filename) {
+    if (!blob || !blob.size) throw new Error("Empty PNG data.");
+
+    // 1) Modern browsers: real "Save as..." dialog, guarantees the file lands on disk.
+    if (typeof window.showSaveFilePicker === "function") {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: "PNG image", accept: { "image/png": [".png"] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return "saved";
+      } catch (err) {
+        if (err && err.name === "AbortError") return "cancelled";
+        // Anything else (permission / insecure context) → fall through
+      }
+    }
+
+    // 2) Standard anchor + blob URL, using the native click() method.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.rel = "noopener";
+    // Must be in the layout tree and not display:none for some browsers
+    a.style.cssText =
+      "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+
+    document.body.appendChild(a);
+    a.click();
+
+    // Keep the URL and the anchor alive long enough for the download to start
+    setTimeout(() => {
+      try { a.remove(); } catch (e) {}
+      try { URL.revokeObjectURL(url); } catch (e) {}
+    }, 10000);
+
+    return "triggered";
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  PNG conversion
+   * ------------------------------------------------------------------ */
+
+  function ensureLoaded(img) {
+    if (!img) return Promise.reject(new Error("No image element."));
+    if (img.complete && (img.naturalWidth || img.width)) {
+      return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+    }
+    return new Promise((res, rej) => {
+      img.addEventListener("load", res, { once: true });
+      img.addEventListener("error", () => rej(new Error("Image failed to load.")), { once: true });
+    }).then(() => (img.decode ? img.decode().catch(() => {}) : undefined));
+  }
+
+  function extractEmbeddedImage(svg) {
+    if (typeof svg !== "string") return null;
+    const m = svg.match(/data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=\s]+)/i);
+    if (!m) return null;
+    return {
+      mime: "image/" + m[1].toLowerCase().replace("jpg", "jpeg"),
+      b64: m[2].replace(/\s+/g, "")
+    };
+  }
+
+  function b64ToBlob(b64, mime) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  }
+
+  /** Convert an <img> to a PNG Blob (or pull the embedded raster as fallback). */
+  async function makePNGBlob(imgEl, face) {
+    if (imgEl) {
+      try {
+        await ensureLoaded(imgEl);
+        const w = imgEl.naturalWidth || imgEl.width;
+        const h = imgEl.naturalHeight || imgEl.height;
+        if (w && h) {
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(imgEl, 0, 0, w, h);
+
+          const blob = await new Promise((res, rej) => {
+            try {
+              canvas.toBlob(
+                b => b && b.size ? res(b) : rej(new Error("Canvas produced no data.")),
+                "image/png"
+              );
+            } catch (e) { rej(e); }
+          });
+          if (blob) return blob;
+        }
+      } catch (e) {
+        /* tainted canvas or SVG cross-origin — fall through */
+      }
+    }
+
+    // Fallback: grab the embedded base64 raster from the SVG data-URI
+    const emb = face && extractEmbeddedImage(face.photo);
+    if (emb) return b64ToBlob(emb.b64, emb.mime);
+
+    throw new Error("Could not convert this image to PNG in this browser.");
+  }
+
+  function releasePngState() {
+    if (pngState.previewUrl) {
+      try { URL.revokeObjectURL(pngState.previewUrl); } catch (e) {}
+      pngState.previewUrl = null;
+    }
+    pngState.blob = null;
+    pngState.filename = "";
+  }
+
+  function openPngModal() { els.pngModal.classList.add("show"); }
+
+  function closePngModal() {
+    els.pngModal.classList.remove("show");
+    els.pngPreview.innerHTML = "";
+    els.pngMeta.textContent = "";
+    els.pngDownload.disabled = true;
+    els.pngHint.textContent = "Tip: double-click any photo to export it as PNG.";
+    els.pngHint.className = "status-line";
+    releasePngState();
+  }
+
+  async function exportImageAsPNG({ imgEl, face, baseName }) {
+    openPngModal();
+    els.pngPreview.innerHTML = '<div class="spinner"></div>';
+    els.pngMeta.textContent = "Converting…";
+    els.pngDownload.disabled = true;
+    els.pngHint.textContent = "Converting image to PNG…";
+    els.pngHint.className = "status-line";
+    releasePngState();
+
+    try {
+      const blob = await makePNGBlob(imgEl, face);
+      const fname = sanitizeFile(baseName || "image") + ".png";
+
+      pngState.blob = blob;
+      pngState.filename = fname;
+
+      const previewUrl = URL.createObjectURL(blob);
+      pngState.previewUrl = previewUrl;
+
+      els.pngPreview.innerHTML = "";
+      const preview = new Image();
+      preview.src = previewUrl;
+      preview.alt = "PNG preview";
+      els.pngPreview.appendChild(preview);
+
+      const w = (imgEl && (imgEl.naturalWidth || imgEl.width)) || 0;
+      const h = (imgEl && (imgEl.naturalHeight || imgEl.height)) || 0;
+
+      els.pngMeta.innerHTML =
+        `<b>${esc(fname)}</b><br>` +
+        `type: <b>image/png</b> &nbsp;·&nbsp; size: <b>${formatBytes(blob.size)}</b>` +
+        (w && h ? ` &nbsp;·&nbsp; ${w} × ${h} px` : "");
+
+      els.pngDownload.disabled = false;
+      els.pngHint.textContent = "Ready — click “Download PNG” to save the file.";
+      els.pngHint.className = "status-line ok";
+    } catch (err) {
+      els.pngPreview.innerHTML =
+        `<div class="png-error">${esc(err && err.message ? err.message : "Conversion failed.")}</div>`;
+      els.pngMeta.textContent = "";
+      els.pngHint.textContent = "Conversion failed.";
+      els.pngHint.className = "status-line bad";
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Download button
+   * ------------------------------------------------------------------ */
+
+  els.pngDownload.addEventListener("click", async e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!pngState.blob) {
+      els.pngHint.textContent = "⚠ Nothing to download yet.";
+      els.pngHint.className = "status-line bad";
+      return;
+    }
+
+    els.pngDownload.disabled = true;
+    els.pngHint.textContent = "Saving…";
+    els.pngHint.className = "status-line";
+
+    try {
+      const result = await saveBlob(pngState.blob, pngState.filename || "image.png");
+      if (result === "cancelled") {
+        els.pngHint.textContent = "Save cancelled.";
+        els.pngHint.className = "status-line";
+      } else {
+        els.pngHint.textContent = "✔ PNG saved — check your downloads folder.";
+        els.pngHint.className = "status-line ok";
+      }
+    } catch (err) {
+      els.pngHint.textContent =
+        "⚠ Download failed: " + (err && err.message ? err.message : "unknown error");
+      els.pngHint.className = "status-line bad";
+    } finally {
+      els.pngDownload.disabled = false;
+    }
+  });
+
+  /* ------------------------------------------------------------------ *
+   *  Loading
+   * ------------------------------------------------------------------ */
+
+  function showError(msg) {
+    els.error.textContent = msg;
+    els.error.style.display = "block";
+  }
+  function hideError() { els.error.style.display = "none"; }
+
+  function loadText(text, label) {
+    state.rawText = text;
+    state.fileName = label || "";
+    hideError();
+    els.dropzone.style.display = "none";
+
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      showError("Could not parse JSON — " + e.message + "  (Showing the raw text below.)");
+    }
+
+    state.data = data;
+    render();
+
+    if (data) {
+      els.search.disabled = false;
+      els.toggleRaw.disabled = false;
+    }
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadText(String(reader.result), file.name);
+    reader.onerror = () => showError("Could not read the file.");
+    reader.readAsText(file);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Rendering
+   * ------------------------------------------------------------------ */
+
+  function render() {
+    clearObjectURLs();
+    els.faces.innerHTML = "";
+    els.stageWrap.innerHTML = "";
+    els.meta.innerHTML = "";
+
+    const d = state.data;
+    if (!d) { renderRaw(); return; }
+
+    els.appName.textContent = d.app || "Face Recognition Studio";
+    els.appSub.textContent =
+      [state.fileName, d.imageName, d.version != null ? "v" + d.version : ""]
+        .filter(Boolean).join("  •  ");
+
+    const ls = d.labelStyle || {};
+    const faces = Array.isArray(d.faces) ? d.faces : [];
+
+    const metaItems = [
+      ["Image", esc(d.imageName || "—")],
+      ["Dimensions", (d.width && d.height) ? `${d.width} × ${d.height}` : "—"],
+      ["Faces", String(faces.length)],
+      ["Version", d.version != null ? String(d.version) : "—"],
+      ["Label colour", ls.color
+        ? `<span class="swatch" style="background:${esc(ls.color)}"></span>${esc(ls.color)}`
+        : "—"],
+      ["Label style", `size ${ls.size ?? "—"} · opacity ${ls.opacity ?? "—"}`]
+    ];
+    els.meta.innerHTML = metaItems.map(([k, v]) =>
+      `<div class="item"><div class="k">${esc(k)}</div><div class="v">${v}</div></div>`
+    ).join("");
+    els.meta.style.display = "grid";
+
+    renderStage(d, faces);
+    renderCounts(faces);
+    renderCards(faces);
+    renderRaw();
+  }
+
+  function renderCounts(faces) {
+    const named = faces.filter(f => displayName(f)).length;
+    els.count.innerHTML =
+      `Showing <b>${faces.length}</b> face${faces.length === 1 ? "" : "s"} — ` +
+      `<b>${named}</b> named, <b>${faces.length - named}</b> unnamed. ` +
+      `<span class="sub">Double-click a photo to export it as PNG.</span>`;
+    els.count.style.display = "block";
+  }
+
+  function renderStage(d, faces) {
+    if (!state.sourceImageURL) return;
+
+    const w = num(d.width), h = num(d.height);
+    const stage = document.createElement("div");
+    stage.className = "stage";
+
+    const img = document.createElement("img");
+    img.src = state.sourceImageURL;
+    img.alt = d.imageName || "source image";
+    img.title = "Double-click to export the full image as PNG";
+    img.addEventListener("dblclick", () => {
+      exportImageAsPNG({
+        imgEl: img,
+        face: null,
+        baseName: sanitizeFile(d.imageName || "source-image") + "-full"
+      });
+    });
+    stage.appendChild(img);
+
+    if (w && h) {
+      faces.forEach(f => {
+        const r = f.region || {};
+        const x = num(r.x), y = num(r.y), rw = num(r.w), rh = num(r.h);
+        if ([x, y, rw, rh].some(v => v === null)) return;
+
+        const box = document.createElement("div");
+        box.className = "box";
+        box.style.left   = (x / w * 100) + "%";
+        box.style.top    = (y / h * 100) + "%";
+        box.style.width  = (rw / w * 100) + "%";
+        box.style.height = (rh / h * 100) + "%";
+        if (d.labelStyle && d.labelStyle.color) box.style.borderColor = d.labelStyle.color;
+
+        const tag = document.createElement("span");
+        tag.textContent = "#" + (f.index ?? "?") + (displayName(f) ? " " + displayName(f) : "");
+        if (d.labelStyle && d.labelStyle.color) tag.style.background = d.labelStyle.color;
+        box.appendChild(tag);
+        stage.appendChild(box);
+      });
+    }
+
+    els.stageWrap.appendChild(stage);
+  }
+
+  function renderCards(faces) {
+    const q = els.search.value.trim().toLowerCase();
+    const filtered = !q ? faces : faces.filter(f => {
+      const hay = [f.index, f.name, f.surname, f.link,
+                   f.region && f.region.x, f.region && f.region.y,
+                   f.region && f.region.w, f.region && f.region.h]
+                   .join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+
+    if (!filtered.length) {
+      els.faces.innerHTML = `<p class="sub">No faces match “${esc(q)}”.</p>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    filtered.forEach(f => {
+      const r = f.region || {};
+      const url = photoURL(f);
+      const name = displayName(f);
+
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      thumb.title = "Click to enlarge · Double-click to export PNG";
+
+      let thumbImg = null;
+      if (url) {
+        thumbImg = document.createElement("img");
+        thumbImg.src = url;
+        thumbImg.alt = name || ("face " + (f.index ?? ""));
+        thumbImg.loading = "lazy";
+        thumbImg.decoding = "async";
+        thumb.appendChild(thumbImg);
+      } else {
+        thumb.innerHTML = `<span class="noimg">no photo</span>`;
+      }
+
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "#" + (f.index ?? "?");
+      thumb.appendChild(badge);
+
+      if (url) {
+        const pill = document.createElement("span");
+        pill.className = "png-pill";
+        pill.textContent = "2× CLICK → PNG";
+        thumb.appendChild(pill);
+      }
+
+      let clickTimer = null;
+      thumb.addEventListener("click", () => {
+        if (!url) return;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => openLightbox(url, f), 240);
+      });
+
+      if (url) {
+        thumb.addEventListener("dblclick", e => {
+          e.preventDefault();
+          clearTimeout(clickTimer);
+          exportImageAsPNG({
+            imgEl: thumbImg,
+            face: f,
+            baseName: baseNameForFace(f)
+          });
+        });
+      }
+
+      const body = document.createElement("div");
+      body.className = "body";
+
+      const h3 = document.createElement("h3");
+      h3.className = "name";
+      h3.innerHTML = name ? esc(name) : `<span class="unnamed">unnamed</span>`;
+      body.appendChild(h3);
+
+      if (f.surname && String(f.surname).trim()) {
+        const p = document.createElement("p");
+        p.className = "surname";
+        p.textContent = "surname: " + f.surname;
+        body.appendChild(p);
+      }
+
+      const coords = document.createElement("p");
+      coords.className = "coords";
+      coords.textContent =
+        `x ${fmt(r.x)}   y ${fmt(r.y)}\nw ${fmt(r.w)}   h ${fmt(r.h)}` +
+        (r.shape ? `\nshape: ${r.shape}` : "");
+      body.appendChild(coords);
+
+      if (f.link && f.link !== "#") {
+        const a = document.createElement("a");
+        a.className = "link";
+        a.href = f.link;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "open link ↗";
+        body.appendChild(a);
+      }
+
+      card.appendChild(thumb);
+      card.appendChild(body);
+      frag.appendChild(card);
+    });
+
+    els.faces.innerHTML = "";
+    els.faces.appendChild(frag);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Lightbox
+   * ------------------------------------------------------------------ */
+
+  function openLightbox(url, face) {
+    state.lightboxFace = face;
+    els.lbImg.src = url;
+    els.lbImg.alt = displayName(face) || "face";
+    const r = face.region || {};
+    els.lbCap.innerHTML =
+      `<b>#${esc(face.index ?? "?")}</b> ` +
+      `${displayName(face) ? "— " + esc(displayName(face)) : "— unnamed"}<br>` +
+      `x ${fmt(r.x)}, y ${fmt(r.y)}, w ${fmt(r.w)}, h ${fmt(r.h)}` +
+      `<br><span class="sub">Double-click the image to export it as PNG</span>`;
+    els.lightbox.classList.add("show");
+  }
+
+  function closeLightbox() {
+    els.lightbox.classList.remove("show");
+    els.lbImg.src = "";
+    state.lightboxFace = null;
+  }
+
+  els.lightbox.addEventListener("click", e => {
+    if (e.target === els.lightbox) closeLightbox();
+  });
+  els.lbClose.addEventListener("click", e => { e.stopPropagation(); closeLightbox(); });
+  els.lbImg.addEventListener("dblclick", e => {
+    e.stopPropagation();
+    if (!state.lightboxFace) return;
+    exportImageAsPNG({
+      imgEl: els.lbImg,
+      face: state.lightboxFace,
+      baseName: baseNameForFace(state.lightboxFace)
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   *  Raw view
+   * ------------------------------------------------------------------ */
+
+  function renderRaw() {
+    if (!state.rawText) { els.rawOut.textContent = ""; return; }
+    let text;
+    if (state.data && els.trimPhotos.checked) {
+      text = JSON.stringify(state.data, (k, v) => {
+        if (k === "photo" && typeof v === "string" && v.length > 80) {
+          return v.slice(0, 72) + ` … [${v.length} chars trimmed]`;
+        }
+        return v;
+      }, 2);
+    } else if (state.data) {
+      text = JSON.stringify(state.data, null, 2);
+    } else {
+      text = state.rawText;
+    }
+    els.rawOut.textContent = text;
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Events
+   * ------------------------------------------------------------------ */
+
+  els.jsonInput.addEventListener("change", e => {
+    loadFile(e.target.files && e.target.files[0]);
+    e.target.value = "";
+  });
+
+  els.imgInput.addEventListener("change", e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (state.sourceImageURL) URL.revokeObjectURL(state.sourceImageURL);
+    state.sourceImageURL = URL.createObjectURL(file);
+    render();
+    e.target.value = "";
+  });
+
+  els.search.addEventListener("input", () => {
+    if (state.data) renderCards(Array.isArray(state.data.faces) ? state.data.faces : []);
+  });
+
+  els.toggleRaw.addEventListener("click", () => {
+    els.rawPanel.classList.toggle("show");
+    els.toggleRaw.textContent = els.rawPanel.classList.contains("show")
+      ? "Hide raw JSON" : "Raw JSON";
+  });
+
+  els.trimPhotos.addEventListener("change", renderRaw);
+
+  els.pngClose.addEventListener("click", closePngModal);
+  els.pngModal.addEventListener("click", e => {
+    if (e.target === els.pngModal) closePngModal();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (els.pngModal.classList.contains("show")) { closePngModal(); return; }
+    if (els.lightbox.classList.contains("show")) closeLightbox();
+  });
+
+  /* drag & drop */
+  ["dragenter", "dragover"].forEach(ev =>
+    document.addEventListener(ev, e => {
+      e.preventDefault();
+      els.dropzone.classList.add("hover");
+    })
+  );
+  ["dragleave", "drop"].forEach(ev =>
+    document.addEventListener(ev, e => {
+      e.preventDefault();
+      if (ev === "dragleave" && e.relatedTarget) return;
+      els.dropzone.classList.remove("hover");
+    })
+  );
+  document.addEventListener("drop", e => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (f.type.startsWith("image/")) {
+      if (state.sourceImageURL) URL.revokeObjectURL(state.sourceImageURL);
+      state.sourceImageURL = URL.createObjectURL(f);
+      render();
+    } else {
+      loadFile(f);
+    }
+  });
+
+  /* auto-load album.json if present next to this page */
+  (async function autoLoad() {
+    try {
+      const res = await fetch("album.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const txt = await res.text();
+      loadText(txt, "album.json");
+    } catch (err) {
+      /* no local album.json — wait for the user */
+    }
+  })();
+})();
+</script>
+</body>
+</html>
