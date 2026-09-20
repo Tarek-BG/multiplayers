@@ -127,8 +127,22 @@ img {vertical-align: middle;}
   <span class="dot" onclick="currentSlide(1)"></span> 
   <span class="dot" onclick="currentSlide(2)"></span> 
   <span class="dot" onclick="currentSlide(3)"></span> 
-   <span class="dot" onclick=url_login></span>  
+   <span class="dot" onclick="url_login"></span>  
 </div>
+
+<button type="button" onclick=url_login()>Click for Log !</button>
+
+
+<script>
+function url_login(){
+    console.log("exe>url_login()");
+    
+     var url1 ='https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec';
+     var winRef = window.open(url1);
+     winRef ? google.script.host.close() : window.alert('Allow popup to redirect you to '+url1) ;
+     window.onload=function(){document.getElementById('url').href = url1;}
+}
+</script>
 
 <script>
 
@@ -158,18 +172,6 @@ function showSlides(n) {
   slides[slideIndex-1].style.display = "block";  
   dots[slideIndex-1].className += " active";
 }
-
-
-function url_login(){
-    console.log("exe>url_login()");
-    
-     var url1 ='https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec';
-     var winRef = window.open(url1);
-     winRef ? google.script.host.close() : window.alert('Allow popup to redirect you to '+url1) ;
-     window.onload=function(){document.getElementById('url').href = url1;}
-}
-
-
 </script>
 
 </body>
