@@ -132,16 +132,6 @@ img {vertical-align: middle;}
 
 <script>
 
-function url_login(){
-    console.log("exe>url_familyview()");
-    
-     var url1 ='https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec';
-     var winRef = window.open(url1);
-     winRef ? google.script.host.close() : window.alert('Allow popup to redirect you to '+url1) ;
-     window.onload=function(){document.getElementById('url').href = url1;}
-}
-
-
 let slideIndex = 1;
 showSlides(slideIndex);
 
@@ -168,6 +158,18 @@ function showSlides(n) {
   slides[slideIndex-1].style.display = "block";  
   dots[slideIndex-1].className += " active";
 }
+
+
+function url_login(){
+    console.log("exe>url_login()");
+    
+     var url1 ='https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec';
+     var winRef = window.open(url1);
+     winRef ? google.script.host.close() : window.alert('Allow popup to redirect you to '+url1) ;
+     window.onload=function(){document.getElementById('url').href = url1;}
+}
+
+
 </script>
 
 </body>
