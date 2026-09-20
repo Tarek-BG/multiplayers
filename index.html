@@ -127,10 +127,21 @@ img {vertical-align: middle;}
   <span class="dot" onclick="currentSlide(1)"></span> 
   <span class="dot" onclick="currentSlide(2)"></span> 
   <span class="dot" onclick="currentSlide(3)"></span> 
-   <span class="dot" onclick="https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec"></span>  
+   <span class="dot" onclick="url_login"></span>  
 </div>
 
 <script>
+
+function url_login(){
+    console.log("exe>url_familyview()");
+    
+     var url1 ='https://script.google.com/macros/s/AKfycbyUZ5vG3CDmeMItabcGUXbW-Gl8xu3-7PHzVLIK59lxQTfGHMzMnzPMF4p2JkuJ_mVQ/exec';
+     var winRef = window.open(url1);
+     winRef ? google.script.host.close() : window.alert('Allow popup to redirect you to '+url1) ;
+     window.onload=function(){document.getElementById('url').href = url1;}
+}
+
+
 let slideIndex = 1;
 showSlides(slideIndex);
 
